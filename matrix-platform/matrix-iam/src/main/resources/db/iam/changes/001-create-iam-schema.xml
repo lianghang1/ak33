@@ -79,11 +79,11 @@
     <!-- ============ 账号主体（无 tenant_id） ============ -->
 
     <changeSet id="20261121-05" author="matrix">
-        <createTable tableName="sys_user" remarks="系统用户（账号主体，username 全局唯一）">
+        <createTable tableName="sys_user" remarks="系统用户账号主体（只存登录鉴权核心字段，username 全局唯一）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
+            <column name="account_type" type="VARCHAR(16)" defaultValue="OPERATOR" remarks="账号类型:OPERATOR/APP/MEMBER"><constraints nullable="false"/></column>
             <column name="username" type="VARCHAR(64)" remarks="登录账号"><constraints nullable="false"/></column>
             <column name="password" type="VARCHAR(128)" remarks="密码(BCrypt)"><constraints nullable="false"/></column>
-            <column name="real_name" type="VARCHAR(64)"/>
             <column name="mobile" type="VARCHAR(32)"/>
             <column name="email" type="VARCHAR(128)"/>
             <column name="status" type="INT" defaultValueNumeric="1" remarks="1启用 0禁用"><constraints nullable="false"/></column>
@@ -94,6 +94,47 @@
             <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
         </createTable>
         <addUniqueConstraint tableName="sys_user" columnNames="username" constraintName="uk_sys_user_name"/>
+    </changeSet>
+
+    <!-- ============ 用户资料（1:1）与社交绑定（1:N） ============ -->
+
+    <changeSet id="20261121-05b" author="matrix">
+        <createTable tableName="sys_user_profile" remarks="用户资料（1:1，展示/业务用，不参与登录）">
+            <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
+            <column name="user_id" type="BIGINT" remarks="对应 sys_user.id"><constraints nullable="false"/></column>
+            <column name="nickname" type="VARCHAR(64)"/>
+            <column name="avatar" type="VARCHAR(255)"/>
+            <column name="sex" type="INT" defaultValueNumeric="0" remarks="0未知 1男 2女"/>
+            <column name="birthday" type="VARCHAR(10)"/>
+            <column name="id_card" type="VARCHAR(32)" remarks="身份证号"/>
+            <column name="address" type="VARCHAR(255)"/>
+            <column name="remark" type="VARCHAR(500)"/>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_user_profile" columnNames="user_id" constraintName="uk_profile_user"/>
+
+        <createTable tableName="sys_user_social" remarks="用户社交绑定（1:N，只存绑定关系与第三方标识）">
+            <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
+            <column name="user_id" type="BIGINT" remarks="对应 sys_user.id"><constraints nullable="false"/></column>
+            <column name="provider" type="VARCHAR(32)" remarks="平台:wechat-mp/wechat-mini/alipay"><constraints nullable="false"/></column>
+            <column name="open_id" type="VARCHAR(64)" remarks="平台内主标识 openId"><constraints nullable="false"/></column>
+            <column name="union_id" type="VARCHAR(64)" remarks="跨应用统一标识 unionId（可空）"/>
+            <column name="ext_info" type="VARCHAR(2000)" remarks="第三方原始返回快照 JSON"/>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_user_social" columnNames="provider, open_id" constraintName="uk_social_provider_open"/>
+        <createIndex tableName="sys_user_social" indexName="idx_social_union">
+            <column name="provider"/>
+            <column name="union_id"/>
+        </createIndex>
     </changeSet>
 
     <!-- ============ 租户隔离表（有 tenant_id + @Filter） ============ -->
@@ -146,7 +187,8 @@
             <column name="role_type" type="VARCHAR(32)" defaultValue="NORMAL" remarks="PLATFORM_ADMIN/TENANT_ADMIN/NORMAL"><constraints nullable="false"/></column>
             <column name="sort_no" type="INT"/>
             <column name="built_in" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
-            <column name="data_scope" type="VARCHAR(32)" defaultValue="ALL" remarks="数据范围(预留):ALL/DEPT_CUSTOM/DEPT_ONLY/DEPT_AND_CHILD/SELF"><constraints nullable="false"/></column>
+            <column name="data_scope" type="VARCHAR(32)" defaultValue="ALL" remarks="数据范围:ALL/DEPT_CUSTOM/DEPT_ONLY/DEPT_AND_CHILD/SELF"><constraints nullable="false"/></column>
+            <column name="data_scope_dept_ids" type="VARCHAR(255)" remarks="指定部门(DEPT_CUSTOM用),逗号分隔部门ID"/>
             <column name="remark" type="VARCHAR(255)"/>
             <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
             <column name="update_time" type="DATETIME"/>

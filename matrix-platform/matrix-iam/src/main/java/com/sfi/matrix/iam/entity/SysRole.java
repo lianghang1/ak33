@@ -1,7 +1,7 @@
 package com.sfi.matrix.iam.entity;
 
 import com.sfi.matrix.iam.constant.IamConstants;
-import com.sfi.scaffold.starter.data.jpa.datascope.DataScopeType;
+import com.sfi.scaffold.common.datascope.DataScopeType;
 import com.sfi.scaffold.starter.data.jpa.entity.BaseEntity;
 import com.sfi.scaffold.starter.tenant.aspect.JpaTenantFilterAspect;
 import org.hibernate.annotations.Filter;
@@ -45,10 +45,14 @@ public class SysRole extends BaseEntity {
 
     /**
      * 数据范围：取值见框架 {@link DataScopeType}（默认 ALL）。
-     * 当前仅作字段预留与可配置，归约/过滤能力已下沉框架，执行层待业务表落地后接入。
+     * 登录时连同 dataScopeDeptIds 一起归约成 DataScopeDecision 注入会话。
      */
     @Column(name = "data_scope", nullable = false, length = 32)
     private String dataScope = DataScopeType.ALL.name();
+
+    /** 指定部门（DEPT_CUSTOM 档用），逗号分隔的部门 ID。 */
+    @Column(name = "data_scope_dept_ids", length = 255)
+    private String dataScopeDeptIds;
 
     @Column(name = "remark", length = 255)
     private String remark;
@@ -107,6 +111,14 @@ public class SysRole extends BaseEntity {
 
     public void setDataScope(String dataScope) {
         this.dataScope = dataScope;
+    }
+
+    public String getDataScopeDeptIds() {
+        return dataScopeDeptIds;
+    }
+
+    public void setDataScopeDeptIds(String dataScopeDeptIds) {
+        this.dataScopeDeptIds = dataScopeDeptIds;
     }
 
     public String getRemark() {

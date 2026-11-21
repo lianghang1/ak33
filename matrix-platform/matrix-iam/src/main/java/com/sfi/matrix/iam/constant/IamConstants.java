@@ -41,9 +41,19 @@ public final class IamConstants {
     /** 通用菜单：平台与租户都可用（个人中心等） */
     public static final String MENU_SCOPE_COMMON = "COMMON";
 
+    // ===== 账号类型 sys_user.account_type =====
+    /** 内部操作员（账密登录，挂 RBAC 角色） */
+    public static final String ACCOUNT_TYPE_OPERATOR = "OPERATOR";
+    /** 应用/三方系统（凭据换 token，权限走 scope/RBAC，本阶段不做签名链） */
+    public static final String ACCOUNT_TYPE_APP = "APP";
+    /** C 端会员（社交授权，本阶段只留类型） */
+    public static final String ACCOUNT_TYPE_MEMBER = "MEMBER";
+
     // ===== 登录身份扩展属性 key（LoginUser.attributes） =====
     /** 当前用户在当前租户下的部门 ID（来自 sys_user_tenant.dept_id） */
     public static final String ATTR_DEPT_ID = "deptId";
+    /** 数据范围归约结果 JSON（DataScopeDecision，随会话透传，切面/过滤器消费） */
+    public static final String ATTR_DATA_SCOPE = "dataScope";
 
     // ===== 平台管理权限点 sys_menu.permission（@RequirePermission 用） =====
     // 与 seedPlatformMenus 一一对应：接口标注的权限点必须在 PLATFORM 菜单里存在，

@@ -4,9 +4,15 @@ import com.sfi.matrix.iam.config.PlatformInitializer;
 import com.sfi.matrix.iam.constant.IamConstants;
 import com.sfi.matrix.iam.entity.*;
 import com.sfi.matrix.iam.repository.*;
+import com.sfi.scaffold.common.datascope.DataScopeDecision;
+import com.sfi.scaffold.common.datascope.DataScopeKeys;
+import com.sfi.scaffold.common.datascope.DataScopeReducer;
+import com.sfi.scaffold.common.datascope.DataScopeType;
+import com.sfi.scaffold.common.datascope.DeptTreeProvider;
+import com.sfi.scaffold.common.datascope.RoleDataScope;
 import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.exception.GlobalErrorCode;
-import com.sfi.scaffold.starter.data.jpa.datascope.DataScopeType;
+import com.sfi.scaffold.common.util.JsonUtils;
 import com.sfi.scaffold.starter.security.identity.LoginUser;
 import com.sfi.scaffold.starter.security.token.SessionInfo;
 import com.sfi.scaffold.starter.tenant.annotation.TenantIgnore;
@@ -37,6 +43,7 @@ public class IamService {
     private final SysTenantPackageRepository packageRepository;
     private final SysPackageMenuRepository packageMenuRepository;
     private final SysUserRepository userRepository;
+    private final SysUserProfileRepository userProfileRepository;
     private final SysUserTenantRepository userTenantRepository;
     private final SysDeptRepository deptRepository;
     private final SysRoleRepository roleRepository;
@@ -51,6 +58,7 @@ public class IamService {
                       SysTenantPackageRepository packageRepository,
                       SysPackageMenuRepository packageMenuRepository,
                       SysUserRepository userRepository,
+                      SysUserProfileRepository userProfileRepository,
                       SysUserTenantRepository userTenantRepository,
                       SysDeptRepository deptRepository,
                       SysRoleRepository roleRepository,
@@ -61,6 +69,7 @@ public class IamService {
         this.packageRepository = packageRepository;
         this.packageMenuRepository = packageMenuRepository;
         this.userRepository = userRepository;
+        this.userProfileRepository = userProfileRepository;
         this.userTenantRepository = userTenantRepository;
         this.deptRepository = deptRepository;
         this.roleRepository = roleRepository;
@@ -148,14 +157,99 @@ public class IamService {
         LoginUser loginUser = new LoginUser();
         loginUser.setAccountId(user.getId());
         loginUser.setAccountNo(user.getUsername());
-        loginUser.setDisplayName(user.getRealName() == null ? user.getUsername() : user.getRealName());
+        loginUser.setDisplayName(displayNameOf(user));
+        // 账号类型决定权限加载分流（OPERATOR 走 RBAC；APP/MEMBER 本阶段同为凭据换 token）
+        loginUser.setAccountType(accountTypeOf(user));
         loginUser.setTenantId(tenant.getId().toString());
-        loginUser.setRoles(new HashSet<>(userRoleCodes(user.getId(), tenant.getId().toString())));
-        loginUser.setPermissions(userPermissions(user.getId(), tenant.getId().toString()));
+        String tenantId = tenant.getId().toString();
+        loginUser.setRoles(new HashSet<>(userRoleCodes(user.getId(), tenantId)));
+        loginUser.setPermissions(userPermissions(user.getId(), tenantId));
         // 部门归属随会话透传（展示/审计用）；空值写空串，保持 attributes 键稳定
+        Long deptId = membership.getDeptId();
         loginUser.getAttributes().put(IamConstants.ATTR_DEPT_ID,
-                membership.getDeptId() == null ? "" : membership.getDeptId().toString());
+                deptId == null ? "" : deptId.toString());
+        // 数据范围归约：多角色 data_scope 并集成单一决策，JSON 随会话透传供 jpa/query 过滤
+        loginUser.getAttributes().put(DataScopeKeys.ATTR_DECISION,
+                JsonUtils.toJson(reduceDataScope(user.getId(), tenantId, deptId)));
         return loginUser;
+    }
+
+    /** 展示名：优先资料表昵称，降级账号名。 */
+    private String displayNameOf(SysUser user) {
+        return userProfileRepository.findByUserIdAndDeletedFalse(user.getId())
+                .map(p -> p.getNickname())
+                .filter(n -> n != null && !n.trim().isEmpty())
+                .orElse(user.getUsername());
+    }
+
+    /** 账号类型：OPERATOR / APP / MEMBER。 */
+    private com.sfi.scaffold.starter.security.identity.AccountType accountTypeOf(SysUser user) {
+        String type = user.getAccountType();
+        if (IamConstants.ACCOUNT_TYPE_APP.equals(type)) {
+            return com.sfi.scaffold.starter.security.identity.AccountType.APP;
+        }
+        if (IamConstants.ACCOUNT_TYPE_MEMBER.equals(type)) {
+            return com.sfi.scaffold.starter.security.identity.AccountType.MEMBER;
+        }
+        return com.sfi.scaffold.starter.security.identity.AccountType.OPERATOR;
+    }
+
+    /**
+     * 数据范围归约：把用户在当前租户下的所有角色 data_scope 拍平成单一决策。
+     * 超管（PLATFORM_ADMIN/TENANT_ADMIN）直接 ALL；普通角色按框架 DataScopeReducer 并集。
+     */
+    private DataScopeDecision reduceDataScope(Long userId, String tenantId, Long currentDeptId) {
+        List<SysRole> roles = userRolesOf(userId, tenantId);
+        if (roles.stream().anyMatch(r -> IamConstants.ROLE_TYPE_PLATFORM_ADMIN.equals(r.getRoleType())
+                || IamConstants.ROLE_TYPE_TENANT_ADMIN.equals(r.getRoleType()))) {
+            return DataScopeDecision.all();
+        }
+        DeptTreeProvider deptTree = deptId -> {
+            if (deptId == null) {
+                return java.util.Collections.emptySet();
+            }
+            Set<Long> result = new HashSet<>();
+            result.add(deptId);
+            // 内存构树：同租户全量部门按 parentId 逐层展开（组织规模有限，可靠简单）
+            List<SysDept> depts = deptRepository.findByTenantIdAndDeletedFalse(tenantId);
+            boolean grew = true;
+            while (grew) {
+                grew = false;
+                for (SysDept d : depts) {
+                    if (d.getParentId() != null && result.contains(d.getParentId())
+                            && !result.contains(d.getId())) {
+                        result.add(d.getId());
+                        grew = true;
+                    }
+                }
+            }
+            return result;
+        };
+        List<RoleDataScope> scopes = roles.stream().map(r -> {
+            DataScopeType type = DataScopeType.of(r.getDataScope());
+            Set<Long> custom = parseDeptIds(r.getDataScopeDeptIds());
+            return RoleDataScope.of(type, custom);
+        }).collect(Collectors.toList());
+        return DataScopeReducer.reduce(scopes, currentDeptId, deptTree);
+    }
+
+    /** 解析逗号分隔的部门 ID。 */
+    private Set<Long> parseDeptIds(String csv) {
+        if (csv == null || csv.trim().isEmpty()) {
+            return java.util.Collections.emptySet();
+        }
+        Set<Long> ids = new HashSet<>();
+        for (String part : csv.split(",")) {
+            String s = part.trim();
+            if (!s.isEmpty()) {
+                try {
+                    ids.add(Long.valueOf(s));
+                } catch (NumberFormatException ignored) {
+                    // 忽略非法片段
+                }
+            }
+        }
+        return ids;
     }
 
     /** 供 controller 组装 SessionInfo */
@@ -210,9 +304,9 @@ public class IamService {
             SysUser admin = new SysUser();
             admin.setUsername(adminUsername);
             admin.setPassword(encodedAdminPassword);
-            admin.setRealName(adminName);
             admin.setStatus(1);
             admin = userRepository.save(admin);
+            saveProfile(admin.getId(), adminName);
 
             // 挂租户归属 + 授管理员角色（角色归属要落库，菜单授权不落库）
             SysUserTenant ut = new SysUserTenant();
@@ -304,9 +398,25 @@ public class IamService {
         SysUser user = new SysUser();
         user.setUsername(username);
         user.setPassword(encodedPassword);
-        user.setRealName(realName);
         user.setStatus(1);
-        return userRepository.save(user);
+        user = userRepository.save(user);
+        saveProfile(user.getId(), realName);
+        return user;
+    }
+
+    /** 建/更新用户资料（nickname 承接原 realName 语义），幂等。 */
+    private void saveProfile(Long userId, String nickname) {
+        if (nickname == null || nickname.trim().isEmpty()) {
+            return;
+        }
+        SysUserProfile profile = userProfileRepository.findByUserIdAndDeletedFalse(userId)
+                .orElseGet(() -> {
+                    SysUserProfile p = new SysUserProfile();
+                    p.setUserId(userId);
+                    return p;
+                });
+        profile.setNickname(nickname);
+        userProfileRepository.save(profile);
     }
 
     public List<SysUser> listUsers() {
@@ -672,10 +782,10 @@ public class IamService {
             SysUser u = new SysUser();
             u.setUsername(username);
             u.setPassword(encodedPassword);
-            u.setRealName(realName);
             u.setStatus(1);
             return userRepository.save(u);
         });
+        saveProfile(admin.getId(), realName);
         userTenantRepository.findByUserIdAndTenantIdAndDeletedFalse(admin.getId(), tenantId).orElseGet(() -> {
             SysUserTenant ut = new SysUserTenant();
             ut.setUserId(admin.getId());
@@ -712,10 +822,13 @@ public class IamService {
         LoginUser loginUser = new LoginUser();
         loginUser.setAccountId(admin.getId());
         loginUser.setAccountNo(admin.getUsername());
-        loginUser.setDisplayName(admin.getRealName() == null ? admin.getUsername() : admin.getRealName());
+        loginUser.setDisplayName(displayNameOf(admin));
+        loginUser.setAccountType(accountTypeOf(admin));
         loginUser.setTenantId(tenantId);
         loginUser.setRoles(new HashSet<>(Collections.singletonList(TENANT_ADMIN_ROLE_CODE)));
         loginUser.setPermissions(userPermissionsOfSuper(IamConstants.ROLE_TYPE_TENANT_ADMIN, tenantId));
+        // 平台超管进入租户以 TENANT_ADMIN 身份，数据范围 ALL
+        loginUser.getAttributes().put(DataScopeKeys.ATTR_DECISION, JsonUtils.toJson(DataScopeDecision.all()));
         loginUser.getAttributes().put("impersonatedFrom", IamConstants.PLATFORM_TENANT_CODE);
         return loginUser;
     }

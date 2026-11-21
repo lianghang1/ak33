@@ -15,4 +15,7 @@ import java.util.List;
 public interface SysDeptRepository extends JpaRepository<SysDept, Long> {
 
     List<SysDept> findByDeletedFalseOrderBySortNoAsc();
+
+    /** 按租户查未删除部门（数据权限部门子树构树用）。 */
+    List<SysDept> findByTenantIdAndDeletedFalse(String tenantId);
 }
