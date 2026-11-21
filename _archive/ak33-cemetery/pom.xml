@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+      公墓系统仓根 pom。parent 直接指向 scaffold-parent，relativePath 留空。
+      本文件夹单独拷到新仓库即可独立构建：内部业务模块 + 对平台仓各 jar 的版本引用都在此自包含。
+    -->
+    <parent>
+        <groupId>com.sfi.scaffold</groupId>
+        <artifactId>scaffold-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.sfi.ak33</groupId>
+    <artifactId>ak33-cemetery</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>ak33-cemetery</name>
+    <description>公墓系统：按需组装平台仓能力 + 墓位业务，产出可独立部署的可执行jar</description>
+
+    <!-- 一个系统仓 = 业务域模块 + 应用宿主模块 -->
+    <modules>
+        <module>ak33-biz-cemetery</module>
+        <module>ak33-app-cemetery</module>
+    </modules>
+
+    <properties>
+        <ak33.version>1.0.0-SNAPSHOT</ak33.version>
+    </properties>
+
+    <!--
+      自包含版本声明：既声明本仓内部模块，也声明对平台仓各 jar 的引用版本。
+      单仓阶段靠 reactor 构建；拆仓后这些 jar 从 Maven 私服按此版本拉取。
+    -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- 本仓内部模块 -->
+            <dependency>
+                <groupId>com.sfi.ak33</groupId>
+                <artifactId>ak33-biz-cemetery</artifactId>
+                <version>${ak33.version}</version>
+            </dependency>
+            <!-- 依赖平台仓的能力模块（拆仓后从私服拉） -->
+            <dependency>
+                <groupId>com.sfi.ak33</groupId>
+                <artifactId>ak33-platform-core</artifactId>
+                <version>${ak33.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sfi.ak33</groupId>
+                <artifactId>ak33-platform-iam</artifactId>
+                <version>${ak33.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sfi.ak33</groupId>
+                <artifactId>ak33-platform-settle</artifactId>
+                <version>${ak33.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

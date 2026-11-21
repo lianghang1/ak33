@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.sfi.matrix.platform</groupId>
+        <artifactId>matrix-platform</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>matrix-iam</artifactId>
+    <name>matrix-iam</name>
+    <description>身份权限 + 租户管理：用户/角色/菜单/授权 + 租户，登录接入 scaffold token 会话，租户隔离由 scaffold 提供。</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-security-token</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-tenant</artifactId>
+        </dependency>
+    </dependencies>
+</project>

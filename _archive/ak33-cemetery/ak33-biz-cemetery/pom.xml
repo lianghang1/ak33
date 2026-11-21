@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.sfi.ak33</groupId>
+        <artifactId>ak33-cemetery</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>ak33-biz-cemetery</artifactId>
+    <name>ak33-biz-cemetery</name>
+    <description>公墓业务能力：墓区/格位/墓位/购墓/安葬，自带实体+接口+服务+建表脚本，供公墓类系统复用</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.sfi.ak33</groupId>
+            <artifactId>ak33-platform-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>

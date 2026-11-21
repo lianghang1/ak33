@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  公墓系统主 changelog：只负责 include 各能力模块自带的脚本。
+  某个 app 引入了哪些 jar，这里就 include 哪些模块的 changelog——
+  寄存系统不引 cemetery，就不 include 它，天然隔离。
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <!-- 平台能力（全系统复用） -->
+    <include file="db/iam/changelog.xml"/>
+    <include file="db/settle/changelog.xml"/>
+
+    <!-- 业务域（本系统专有） -->
+    <include file="db/cemetery/changelog.xml"/>
+</databaseChangeLog>

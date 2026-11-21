@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.sfi.scaffold</groupId>
+        <artifactId>scaffold-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.sfi.matrix.platform</groupId>
+    <artifactId>matrix-platform</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>matrix-platform</name>
+    <description>平台仓根 pom：被各业务系统复用的基础能力。自包含版本声明，可独立拆仓构建。</description>
+
+    <modules>
+        <module>matrix-iam</module>
+        <module>matrix-support</module>
+    </modules>
+</project>

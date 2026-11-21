@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <!-- 1. 墓区表：园/区 层级，parent_id 自关联 -->
+    <changeSet id="001-01-create-cem-area" author="ak33">
+        <comment>墓区表：园→区 层级节点</comment>
+        <createTable tableName="cem_area" remarks="墓区（园/区）">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_cem_area"/>
+            </column>
+            <column name="area_code" type="VARCHAR(32)" remarks="墓区编码">
+                <constraints nullable="false"/>
+            </column>
+            <column name="area_name" type="VARCHAR(64)" remarks="墓区名称">
+                <constraints nullable="false"/>
+            </column>
+            <column name="level" type="INT" remarks="层级：1园 2区">
+                <constraints nullable="false"/>
+            </column>
+            <column name="parent_id" type="BIGINT" remarks="上级墓区ID"/>
+            <column name="full_path" type="VARCHAR(255)" remarks="可读层级路径"/>
+            <column name="sort_no" type="INT" remarks="排序号"/>
+            <column name="create_time" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="cem_area" columnNames="parent_id, area_code"
+                             constraintName="uk_cem_area_parent_code"/>
+        <createIndex tableName="cem_area" indexName="idx_cem_area_parent">
+            <column name="parent_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- 2. 格位表：规划位置，可多于墓位 -->
+    <changeSet id="001-02-create-cem-grid-cell" author="ak33">
+        <comment>格位表：图纸规划的格子，initialized=false 表示待建</comment>
+        <createTable tableName="cem_grid_cell" remarks="规划格位">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_cem_grid_cell"/>
+            </column>
+            <column name="area_id" type="BIGINT" remarks="所属墓区ID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="row_no" type="INT" remarks="横排号">
+                <constraints nullable="false"/>
+            </column>
+            <column name="col_no" type="INT" remarks="竖列号">
+                <constraints nullable="false"/>
+            </column>
+            <column name="initialized" type="BOOLEAN" defaultValueBoolean="false" remarks="是否已初始化为墓位">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tomb_id" type="BIGINT" remarks="初始化后关联墓位ID"/>
+            <column name="create_time" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="cem_grid_cell" columnNames="area_id, row_no, col_no"
+                             constraintName="uk_cem_grid_cell_pos"/>
+        <createIndex tableName="cem_grid_cell" indexName="idx_cem_grid_cell_area_init">
+            <column name="area_id"/>
+            <column name="initialized"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- 3. 墓位表：格位初始化后的实体，业务主体 -->
+    <changeSet id="001-03-create-cem-tomb" author="ak33">
+        <comment>墓位表：三标识由策略生成落库快照，status 由业务动作流转</comment>
+        <createTable tableName="cem_tomb" remarks="墓位">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_cem_tomb"/>
+            </column>
+            <column name="grid_cell_id" type="BIGINT" remarks="来源格位ID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="area_id" type="BIGINT" remarks="所属墓区ID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(64)" remarks="编号 如A-01-01">
+                <constraints nullable="false"/>
+            </column>
+            <column name="base_path" type="VARCHAR(255)" remarks="基础路径"/>
+            <column name="full_path" type="VARCHAR(512)" remarks="全路径"/>
+            <column name="code_strategy" type="VARCHAR(64)" remarks="编号策略名快照"/>
+            <column name="holes" type="INT" remarks="穴位数 1单2双3多">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(32)" remarks="墓位状态">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sale_price" type="DECIMAL(14,2)" remarks="销售价"/>
+            <column name="create_time" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="cem_tomb" columnNames="code"
+                             constraintName="uk_cem_tomb_code"/>
+        <createIndex tableName="cem_tomb" indexName="idx_cem_tomb_area_status">
+            <column name="area_id"/>
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- 4. 编号策略配置表：租户级策略选择（可插拔的策略模式落地点） -->
+    <changeSet id="001-04-create-code-strategy" author="ak33">
+        <comment>编号策略配置表：不同租户选择不同编号策略</comment>
+        <createTable tableName="cem_code_strategy" remarks="编号策略配置">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_cem_code_strategy"/>
+            </column>
+            <column name="tenant_id" type="VARCHAR(64)" remarks="租户ID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="strategy_name" type="VARCHAR(64)" remarks="策略Bean名">
+                <constraints nullable="false"/>
+            </column>
+            <column name="enabled" type="BOOLEAN" defaultValueBoolean="true" remarks="是否启用">
+                <constraints nullable="false"/>
+            </column>
+            <column name="remark" type="VARCHAR(255)" remarks="说明"/>
+            <column name="create_time" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="cem_code_strategy" columnNames="tenant_id"
+                             constraintName="uk_cem_code_strategy_tenant"/>
+    </changeSet>
+</databaseChangeLog>

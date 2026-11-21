@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <!-- ============ 平台全局表（无 tenant_id，不参与租户过滤） ============ -->
+
+    <changeSet id="20261121-01" author="matrix">
+        <createTable tableName="sys_tenant" remarks="租户">
+            <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
+            <column name="tenant_code" type="VARCHAR(64)" remarks="租户编码"><constraints nullable="false"/></column>
+            <column name="tenant_name" type="VARCHAR(128)" remarks="租户名称"><constraints nullable="false"/></column>
+            <column name="package_id" type="BIGINT" remarks="开通的套餐ID"/>
+            <column name="expire_time" type="DATE" remarks="到期日"/>
+            <column name="status" type="INT" defaultValueNumeric="1" remarks="1启用 0停用"><constraints nullable="false"/></column>
+            <column name="remark" type="VARCHAR(255)"/>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_tenant" columnNames="tenant_code" constraintName="uk_sys_tenant_code"/>
+    </changeSet>
+
+    <changeSet id="20261121-02" author="matrix">
+        <createTable tableName="sys_tenant_package" remarks="租户套餐（平台全局）">
+            <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
+            <column name="package_code" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="package_name" type="VARCHAR(128)"><constraints nullable="false"/></column>
+            <column name="remark" type="VARCHAR(255)"/>
+            <column name="status" type="INT" defaultValueNumeric="1"><constraints nullable="false"/></column>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_tenant_package" columnNames="package_code" constraintName="uk_sys_package_code"/>
+    </changeSet>
+
+    <changeSet id="20261121-03" author="matrix">
+        <createTable tableName="sys_package_menu" remarks="套餐-菜单关联（平台全局）">
+            <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
+            <column name="package_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="menu_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_package_menu" columnNames="package_id, menu_id" constraintName="uk_sys_package_menu"/>
+    </changeSet>
+
+    <changeSet id="20261121-04" author="matrix">
+        <createTable tableName="sys_menu" remarks="菜单/权限点（平台全局定义）">
+            <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
+            <column name="menu_name" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="menu_type" type="VARCHAR(2)" remarks="M目录 C菜单 F按钮"><constraints nullable="false"/></column>
+            <column name="menu_scope" type="VARCHAR(16)" defaultValue="TENANT" remarks="PLATFORM运营平台/TENANT租户业务/COMMON通用"><constraints nullable="false"/></column>
+            <column name="parent_id" type="BIGINT"/>
+            <column name="path" type="VARCHAR(128)"/>
+            <column name="component" type="VARCHAR(128)"/>
+            <column name="icon" type="VARCHAR(64)"/>
+            <column name="permission" type="VARCHAR(128)" remarks="权限标识"/>
+            <column name="sort_no" type="INT"/>
+            <column name="visible" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+
+    <!-- ============ 账号主体（无 tenant_id） ============ -->
+
+    <changeSet id="20261121-05" author="matrix">
+        <createTable tableName="sys_user" remarks="系统用户（账号主体，username 全局唯一）">
+            <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
+            <column name="username" type="VARCHAR(64)" remarks="登录账号"><constraints nullable="false"/></column>
+            <column name="password" type="VARCHAR(128)" remarks="密码(BCrypt)"><constraints nullable="false"/></column>
+            <column name="real_name" type="VARCHAR(64)"/>
+            <column name="mobile" type="VARCHAR(32)"/>
+            <column name="email" type="VARCHAR(128)"/>
+            <column name="status" type="INT" defaultValueNumeric="1" remarks="1启用 0禁用"><constraints nullable="false"/></column>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_user" columnNames="username" constraintName="uk_sys_user_name"/>
+    </changeSet>
+
+    <!-- ============ 租户隔离表（有 tenant_id + @Filter） ============ -->
+
+    <changeSet id="20261121-06" author="matrix">
+        <createTable tableName="sys_user_tenant" remarks="用户-租户归属（不标租户过滤，登录跨租户查）">
+            <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
+            <column name="user_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="tenant_id" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="dept_id" type="BIGINT" remarks="该账号在此租户下的部门"/>
+            <column name="status" type="INT" defaultValueNumeric="1" remarks="1启用 0停用"><constraints nullable="false"/></column>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_user_tenant" columnNames="user_id, tenant_id" constraintName="uk_sys_user_tenant"/>
+        <createIndex tableName="sys_user_tenant" indexName="idx_sys_user_tenant_tid">
+            <column name="tenant_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="20261121-07" author="matrix">
+        <createTable tableName="sys_dept" remarks="部门（租户内组织结构）">
+            <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
+            <column name="tenant_id" type="VARCHAR(64)"/>
+            <column name="dept_name" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="parent_id" type="BIGINT"/>
+            <column name="sort_no" type="INT"/>
+            <column name="leader_id" type="BIGINT"/>
+            <column name="status" type="INT" defaultValueNumeric="1"><constraints nullable="false"/></column>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="sys_dept" indexName="idx_sys_dept_tid">
+            <column name="tenant_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="20261121-08" author="matrix">
+        <createTable tableName="sys_role" remarks="系统角色（租户内）">
+            <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
+            <column name="tenant_id" type="VARCHAR(64)"/>
+            <column name="role_code" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="role_name" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="role_type" type="VARCHAR(32)" defaultValue="NORMAL" remarks="PLATFORM_ADMIN/TENANT_ADMIN/NORMAL"><constraints nullable="false"/></column>
+            <column name="sort_no" type="INT"/>
+            <column name="built_in" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="data_scope" type="VARCHAR(32)" defaultValue="ALL" remarks="数据范围(预留):ALL/DEPT_CUSTOM/DEPT_ONLY/DEPT_CHILD/SELF"><constraints nullable="false"/></column>
+            <column name="remark" type="VARCHAR(255)"/>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_role" columnNames="tenant_id, role_code" constraintName="uk_sys_role_code"/>
+        <createIndex tableName="sys_role" indexName="idx_sys_role_tid">
+            <column name="tenant_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="20261121-09" author="matrix">
+        <createTable tableName="sys_user_role" remarks="用户-角色关联（租户内）">
+            <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
+            <column name="tenant_id" type="VARCHAR(64)"/>
+            <column name="user_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="role_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_user_role" columnNames="tenant_id, user_id, role_id" constraintName="uk_sys_user_role"/>
+        <createIndex tableName="sys_user_role" indexName="idx_sys_user_role_tid">
+            <column name="tenant_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="20261121-10" author="matrix">
+        <createTable tableName="sys_role_menu" remarks="角色-菜单关联（租户内，菜单为全局定义）">
+            <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
+            <column name="tenant_id" type="VARCHAR(64)"/>
+            <column name="role_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="menu_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_role_menu" columnNames="tenant_id, role_id, menu_id" constraintName="uk_sys_role_menu"/>
+        <createIndex tableName="sys_role_menu" indexName="idx_sys_role_menu_tid">
+            <column name="tenant_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

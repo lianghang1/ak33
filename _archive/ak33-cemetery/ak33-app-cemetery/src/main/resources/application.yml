@@ -1,0 +1,27 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ak33-app-cemetery
+  datasource:
+    url: jdbc:h2:file:./data/ak33;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      # 表结构全部由 Liquibase 管理，Hibernate 只校验
+      ddl-auto: validate
+    open-in-view: false
+  liquibase:
+    # master changelog 统一 include 各能力模块自带的脚本
+    change-log: classpath:db/master/changelog.xml
+
+# 切 MySQL 时：
+# spring:
+#   datasource:
+#     url: jdbc:mysql://127.0.0.1:3306/ak33?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+#     driver-class-name: com.mysql.cj.jdbc.Driver
+#     username: root
+#     password: your-password

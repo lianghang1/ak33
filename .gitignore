@@ -1,0 +1,16 @@
+# Maven 构建产物
+target/
+**/target/
+
+# 运行时数据（H2 文件库）与日志
+data/
+logs/
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store

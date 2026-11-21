@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <changeSet id="settle-001-bill" author="ak33">
+        <createTable tableName="settle_bill" remarks="结算单（跨业务系统复用）">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_settle_bill"/>
+            </column>
+            <column name="bill_no" type="VARCHAR(64)" remarks="结算单号">
+                <constraints nullable="false"/>
+            </column>
+            <column name="biz_type" type="VARCHAR(32)" remarks="业务来源 tomb/deposit/funeral">
+                <constraints nullable="false"/>
+            </column>
+            <column name="biz_id" type="BIGINT" remarks="业务单据ID"/>
+            <column name="amount" type="DECIMAL(14,2)" remarks="应收金额">
+                <constraints nullable="false"/>
+            </column>
+            <column name="pay_method" type="VARCHAR(32)"/>
+            <column name="status" type="VARCHAR(32)" remarks="UNPAID/PAID/REFUNDED">
+                <constraints nullable="false"/>
+            </column>
+            <column name="paid_at" type="DATETIME"/>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="settle_bill" columnNames="bill_no" constraintName="uk_settle_bill_no"/>
+        <createIndex tableName="settle_bill" indexName="idx_settle_bill_biz">
+            <column name="biz_type"/>
+            <column name="biz_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

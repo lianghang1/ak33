@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <!-- 数据字典 -->
+    <changeSet id="support-001-sys-dict" author="matrix">
+        <createTable tableName="sys_dict" remarks="数据字典">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_dict"/>
+            </column>
+            <column name="tenant_id" type="VARCHAR(64)" remarks="租户ID"/>
+            <column name="dict_type" type="VARCHAR(64)" remarks="字典类型">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dict_code" type="VARCHAR(64)" remarks="字典编码">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dict_label" type="VARCHAR(128)" remarks="字典显示名">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_no" type="INT"/>
+            <column name="status" type="INT" defaultValueNumeric="1" remarks="1启用 0停用">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="sys_dict" indexName="idx_sys_dict_type">
+            <column name="dict_type"/>
+        </createIndex>
+        <createIndex tableName="sys_dict" indexName="idx_sys_dict_tenant">
+            <column name="tenant_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- 系统参数 -->
+    <changeSet id="support-002-sys-config" author="matrix">
+        <createTable tableName="sys_config" remarks="系统参数">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_config"/>
+            </column>
+            <column name="tenant_id" type="VARCHAR(64)" remarks="租户ID"/>
+            <column name="config_key" type="VARCHAR(128)" remarks="参数键">
+                <constraints nullable="false"/>
+            </column>
+            <column name="config_value" type="VARCHAR(512)" remarks="参数值"/>
+            <column name="remark" type="VARCHAR(255)"/>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_config" columnNames="config_key" constraintName="uk_sys_config_key"/>
+        <createIndex tableName="sys_config" indexName="idx_sys_config_tenant">
+            <column name="tenant_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
