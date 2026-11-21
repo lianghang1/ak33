@@ -26,23 +26,23 @@ import javax.persistence.Table;
 public class SysUser extends BaseEntity {
 
     /** 账号类型：OPERATOR / APP / MEMBER，默认 OPERATOR */
-    @Column(name = "account_type", nullable = false, length = 16)
+    @Column(name = "account_type")
     private String accountType = IamConstants.ACCOUNT_TYPE_OPERATOR;
 
-    @Column(name = "username", nullable = false, length = 64)
+    @Column(name = "username")
     private String username;
 
-    @Column(name = "password", nullable = false, length = 128)
+    @Column(name = "password")
     private String password;
 
-    @Column(name = "mobile", length = 32)
+    @Column(name = "mobile")
     private String mobile;
 
-    @Column(name = "email", length = 128)
+    @Column(name = "email")
     private String email;
 
     /** 状态：1启用 0禁用 */
-    @Column(name = "status", nullable = false)
+    @Column(name = "status")
     private Integer status = 1;
 
     public String getAccountType() {

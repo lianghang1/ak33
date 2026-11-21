@@ -21,37 +21,37 @@ import javax.persistence.Table;
 @Table(name = "sys_menu")
 public class SysMenu extends BaseEntity {
 
-    @Column(name = "menu_name", nullable = false, length = 64)
+    @Column(name = "menu_name")
     private String menuName;
 
     /** 类型：M目录 C菜单 F按钮 */
-    @Column(name = "menu_type", nullable = false, length = 2)
+    @Column(name = "menu_type")
     private String menuType;
 
     /** 范围：PLATFORM 运营平台 / TENANT 租户业务 / COMMON 通用；套餐只能选 TENANT/COMMON */
-    @Column(name = "menu_scope", nullable = false, length = 16)
+    @Column(name = "menu_scope")
     private String menuScope = IamConstants.MENU_SCOPE_TENANT;
 
     @Column(name = "parent_id")
     private Long parentId;
 
-    @Column(name = "path", length = 128)
+    @Column(name = "path")
     private String path;
 
-    @Column(name = "component", length = 128)
+    @Column(name = "component")
     private String component;
 
-    @Column(name = "icon", length = 64)
+    @Column(name = "icon")
     private String icon;
 
     /** 权限标识 */
-    @Column(name = "permission", length = 128)
+    @Column(name = "permission")
     private String permission;
 
     @Column(name = "sort_no")
     private Integer sortNo;
 
-    @Column(name = "visible", nullable = false)
+    @Column(name = "visible")
     private Boolean visible = Boolean.TRUE;
 
     public String getMenuName() {

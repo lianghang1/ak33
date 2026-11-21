@@ -19,29 +19,29 @@ import javax.persistence.Table;
 public class SysUserProfile extends BaseEntity {
 
     /** 对应 sys_user.id（1:1，唯一） */
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "nickname", length = 64)
+    @Column(name = "nickname")
     private String nickname;
 
-    @Column(name = "avatar", length = 255)
+    @Column(name = "avatar")
     private String avatar;
 
     /** 性别：0未知 1男 2女 */
     @Column(name = "sex")
     private Integer sex = 0;
 
-    @Column(name = "birthday", length = 10)
+    @Column(name = "birthday")
     private String birthday;
 
-    @Column(name = "id_card", length = 32)
+    @Column(name = "id_card")
     private String idCard;
 
-    @Column(name = "address", length = 255)
+    @Column(name = "address")
     private String address;
 
-    @Column(name = "remark", length = 500)
+    @Column(name = "remark")
     private String remark;
 
     public Long getUserId() {

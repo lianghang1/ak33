@@ -18,16 +18,16 @@ import javax.persistence.Table;
 @Filter(name = JpaTenantFilterAspect.FILTER_NAME, condition = "tenant_id = :tenantId")
 public class SysConfig extends BaseEntity {
 
-    @Column(name = "tenant_id", length = 64)
+    @Column(name = "tenant_id")
     private String tenantId;
 
-    @Column(name = "config_key", nullable = false, length = 128)
+    @Column(name = "config_key")
     private String configKey;
 
-    @Column(name = "config_value", length = 512)
+    @Column(name = "config_value")
     private String configValue;
 
-    @Column(name = "remark", length = 255)
+    @Column(name = "remark")
     private String remark;
 
     public String getTenantId() {

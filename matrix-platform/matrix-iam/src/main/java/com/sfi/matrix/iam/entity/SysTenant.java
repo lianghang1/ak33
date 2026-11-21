@@ -19,10 +19,10 @@ import java.time.LocalDate;
 @Table(name = "sys_tenant")
 public class SysTenant extends BaseEntity {
 
-    @Column(name = "tenant_code", nullable = false, length = 64)
+    @Column(name = "tenant_code")
     private String tenantCode;
 
-    @Column(name = "tenant_name", nullable = false, length = 128)
+    @Column(name = "tenant_name")
     private String tenantName;
 
     /** 开通的套餐 ID（对应 sys_tenant_package.id） */
@@ -34,10 +34,10 @@ public class SysTenant extends BaseEntity {
     private LocalDate expireTime;
 
     /** 状态：1启用 0停用 */
-    @Column(name = "status", nullable = false)
+    @Column(name = "status")
     private Integer status = 1;
 
-    @Column(name = "remark", length = 255)
+    @Column(name = "remark")
     private String remark;
 
     public String getTenantCode() {

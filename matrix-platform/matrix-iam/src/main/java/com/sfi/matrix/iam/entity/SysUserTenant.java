@@ -22,10 +22,10 @@ import javax.persistence.Table;
 @Table(name = "sys_user_tenant")
 public class SysUserTenant extends BaseEntity {
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "tenant_id", nullable = false, length = 64)
+    @Column(name = "tenant_id")
     private String tenantId;
 
     /** 该账号在此租户下的部门 ID（对应 sys_dept.id） */
@@ -33,7 +33,7 @@ public class SysUserTenant extends BaseEntity {
     private Long deptId;
 
     /** 在此租户下是否启用：1启用 0停用 */
-    @Column(name = "status", nullable = false)
+    @Column(name = "status")
     private Integer status = 1;
 
     public Long getUserId() {

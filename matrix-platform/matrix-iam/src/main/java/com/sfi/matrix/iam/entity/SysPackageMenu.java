@@ -15,10 +15,10 @@ import javax.persistence.Table;
 @Table(name = "sys_package_menu")
 public class SysPackageMenu extends BaseEntity {
 
-    @Column(name = "package_id", nullable = false)
+    @Column(name = "package_id")
     private Long packageId;
 
-    @Column(name = "menu_id", nullable = false)
+    @Column(name = "menu_id")
     private Long menuId;
 
     public Long getPackageId() {

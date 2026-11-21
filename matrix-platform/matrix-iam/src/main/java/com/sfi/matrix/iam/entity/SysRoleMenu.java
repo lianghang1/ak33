@@ -18,13 +18,13 @@ import javax.persistence.Table;
 @Filter(name = JpaTenantFilterAspect.FILTER_NAME, condition = "tenant_id = :tenantId")
 public class SysRoleMenu extends BaseEntity {
 
-    @Column(name = "tenant_id", length = 64)
+    @Column(name = "tenant_id")
     private String tenantId;
 
-    @Column(name = "role_id", nullable = false)
+    @Column(name = "role_id")
     private Long roleId;
 
-    @Column(name = "menu_id", nullable = false)
+    @Column(name = "menu_id")
     private Long menuId;
 
     public String getTenantId() {

@@ -21,23 +21,23 @@ import javax.persistence.Table;
 public class SysUserSocial extends BaseEntity {
 
     /** 对应 sys_user.id */
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id")
     private Long userId;
 
     /** 平台编码：wechat-mp / wechat-mini / alipay / ... */
-    @Column(name = "provider", nullable = false, length = 32)
+    @Column(name = "provider")
     private String provider;
 
     /** 平台内主唯一标识（openId） */
-    @Column(name = "open_id", nullable = false, length = 64)
+    @Column(name = "open_id")
     private String openId;
 
     /** 跨应用统一标识（unionId，可空） */
-    @Column(name = "union_id", length = 64)
+    @Column(name = "union_id")
     private String unionId;
 
     /** 第三方原始返回快照（JSON），兜住不确定字段 */
-    @Column(name = "ext_info", length = 2000)
+    @Column(name = "ext_info")
     private String extInfo;
 
     public Long getUserId() {

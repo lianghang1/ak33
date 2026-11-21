@@ -21,10 +21,10 @@ import javax.persistence.Table;
 @Filter(name = JpaTenantFilterAspect.FILTER_NAME, condition = "tenant_id = :tenantId")
 public class SysDept extends BaseEntity {
 
-    @Column(name = "tenant_id", length = 64)
+    @Column(name = "tenant_id")
     private String tenantId;
 
-    @Column(name = "dept_name", nullable = false, length = 64)
+    @Column(name = "dept_name")
     private String deptName;
 
     @Column(name = "parent_id")
@@ -37,7 +37,7 @@ public class SysDept extends BaseEntity {
     @Column(name = "leader_id")
     private Long leaderId;
 
-    @Column(name = "status", nullable = false)
+    @Column(name = "status")
     private Integer status = 1;
 
     public String getTenantId() {

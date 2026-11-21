@@ -18,16 +18,16 @@ import javax.persistence.Table;
 @Table(name = "sys_tenant_package")
 public class SysTenantPackage extends BaseEntity {
 
-    @Column(name = "package_code", nullable = false, length = 64)
+    @Column(name = "package_code")
     private String packageCode;
 
-    @Column(name = "package_name", nullable = false, length = 128)
+    @Column(name = "package_name")
     private String packageName;
 
-    @Column(name = "remark", length = 255)
+    @Column(name = "remark")
     private String remark;
 
-    @Column(name = "status", nullable = false)
+    @Column(name = "status")
     private Integer status = 1;
 
     public String getPackageCode() {

@@ -20,23 +20,23 @@ import javax.persistence.Table;
 @Filter(name = JpaTenantFilterAspect.FILTER_NAME, condition = "tenant_id = :tenantId")
 public class SysDict extends BaseEntity {
 
-    @Column(name = "tenant_id", length = 64)
+    @Column(name = "tenant_id")
     private String tenantId;
 
-    @Column(name = "dict_type", nullable = false, length = 64)
+    @Column(name = "dict_type")
     private String dictType;
 
-    @Column(name = "dict_code", nullable = false, length = 64)
+    @Column(name = "dict_code")
     private String dictCode;
 
-    @Column(name = "dict_label", nullable = false, length = 128)
+    @Column(name = "dict_label")
     private String dictLabel;
 
     @Column(name = "sort_no")
     private Integer sortNo;
 
     /** 状态：1启用 0停用 */
-    @Column(name = "status", nullable = false)
+    @Column(name = "status")
     private Integer status = 1;
 
     public String getTenantId() {
