@@ -1,6 +1,7 @@
 package com.sfi.matrix.iam.entity;
 
 import com.sfi.matrix.iam.constant.IamConstants;
+import com.sfi.scaffold.starter.data.jpa.datascope.DataScopeType;
 import com.sfi.scaffold.starter.data.jpa.entity.BaseEntity;
 import com.sfi.scaffold.starter.tenant.aspect.JpaTenantFilterAspect;
 import org.hibernate.annotations.Filter;
@@ -43,11 +44,11 @@ public class SysRole extends BaseEntity {
     private Boolean builtIn = Boolean.FALSE;
 
     /**
-     * 数据范围：ALL / DEPT_CUSTOM / DEPT_ONLY / DEPT_CHILD / SELF（默认 ALL）。
-     * 当前仅作字段预留与可配置，业务数据过滤逻辑待业务表落地后实现。
+     * 数据范围：取值见框架 {@link DataScopeType}（默认 ALL）。
+     * 当前仅作字段预留与可配置，归约/过滤能力已下沉框架，执行层待业务表落地后接入。
      */
     @Column(name = "data_scope", nullable = false, length = 32)
-    private String dataScope = IamConstants.DATA_SCOPE_ALL;
+    private String dataScope = DataScopeType.ALL.name();
 
     @Column(name = "remark", length = 255)
     private String remark;

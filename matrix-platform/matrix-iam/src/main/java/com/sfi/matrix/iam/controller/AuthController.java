@@ -6,9 +6,11 @@ import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.exception.GlobalErrorCode;
 import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.common.util.IpUtils;
+import com.sfi.scaffold.starter.protection.ratelimit.RateLimit;
 import com.sfi.scaffold.starter.security.anonymous.Anonymous;
 import com.sfi.scaffold.starter.security.captcha.CaptchaService;
 import com.sfi.scaffold.starter.security.identity.AccountType;
+import com.sfi.scaffold.starter.security.identity.LoginContext;
 import com.sfi.scaffold.starter.security.identity.LoginUser;
 import com.sfi.scaffold.starter.security.policy.LoginFailureGuard;
 import com.sfi.scaffold.starter.security.token.SessionInfo;
@@ -86,6 +88,7 @@ public class AuthController {
 
     /** 生成登录验证码（匿名放行）：返回 captchaId 与 base64 图片，登录时回填 captchaId/captchaCode */
     @Anonymous
+    @RateLimit(limit = 30, windowSeconds = 60, dimension = "ip")
     @PostMapping("/captcha")
     public R<Map<String, String>> captcha() {
         return R.ok(captchaService.generate());
@@ -93,6 +96,7 @@ public class AuthController {
 
     /** 第一步：校验账号密码，返回该账号可登录的租户列表（匿名放行） */
     @Anonymous
+    @RateLimit(limit = 20, windowSeconds = 60, dimension = "ip")
     @PostMapping("/login-tenants")
     public R<List<Map<String, Object>>> loginTenants(@RequestParam String username,
                                                      @RequestParam String password,
@@ -118,6 +122,7 @@ public class AuthController {
 
     /** 第二步：账号密码 + tenantCode 登录，返回 token（匿名放行） */
     @Anonymous
+    @RateLimit(limit = 10, windowSeconds = 60, dimension = "ip")
     @PostMapping("/login")
     public R<Map<String, Object>> login(@RequestParam String username,
                                         @RequestParam String password,
@@ -173,11 +178,6 @@ public class AuthController {
     }
 
     private LoginUser currentUser() {
-        org.springframework.security.core.Authentication auth =
-                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof LoginUser) {
-            return (LoginUser) auth.getPrincipal();
-        }
-        throw BizException.of(GlobalErrorCode.UNAUTHORIZED);
+        return LoginContext.current();
     }
 }

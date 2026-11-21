@@ -3,14 +3,12 @@ package com.sfi.matrix.iam.controller;
 import com.sfi.matrix.iam.constant.IamConstants;
 import com.sfi.matrix.iam.entity.*;
 import com.sfi.matrix.iam.service.IamService;
-import com.sfi.scaffold.common.exception.BizException;
-import com.sfi.scaffold.common.exception.GlobalErrorCode;
 import com.sfi.scaffold.common.result.R;
+import com.sfi.scaffold.starter.security.identity.LoginContext;
 import com.sfi.scaffold.starter.security.identity.LoginUser;
 import com.sfi.scaffold.starter.security.permission.RequirePermission;
 import com.sfi.scaffold.starter.security.policy.PasswordPolicyValidator;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -203,11 +201,7 @@ public class IamController {
     }
 
     private LoginUser currentUser() {
-        org.springframework.security.core.Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof LoginUser) {
-            return (LoginUser) auth.getPrincipal();
-        }
-        throw BizException.of(GlobalErrorCode.UNAUTHORIZED);
+        return LoginContext.current();
     }
 
     // ===== 授权 =====

@@ -35,5 +35,9 @@
             <groupId>com.sfi.scaffold</groupId>
             <artifactId>scaffold-starter-tenant</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-protection</artifactId>
+        </dependency>
     </dependencies>
 </project>

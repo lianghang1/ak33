@@ -45,24 +45,6 @@ public final class IamConstants {
     /** 当前用户在当前租户下的部门 ID（来自 sys_user_tenant.dept_id） */
     public static final String ATTR_DEPT_ID = "deptId";
 
-    // ===== 角色数据范围 sys_role.data_scope（预留字段，执行逻辑待业务表落地后实现） =====
-    /** 全部数据（默认）：不拼部门/本人过滤条件，等同 scaffold 的 DataScopeType.ALL */
-    public static final String DATA_SCOPE_ALL = "ALL";
-    /** 指定部门：按 sys_role_dept 显式授权的部门过滤（关联表待数据权限落地时建） */
-    public static final String DATA_SCOPE_DEPT_CUSTOM = "DEPT_CUSTOM";
-    /** 本部门：仅当前用户所属部门 */
-    public static final String DATA_SCOPE_DEPT_ONLY = "DEPT_ONLY";
-    /** 本部门及以下：当前部门 + 递归子部门 */
-    public static final String DATA_SCOPE_DEPT_CHILD = "DEPT_CHILD";
-    /** 仅本人：按 create_by 匹配，对齐 scaffold 的 DataScopeType.SELF */
-    public static final String DATA_SCOPE_SELF = "SELF";
-
-    /** 合法的数据范围取值（供 createRole/updateRole 校验） */
-    public static final java.util.Set<String> DATA_SCOPES = java.util.Collections.unmodifiableSet(
-            new java.util.HashSet<>(java.util.Arrays.asList(
-                    DATA_SCOPE_ALL, DATA_SCOPE_DEPT_CUSTOM, DATA_SCOPE_DEPT_ONLY,
-                    DATA_SCOPE_DEPT_CHILD, DATA_SCOPE_SELF)));
-
     // ===== 平台管理权限点 sys_menu.permission（@RequirePermission 用） =====
     // 与 seedPlatformMenus 一一对应：接口标注的权限点必须在 PLATFORM 菜单里存在，
     // 否则平台超管动态推导时也拿不到、会被 403。

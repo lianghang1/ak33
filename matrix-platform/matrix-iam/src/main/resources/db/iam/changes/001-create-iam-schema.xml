@@ -146,7 +146,7 @@
             <column name="role_type" type="VARCHAR(32)" defaultValue="NORMAL" remarks="PLATFORM_ADMIN/TENANT_ADMIN/NORMAL"><constraints nullable="false"/></column>
             <column name="sort_no" type="INT"/>
             <column name="built_in" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
-            <column name="data_scope" type="VARCHAR(32)" defaultValue="ALL" remarks="数据范围(预留):ALL/DEPT_CUSTOM/DEPT_ONLY/DEPT_CHILD/SELF"><constraints nullable="false"/></column>
+            <column name="data_scope" type="VARCHAR(32)" defaultValue="ALL" remarks="数据范围(预留):ALL/DEPT_CUSTOM/DEPT_ONLY/DEPT_AND_CHILD/SELF"><constraints nullable="false"/></column>
             <column name="remark" type="VARCHAR(255)"/>
             <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
             <column name="update_time" type="DATETIME"/>

@@ -6,6 +6,7 @@ import com.sfi.matrix.iam.entity.*;
 import com.sfi.matrix.iam.repository.*;
 import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.exception.GlobalErrorCode;
+import com.sfi.scaffold.starter.data.jpa.datascope.DataScopeType;
 import com.sfi.scaffold.starter.security.identity.LoginUser;
 import com.sfi.scaffold.starter.security.token.SessionInfo;
 import com.sfi.scaffold.starter.tenant.annotation.TenantIgnore;
@@ -353,7 +354,7 @@ public class IamService {
     // ===== 角色 =====
 
     public SysRole createRole(String roleCode, String roleName, String tenantId) {
-        return createRole(roleCode, roleName, tenantId, IamConstants.DATA_SCOPE_ALL);
+        return createRole(roleCode, roleName, tenantId, DataScopeType.ALL.name());
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -367,11 +368,12 @@ public class IamService {
             throw BizException.of(GlobalErrorCode.BAD_REQUEST, "角色编码已存在：" + roleCode);
         });
         String scope = (dataScope == null || dataScope.trim().isEmpty())
-                ? IamConstants.DATA_SCOPE_ALL : dataScope.trim();
-        if (!IamConstants.DATA_SCOPES.contains(scope)) {
+                ? DataScopeType.ALL.name() : dataScope.trim();
+        if (!DataScopeType.isValid(scope)) {
             throw BizException.of(GlobalErrorCode.BAD_REQUEST, "数据范围非法：" + dataScope
-                    + "，可选值：" + IamConstants.DATA_SCOPES);
+                    + "，可选值：" + DataScopeType.CODES);
         }
+        scope = DataScopeType.of(scope).name();
         SysRole role = new SysRole();
         role.setRoleCode(roleCode);
         role.setRoleName(roleName);
