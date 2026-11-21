@@ -57,7 +57,7 @@
             <column name="update_by" type="VARCHAR(64)"/>
             <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
         </createTable>
-        <addUniqueConstraint tableName="sys_config" columnNames="config_key" constraintName="uk_sys_config_key"/>
+        <addUniqueConstraint tableName="sys_config" columnNames="tenant_id, config_key" constraintName="uk_sys_config_key"/>
         <createIndex tableName="sys_config" indexName="idx_sys_config_tenant">
             <column name="tenant_id"/>
         </createIndex>

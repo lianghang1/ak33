@@ -108,12 +108,47 @@ public class IamService {
                 .collect(Collectors.toList());
     }
 
-    /** 第二步：按用户名 + 租户编码组装登录身份 */
+    /** 认证策略已产出账号，按账号列出可登录租户（供"列租户"步骤复用） */
+    public List<SysTenant> listLoginTenantsByUser(SysUser user) {
+        if (user == null || !Integer.valueOf(1).equals(user.getStatus())) {
+            return Collections.emptyList();
+        }
+        List<Long> tenantIds = userTenantRepository.findByUserIdAndDeletedFalse(user.getId()).stream()
+                .filter(ut -> Integer.valueOf(1).equals(ut.getStatus()))
+                .map(ut -> Long.valueOf(ut.getTenantId()))
+                .collect(Collectors.toList());
+        if (tenantIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return tenantRepository.findByIdInAndDeletedFalse(tenantIds).stream()
+                .filter(t -> Integer.valueOf(1).equals(t.getStatus()))
+                .filter(t -> t.getExpireTime() == null || !t.getExpireTime().isBefore(LocalDate.now()))
+                .collect(Collectors.toList());
+    }
+
+    /** 修改密码（newPassword 已由 controller 编码） */
+    @Transactional(rollbackFor = Exception.class)
+    public void changePassword(Long userId, String encodedPassword) {
+        SysUser user = userRepository.findById(userId)
+                .orElseThrow(() -> BizException.of(GlobalErrorCode.NOT_FOUND, "账号不存在"));
+        user.setPassword(encodedPassword);
+        userRepository.save(user);
+    }
+
+    /** 第二步：按用户名 + 租户编码组装登录身份（账密专用兼容入口） */
     public LoginUser buildLoginUser(String username, String tenantCode) {
         SysUser user = userRepository.findByUsernameAndDeletedFalse(username).orElse(null);
         if (user == null || !Integer.valueOf(1).equals(user.getStatus())) {
             throw BizException.of(GlobalErrorCode.UNAUTHORIZED, "账号不存在或已禁用");
         }
+        return assembleForAuth(user, tenantCode);
+    }
+
+    /**
+     * 认证策略统一装配入口：凭证已由 {@code AuthenticationStrategy} 校验通过，
+     * 此处只按租户编码定位租户并组装身份，不重复校验密码。
+     */
+    public LoginUser assembleForAuth(SysUser user, String tenantCode) {
         SysTenant tenant = resolveActiveTenant(tenantCode);
         return assemble(user, tenant);
     }
@@ -448,11 +483,17 @@ public class IamService {
 
     @Transactional(rollbackFor = Exception.class)
     public SysDept createDept(String deptName, Long parentId, String tenantId, Integer sortNo) {
+        return createDept(deptName, parentId, tenantId, sortNo, null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public SysDept createDept(String deptName, Long parentId, String tenantId, Integer sortNo, Long leaderId) {
         SysDept dept = new SysDept();
         dept.setDeptName(deptName);
         dept.setParentId(parentId);
         dept.setTenantId(tenantId);
         dept.setSortNo(sortNo == null ? 0 : sortNo);
+        dept.setLeaderId(leaderId);
         dept.setStatus(1);
         return deptRepository.save(dept);
     }
@@ -469,6 +510,12 @@ public class IamService {
 
     @Transactional(rollbackFor = Exception.class)
     public SysRole createRole(String roleCode, String roleName, String tenantId, String dataScope) {
+        return createRole(roleCode, roleName, tenantId, dataScope, null, null, null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public SysRole createRole(String roleCode, String roleName, String tenantId, String dataScope,
+                              String dataScopeDeptIds, Integer sortNo, String remark) {
         // 内置超管编码保留，普通创建不得占用（否则可被拿来伪装隐式超管）
         if (IamConstants.TENANT_ADMIN_ROLE_CODE.equals(roleCode)
                 || IamConstants.PLATFORM_ADMIN_ROLE_CODE.equals(roleCode)) {
@@ -489,9 +536,11 @@ public class IamService {
         role.setRoleName(roleName);
         role.setTenantId(tenantId);
         role.setRoleType(IamConstants.ROLE_TYPE_NORMAL);
-        role.setSortNo(0);
+        role.setSortNo(sortNo == null ? 0 : sortNo);
         role.setBuiltIn(Boolean.FALSE);
         role.setDataScope(scope);
+        role.setDataScopeDeptIds(dataScopeDeptIds);
+        role.setRemark(remark);
         return roleRepository.save(role);
     }
 
@@ -854,6 +903,203 @@ public class IamService {
         if (!ok) {
             throw BizException.of(GlobalErrorCode.FORBIDDEN, "仅运营平台超级管理员可执行该操作");
         }
+    }
+
+    // ===== 通用 CRUD（get / update / delete，逻辑删除） =====
+
+    // --- 租户 ---
+    public SysTenant getTenant(Long id) {
+        return tenantRepository.findById(id)
+                .filter(t -> !Boolean.TRUE.equals(t.getDeleted()))
+                .orElseThrow(() -> BizException.of(GlobalErrorCode.NOT_FOUND, "租户不存在：" + id));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public SysTenant updateTenant(Long id, String tenantName, Long packageId, LocalDate expireTime,
+                                  Integer status, String remark) {
+        SysTenant t = getTenant(id);
+        if (tenantName != null && !tenantName.trim().isEmpty()) t.setTenantName(tenantName);
+        t.setPackageId(packageId);
+        t.setExpireTime(expireTime);
+        if (status != null) t.setStatus(status);
+        if (remark != null) t.setRemark(remark);
+        if (IamConstants.PLATFORM_TENANT_CODE.equals(t.getTenantCode()) && Integer.valueOf(0).equals(status)) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "平台租户不可停用");
+        }
+        return tenantRepository.save(t);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteTenant(Long id) {
+        SysTenant t = getTenant(id);
+        if (IamConstants.PLATFORM_TENANT_CODE.equals(t.getTenantCode())) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "平台租户不可删除");
+        }
+        t.setDeleted(Boolean.TRUE);
+        tenantRepository.save(t);
+    }
+
+    // --- 套餐 ---
+    public SysTenantPackage getPackage(Long id) {
+        return packageRepository.findById(id)
+                .filter(p -> !Boolean.TRUE.equals(p.getDeleted()))
+                .orElseThrow(() -> BizException.of(GlobalErrorCode.NOT_FOUND, "套餐不存在：" + id));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public SysTenantPackage updatePackage(Long id, String packageName, String remark, Integer status) {
+        SysTenantPackage p = getPackage(id);
+        if (packageName != null && !packageName.trim().isEmpty()) p.setPackageName(packageName);
+        if (remark != null) p.setRemark(remark);
+        if (status != null) p.setStatus(status);
+        return packageRepository.save(p);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void deletePackage(Long id) {
+        SysTenantPackage p = getPackage(id);
+        p.setDeleted(Boolean.TRUE);
+        packageRepository.save(p);
+    }
+
+    // --- 用户 ---
+    public SysUser getUser(Long id) {
+        return userRepository.findById(id)
+                .filter(u -> !Boolean.TRUE.equals(u.getDeleted()))
+                .orElseThrow(() -> BizException.of(GlobalErrorCode.NOT_FOUND, "用户不存在：" + id));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public SysUser updateUser(Long id, String nickname, String mobile, String email,
+                              String accountType, Integer status) {
+        SysUser u = getUser(id);
+        if (mobile != null) u.setMobile(mobile);
+        if (email != null) u.setEmail(email);
+        if (accountType != null && !accountType.trim().isEmpty()) u.setAccountType(accountType);
+        if (status != null) u.setStatus(status);
+        u = userRepository.save(u);
+        if (nickname != null) saveProfile(id, nickname);
+        return u;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteUser(Long id) {
+        SysUser u = getUser(id);
+        u.setDeleted(Boolean.TRUE);
+        userRepository.save(u);
+    }
+
+    // --- 部门 ---
+    public SysDept getDept(Long id) {
+        return deptRepository.findById(id)
+                .filter(d -> !Boolean.TRUE.equals(d.getDeleted()))
+                .orElseThrow(() -> BizException.of(GlobalErrorCode.NOT_FOUND, "部门不存在：" + id));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public SysDept updateDept(Long id, String deptName, Long parentId, Integer sortNo,
+                              Long leaderId, Integer status) {
+        SysDept d = getDept(id);
+        if (deptName != null && !deptName.trim().isEmpty()) d.setDeptName(deptName);
+        d.setParentId(parentId);
+        if (sortNo != null) d.setSortNo(sortNo);
+        d.setLeaderId(leaderId);
+        if (status != null) d.setStatus(status);
+        return deptRepository.save(d);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteDept(Long id) {
+        SysDept d = getDept(id);
+        // 存在子部门时拒绝删除
+        List<SysDept> children = deptRepository.findByTenantIdAndDeletedFalse(d.getTenantId()).stream()
+                .filter(x -> id.equals(x.getParentId())).collect(Collectors.toList());
+        if (!children.isEmpty()) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "存在子部门，不可删除");
+        }
+        d.setDeleted(Boolean.TRUE);
+        deptRepository.save(d);
+    }
+
+    // --- 角色 ---
+    public SysRole getRole(Long id) {
+        return roleRepository.findById(id)
+                .filter(r -> !Boolean.TRUE.equals(r.getDeleted()))
+                .orElseThrow(() -> BizException.of(GlobalErrorCode.NOT_FOUND, "角色不存在：" + id));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public SysRole updateRole(Long id, String roleName, String dataScope, String dataScopeDeptIds,
+                              Integer sortNo, String remark) {
+        SysRole r = getRole(id);
+        if (isSuperRole(r)) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "内置超管角色不可修改");
+        }
+        if (roleName != null && !roleName.trim().isEmpty()) r.setRoleName(roleName);
+        if (dataScope != null && !dataScope.trim().isEmpty()) {
+            if (!DataScopeType.isValid(dataScope)) {
+                throw BizException.of(GlobalErrorCode.BAD_REQUEST, "数据范围非法：" + dataScope);
+            }
+            r.setDataScope(DataScopeType.of(dataScope).name());
+        }
+        if (dataScopeDeptIds != null) r.setDataScopeDeptIds(dataScopeDeptIds);
+        if (sortNo != null) r.setSortNo(sortNo);
+        if (remark != null) r.setRemark(remark);
+        return roleRepository.save(r);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteRole(Long id) {
+        SysRole r = getRole(id);
+        if (isSuperRole(r)) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "内置超管角色不可删除");
+        }
+        // 已分配给用户的角色不可删除
+        boolean inUse = userRoleRepository.findAll().stream()
+                .anyMatch(ur -> id.equals(ur.getRoleId()) && !Boolean.TRUE.equals(ur.getDeleted()));
+        if (inUse) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "角色已分配给用户，不可删除");
+        }
+        r.setDeleted(Boolean.TRUE);
+        roleRepository.save(r);
+    }
+
+    // --- 菜单 ---
+    public SysMenu getMenu(Long id) {
+        return menuRepository.findById(id)
+                .filter(m -> !Boolean.TRUE.equals(m.getDeleted()))
+                .orElseThrow(() -> BizException.of(GlobalErrorCode.NOT_FOUND, "菜单不存在：" + id));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public SysMenu updateMenu(Long id, String menuName, String menuType, Long parentId, String path,
+                              String component, String icon, String permission, String menuScope,
+                              Integer sortNo, Boolean visible) {
+        SysMenu m = getMenu(id);
+        if (menuName != null && !menuName.trim().isEmpty()) m.setMenuName(menuName);
+        if (menuType != null && !menuType.trim().isEmpty()) m.setMenuType(menuType);
+        m.setParentId(parentId);
+        if (path != null) m.setPath(path);
+        if (component != null) m.setComponent(component);
+        if (icon != null) m.setIcon(icon);
+        if (permission != null) m.setPermission(permission);
+        if (menuScope != null && !menuScope.trim().isEmpty()) m.setMenuScope(menuScope);
+        if (sortNo != null) m.setSortNo(sortNo);
+        if (visible != null) m.setVisible(visible);
+        return menuRepository.save(m);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteMenu(Long id) {
+        SysMenu m = getMenu(id);
+        // 存在子菜单时拒绝删除
+        List<SysMenu> children = menuRepository.findByDeletedFalseOrderBySortNoAsc().stream()
+                .filter(x -> id.equals(x.getParentId())).collect(Collectors.toList());
+        if (!children.isEmpty()) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "存在子菜单，不可删除");
+        }
+        m.setDeleted(Boolean.TRUE);
+        menuRepository.save(m);
     }
 
     // ===== 内部工具 =====

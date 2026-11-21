@@ -52,8 +52,8 @@ public final class IamConstants {
     // ===== 登录身份扩展属性 key（LoginUser.attributes） =====
     /** 当前用户在当前租户下的部门 ID（来自 sys_user_tenant.dept_id） */
     public static final String ATTR_DEPT_ID = "deptId";
-    /** 数据范围归约结果 JSON（DataScopeDecision，随会话透传，切面/过滤器消费） */
-    public static final String ATTR_DATA_SCOPE = "dataScope";
+    // 数据范围决策的会话键统一用框架 com.sfi.scaffold.common.datascope.DataScopeKeys.ATTR_DECISION，
+    // 不在业务侧重复定义，避免与框架漂移。
 
     // ===== 平台管理权限点 sys_menu.permission（@RequirePermission 用） =====
     // 与 seedPlatformMenus 一一对应：接口标注的权限点必须在 PLATFORM 菜单里存在，

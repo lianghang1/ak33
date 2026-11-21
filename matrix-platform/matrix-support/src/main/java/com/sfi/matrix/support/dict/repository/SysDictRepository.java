@@ -15,4 +15,7 @@ import java.util.List;
 public interface SysDictRepository extends JpaRepository<SysDict, Long> {
 
     List<SysDict> findByDictTypeAndDeletedFalseOrderBySortNoAsc(String dictType);
+
+    java.util.Optional<SysDict> findByDictTypeAndDictCodeAndTenantIdAndDeletedFalse(
+            String dictType, String dictCode, String tenantId);
 }

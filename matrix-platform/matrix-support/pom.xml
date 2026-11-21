@@ -21,11 +21,47 @@
         </dependency>
         <dependency>
             <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-query</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
             <artifactId>scaffold-starter-web</artifactId>
         </dependency>
         <dependency>
             <groupId>com.sfi.scaffold</groupId>
             <artifactId>scaffold-starter-tenant</artifactId>
+        </dependency>
+        <!-- 平台默认配置兜底：查 PLATFORM 租户 ID（iam 不反向依赖 support，无环） -->
+        <dependency>
+            <groupId>com.sfi.matrix.platform</groupId>
+            <artifactId>matrix-iam</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- ===== 测试 ===== -->
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-redis</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

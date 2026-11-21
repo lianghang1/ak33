@@ -18,8 +18,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  */
 @AutoConfiguration
 @ComponentScan(basePackages = "com.sfi.matrix.iam")
-@EntityScan(basePackages = "com.sfi.matrix.iam.entity")
-@EnableJpaRepositories(basePackages = "com.sfi.matrix.iam.repository")
+@EntityScan(basePackages = {"com.sfi.matrix.iam.entity", "com.sfi.matrix.iam.audit.entity"})
+@EnableJpaRepositories(basePackages = {"com.sfi.matrix.iam.repository", "com.sfi.matrix.iam.audit.repository"})
 public class IamAutoConfiguration {
 
     /**

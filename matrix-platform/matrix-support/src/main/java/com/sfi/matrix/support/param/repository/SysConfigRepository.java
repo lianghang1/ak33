@@ -15,4 +15,6 @@ import java.util.Optional;
 public interface SysConfigRepository extends JpaRepository<SysConfig, Long> {
 
     Optional<SysConfig> findByConfigKeyAndDeletedFalse(String configKey);
+
+    Optional<SysConfig> findByTenantIdAndConfigKeyAndDeletedFalse(String tenantId, String configKey);
 }

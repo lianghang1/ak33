@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <!-- 登录审计日志 -->
+    <changeSet id="20261122-01" author="matrix">
+        <createTable tableName="sys_login_log" remarks="登录审计日志">
+            <column name="id" type="BIGINT"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="username" type="VARCHAR(64)"/>
+            <column name="auth_type" type="VARCHAR(32)"/>
+            <column name="tenant_code" type="VARCHAR(64)"/>
+            <column name="ip" type="VARCHAR(64)"/>
+            <column name="user_agent" type="VARCHAR(512)"/>
+            <column name="success" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="reason" type="VARCHAR(255)"/>
+            <column name="login_time" type="DATETIME"/>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="sys_login_log" indexName="idx_login_log_user">
+            <column name="username"/>
+        </createIndex>
+        <createIndex tableName="sys_login_log" indexName="idx_login_log_time">
+            <column name="login_time"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- 操作审计日志 -->
+    <changeSet id="20261122-02" author="matrix">
+        <createTable tableName="sys_operate_log" remarks="操作审计日志">
+            <column name="id" type="BIGINT"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="tenant_id" type="VARCHAR(64)"/>
+            <column name="module" type="VARCHAR(64)"/>
+            <column name="operation" type="VARCHAR(128)"/>
+            <column name="method" type="VARCHAR(255)"/>
+            <column name="uri" type="VARCHAR(512)"/>
+            <column name="ip" type="VARCHAR(64)"/>
+            <column name="oper_user_id" type="BIGINT"/>
+            <column name="oper_user_name" type="VARCHAR(64)"/>
+            <column name="params" type="VARCHAR(2000)"/>
+            <column name="success" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="error_msg" type="VARCHAR(500)"/>
+            <column name="cost_ms" type="BIGINT"/>
+            <column name="oper_time" type="DATETIME"/>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="sys_operate_log" indexName="idx_operate_log_tenant">
+            <column name="tenant_id"/>
+        </createIndex>
+        <createIndex tableName="sys_operate_log" indexName="idx_operate_log_time">
+            <column name="oper_time"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

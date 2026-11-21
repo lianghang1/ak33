@@ -21,6 +21,10 @@
         </dependency>
         <dependency>
             <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-query</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
             <artifactId>scaffold-starter-web</artifactId>
         </dependency>
         <dependency>
@@ -38,6 +42,28 @@
         <dependency>
             <groupId>com.sfi.scaffold</groupId>
             <artifactId>scaffold-starter-protection</artifactId>
+        </dependency>
+
+        <!-- ===== 测试：H2 + Liquibase + Redis 会话，端到端验证平台层 ===== -->
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-redis</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
