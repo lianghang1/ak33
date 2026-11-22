@@ -22,8 +22,6 @@ public interface SysRoleRepository extends JpaRepository<SysRole, Long> {
 
     List<SysRole> findByIdInAndDeletedFalse(List<Long> roleIds);
 
-    List<SysRole> findByDeletedFalseOrderBySortNoAsc();
-
     /** 按租户 + 角色类型查（识别内置超管角色） */
     List<SysRole> findByTenantIdAndRoleTypeAndDeletedFalse(String tenantId, String roleType);
 }

@@ -370,14 +370,6 @@ public class IamService {
                 .collect(Collectors.toList());
     }
 
-    /** 平台层租户列表：排除虚拟 PLATFORM 租户，避免它被当成业务租户改动 */
-    public List<SysTenant> listTenants() {
-        return tenantRepository.findAll().stream()
-                .filter(t -> !Boolean.TRUE.equals(t.getDeleted()))
-                .filter(t -> !IamConstants.PLATFORM_TENANT_CODE.equals(t.getTenantCode()))
-                .collect(Collectors.toList());
-    }
-
     // ===== 套餐 =====
 
     @Transactional(rollbackFor = Exception.class)
@@ -391,12 +383,6 @@ public class IamService {
         pkg.setRemark(remark);
         pkg.setStatus(1);
         return packageRepository.save(pkg);
-    }
-
-    public List<SysTenantPackage> listPackages() {
-        return packageRepository.findAll().stream()
-                .filter(p -> !Boolean.TRUE.equals(p.getDeleted()))
-                .collect(Collectors.toList());
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -454,12 +440,6 @@ public class IamService {
         userProfileRepository.save(profile);
     }
 
-    public List<SysUser> listUsers() {
-        return userRepository.findAll().stream()
-                .filter(u -> !Boolean.TRUE.equals(u.getDeleted()))
-                .collect(Collectors.toList());
-    }
-
     /** 给用户开通租户归属（可带该租户下的部门） */
     @Transactional(rollbackFor = Exception.class)
     public SysUserTenant assignTenant(Long userId, String tenantId, Long deptId) {
@@ -496,10 +476,6 @@ public class IamService {
         dept.setLeaderId(leaderId);
         dept.setStatus(1);
         return deptRepository.save(dept);
-    }
-
-    public List<SysDept> listDepts() {
-        return deptRepository.findByDeletedFalseOrderBySortNoAsc();
     }
 
     // ===== 角色 =====
@@ -542,10 +518,6 @@ public class IamService {
         role.setDataScopeDeptIds(dataScopeDeptIds);
         role.setRemark(remark);
         return roleRepository.save(role);
-    }
-
-    public List<SysRole> listRoles() {
-        return roleRepository.findByDeletedFalseOrderBySortNoAsc();
     }
 
     // ===== 菜单（全局定义） =====
