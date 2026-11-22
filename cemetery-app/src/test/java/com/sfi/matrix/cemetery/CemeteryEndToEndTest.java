@@ -10,7 +10,9 @@ import com.sfi.matrix.cemetery.repository.GridCellRepository;
 import com.sfi.matrix.cemetery.repository.TombRepository;
 import com.sfi.matrix.cemetery.service.TombService;
 import com.sfi.matrix.iam.config.IamAutoConfiguration;
+import com.sfi.matrix.iam.service.MenuUrlPermissionProvider;
 import com.sfi.matrix.support.SupportAutoConfiguration;
+import com.sfi.scaffold.starter.security.permission.UrlPermissionRule;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -81,6 +83,7 @@ class CemeteryEndToEndTest {
     @Autowired CemeteryAreaRepository areaRepository;
     @Autowired GridCellRepository gridCellRepository;
     @Autowired TombRepository tombRepository;
+    @Autowired MenuUrlPermissionProvider menuUrlPermissionProvider;
 
     private static String adminToken;
 
@@ -318,6 +321,22 @@ class CemeteryEndToEndTest {
         del2.put("id", another.getId());
         JsonNode delRej = okRaw(postJsonRaw("/api/cemetery/tomb/delete", del2, adminToken));
         assertNotEquals(0, delRej.path("code").asInt(), "非初始化态墓位删除应被拒");
+    }
+
+    @Test
+    @Order(8)
+    void cemeteryUrlPermissionRulesSeeded() {
+        List<UrlPermissionRule> rules = menuUrlPermissionProvider.loadRules();
+        // 读规则：GET:/api/cemetery/** → cemetery:read
+        assertTrue(rules.stream().anyMatch(r -> "GET".equals(r.getMethod())
+                        && "/api/cemetery/**".equals(r.getPattern())
+                        && r.getPermissions().contains(CemeteryConstants.PERM_CEMETERY_READ)),
+                "应播种公墓读权限规则");
+        // 写规则：POST:/api/cemetery/** → cemetery:write
+        assertTrue(rules.stream().anyMatch(r -> "POST".equals(r.getMethod())
+                        && "/api/cemetery/**".equals(r.getPattern())
+                        && r.getPermissions().contains(CemeteryConstants.PERM_CEMETERY_WRITE)),
+                "应播种公墓写权限规则");
     }
 
     /** 解析响应但不断言业务码（用于预期失败的场景）。 */

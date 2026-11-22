@@ -1,0 +1,11 @@
+# 生产环境 profile：用 --spring.profiles.active=prod 激活。
+#
+# 安全基线：URL 权限严格模式强制开启——任何未命中菜单 api_pattern 的 Controller
+# 端点一律 403，避免漏配规则导致"登录即可访问"。平台层与公墓业务的所有受控端点
+# 均由各自的 *MenuInitializer 幂等播种了规则；登录等公开端点走 @Anonymous 短路，不受影响。
+#
+# 该值在 profile 中写死 true，优先级高于 application.yml 的环境变量默认值，
+# 生产无法靠漏配 URL_PERMISSION_STRICT 退回 fail-open。
+scaffold:
+  security:
+    url-permission-strict: true
