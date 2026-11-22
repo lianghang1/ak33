@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:cemetery;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  liquibase:
+    enabled: true
+    change-log: classpath:db/master-test.xml
+  redis:
+    host: 127.0.0.1
+    port: 6399
+    timeout: 3000ms
+
+matrix:
+  platform:
+    admin:
+      enabled: true
+      username: admin
+      password: admin123
+      name: 平台管理员
+    seed-menus: true
+
+scaffold:
+  tenant:
+    enabled: true
+  crypto:
+    type: AES
+    key: test-only-crypto-key-for-cemetery
+  cache:
+    type: two-level
+  web:
+    access-log:
+      enabled: false

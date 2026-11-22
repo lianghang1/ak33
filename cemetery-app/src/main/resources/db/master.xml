@@ -13,6 +13,7 @@
     <include file="db/iam/changelog.xml"/>
     <include file="db/support/changelog.xml"/>
 
-    <!-- 公墓业务表：后续在此追加 -->
+    <!-- 公墓业务 -->
+    <include file="db/cemetery/changelog.xml"/>
 
 </databaseChangeLog>
