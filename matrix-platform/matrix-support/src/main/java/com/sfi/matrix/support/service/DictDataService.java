@@ -44,7 +44,7 @@ public class DictDataService extends BaseService<SysDictData> {
                             int sortNo, Integer status, String tenantId) {
         SysDictData data;
         if (id != null) {
-            data = get(id);
+            data = require(id); // 更新传入不存在的 id 按 NOT_FOUND 处理
         } else {
             String tid = tenantId != null && !tenantId.isEmpty() ? tenantId : DictTypeService.currentTenantId();
             data = dataRepository.findByDictTypeAndDictCodeAndTenantIdAndDeletedFalse(dictType, dictCode, tid)
@@ -61,7 +61,7 @@ public class DictDataService extends BaseService<SysDictData> {
         return dataRepository.save(data);
     }
 
-    // get(Long) 继承 BaseService：逻辑删除过滤 + NOT_FOUND 统一语义。
+    // get(Long) 继承 BaseService：逻辑删除过滤，查不到返回 null。
 
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = SupportConstants.CACHE_DICT_DATA, allEntries = true)

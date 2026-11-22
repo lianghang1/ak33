@@ -43,11 +43,13 @@ query 通路的租户 / 部门过滤由 starter 的 `ParamFilter` / `QueryInterc
 
 | 层 | 位置 | 职责 |
 |---|---|---|
-| `BaseService<E extends BaseEntity>` | scaffold-starter-data-jpa | `get`（逻辑删除过滤+NOT_FOUND）/`find`/`exists`/`delete`（逻辑删除）/`saveEntity`，差异方法留子类 |
+| `BaseService<E extends BaseEntity>` | scaffold-starter-data-jpa | `get`（逻辑删除过滤，查不到返回 null）/`exists`/`list`/`page`/`count`（走 query 通路，实体泛型自动解析）/`save`/`delete`（逻辑删除）；写操作内部用 `require(id)` 兜 NOT_FOUND，差异方法留子类 |
 | `QuerySupport` | scaffold-starter-query | list 统一派发：有 `plan` 走白名单计划（通路③），无 plan 用默认实体（通路②）；1 基分页、`PageResult` 返回、`pageNum/pageSize`（兼容 `page/size`） |
+| `DeletedParamFilter` / `@IncludeDeleted` | scaffold-starter-query | query 通路自动注入 `deleted=false`（检索类含 `deleted` 字段才生效），前端不可篡改；查已删除数据须服务端标 `@IncludeDeleted`，与 `@TenantIgnore` 正交可叠加 |
 | `@CrudResource` | scaffold-common | 类级声明 entity/dto/module 与各动作权限点（any-of），权限拦截器与审计切面共用 |
 | `AbstractCrudController<E,D,S>` | scaffold-starter-web | 模板方法实现 list/get/save/delete；子类零方法，仅贴 `@CrudResource` + 构造器注入 |
 
+- **系统字段命名固定**：租户字段一律 `tenantId`（列 `tenant_id`）、逻辑删除标记一律 `deleted`（列 `deleted`），三条通路（findById 兜底 / Hibernate Filter / query ParamFilter）统一按字段名探测，不再支持自定义字段名（框架已移除 `@TenantIdField`）。
 - 页码基准**全平台统一 1 基**（对齐 common 的 `PageParam`/`PageResult`），禁止再用 `PageRequest.of(page,size)` 的 0 基裸语义。
 - `QuerySupport` 的 plan/entity 派发是**派发器**而非通路混用：命中哪条通路该通路全程自洽，默认实体由后端写死、plan 只能选 `@QueryPlanX` 白名单内的类。
 - **强业务特化资源不接基类**：如 config（加密/分组/明文副本）、dict（平台兜底/幂等 upsert）、iam 授权动作——它们保留各自的 Service/Controller 实现，只让 Service 继承 `BaseService` 复用 `get/delete` 骨架，Controller 保持特化端点不动。判定标准：写操作带业务规则（加密/兜底/唯一键/复杂装配）即不套 `save` 模板。

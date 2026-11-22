@@ -71,15 +71,16 @@ public class ConfigService extends BaseService<SysConfig> {
         return plainCopy(config);
     }
 
-    /** 详情：返回明文副本（覆盖基类，避免密文/污染 JPA 实体）。 */
+    /** 详情：返回明文副本（覆盖基类，避免密文/污染 JPA 实体）；查不到返回 null。 */
     @Override
     public SysConfig get(Long id) {
-        return plainCopy(super.get(id));
+        SysConfig raw = super.get(id);
+        return raw == null ? null : plainCopy(raw);
     }
 
-    /** 取原始（可能为密文）实体，供 save 装配用；复用基类 get 的过滤+NOT_FOUND。 */
+    /** 取原始（可能为密文）实体，供 save 装配用；复用基类 require 的过滤+NOT_FOUND。 */
     private SysConfig getRaw(Long id) {
-        return super.get(id);
+        return require(id);
     }
 
     @Transactional(rollbackFor = Exception.class)

@@ -41,7 +41,7 @@ public class DictTypeService extends BaseService<SysDictType> {
                             Integer status, String tenantId) {
         SysDictType entity;
         if (id != null) {
-            entity = get(id);
+            entity = require(id); // 更新传入不存在的 id 按 NOT_FOUND 处理
         } else {
             String tid = resolveTenantId(tenantId);
             entity = typeRepository.findByDictTypeAndTenantIdAndDeletedFalse(dictType, tid).orElseGet(SysDictType::new);
@@ -56,7 +56,7 @@ public class DictTypeService extends BaseService<SysDictType> {
         return typeRepository.save(entity);
     }
 
-    // get(Long) 继承 BaseService：逻辑删除过滤 + NOT_FOUND 统一语义。
+    // get(Long) 继承 BaseService：逻辑删除过滤，查不到返回 null。
 
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = SupportConstants.CACHE_DICT_TYPE, allEntries = true)
