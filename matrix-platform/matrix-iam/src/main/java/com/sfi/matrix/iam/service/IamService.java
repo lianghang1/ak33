@@ -559,6 +559,13 @@ public class IamService {
     @Transactional(rollbackFor = Exception.class)
     public SysMenu createMenu(String menuName, String menuType, Long parentId, String permission,
                               String menuScope, int sortNo) {
+        return createMenu(menuName, menuType, parentId, permission, menuScope, sortNo, null);
+    }
+
+    /** 带 URL 权限模式创建菜单（URL 权限种子用） */
+    @Transactional(rollbackFor = Exception.class)
+    public SysMenu createMenu(String menuName, String menuType, Long parentId, String permission,
+                              String menuScope, int sortNo, String apiPattern) {
         SysMenu menu = new SysMenu();
         menu.setMenuName(menuName);
         menu.setMenuType(menuType);
@@ -566,6 +573,7 @@ public class IamService {
         menu.setPermission(permission);
         menu.setMenuScope(menuScope);
         menu.setSortNo(sortNo);
+        menu.setApiPattern(apiPattern);
         menu.setVisible(Boolean.TRUE);
         return menuRepository.save(menu);
     }
@@ -573,6 +581,16 @@ public class IamService {
     /** 按权限标识查菜单（种子幂等判断） */
     public SysMenu findMenuByPermission(String permission) {
         return menuRepository.findByPermissionAndDeletedFalse(permission).orElse(null);
+    }
+
+    /** 已存在的菜单补齐 api_pattern（升级兼容：老数据无此字段时由种子回填）。 */
+    @Transactional(rollbackFor = Exception.class)
+    public void ensureMenuApiPattern(String permission, String apiPattern) {
+        SysMenu menu = findMenuByPermission(permission);
+        if (menu != null && (menu.getApiPattern() == null || menu.getApiPattern().isEmpty())) {
+            menu.setApiPattern(apiPattern);
+            menuRepository.save(menu);
+        }
     }
 
     /** 平台层：查看全部全局菜单定义（用于配套餐） */

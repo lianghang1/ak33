@@ -48,6 +48,10 @@ public class SysMenu extends BaseEntity {
     @Column(name = "permission")
     private String permission;
 
+    /** URL 权限模式（Ant 风格，多个逗号分隔），声明该权限点守护的后端 URL */
+    @Column(name = "api_pattern")
+    private String apiPattern;
+
     @Column(name = "sort_no")
     private Integer sortNo;
 
@@ -116,6 +120,14 @@ public class SysMenu extends BaseEntity {
 
     public void setPermission(String permission) {
         this.permission = permission;
+    }
+
+    public String getApiPattern() {
+        return apiPattern;
+    }
+
+    public void setApiPattern(String apiPattern) {
+        this.apiPattern = apiPattern;
     }
 
     public Integer getSortNo() {

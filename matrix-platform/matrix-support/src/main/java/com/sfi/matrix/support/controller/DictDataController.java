@@ -10,7 +10,6 @@ import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.query.QueryUtilsX;
 import com.sfi.scaffold.starter.security.identity.LoginContext;
 import com.sfi.scaffold.starter.security.identity.LoginUser;
-import com.sfi.scaffold.starter.security.permission.RequirePermission;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,7 +42,6 @@ public class DictDataController {
         this.dictDataService = dictDataService;
     }
 
-    @RequirePermission(SupportConstants.PERM_DICT_SAVE)
     @OperateLog(module = "字典管理", operation = "维护字典选项")
     @PostMapping
     public R<SysDictData> save(@Valid @RequestBody DictDataRequest req) {
@@ -51,7 +49,6 @@ public class DictDataController {
                 req.getSortNo() == null ? 0 : req.getSortNo(), req.getStatus(), req.getTenantId()));
     }
 
-    @RequirePermission(SupportConstants.PERM_DICT_SAVE)
     @OperateLog(module = "字典管理", operation = "删除字典选项")
     @PostMapping("/delete")
     public R<Void> delete(@Valid @RequestBody IdRequest req) {

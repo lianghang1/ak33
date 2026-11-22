@@ -44,19 +44,24 @@ query 通路的租户 / 部门过滤由 starter 的 `ParamFilter` / `QueryInterc
 | 层 | 位置 | 职责 |
 |---|---|---|
 | `BaseService<E extends BaseEntity>` | scaffold-starter-data-jpa | `get`（逻辑删除过滤，查不到返回 null）/`exists`/`list`/`page`/`count`（走 query 通路，实体泛型自动解析）/`save`/`delete`（逻辑删除）；写操作内部用 `require(id)` 兜 NOT_FOUND，差异方法留子类 |
-| `QuerySupport` | scaffold-starter-query | list 统一派发：有 `plan` 走白名单计划（通路③），无 plan 用默认实体（通路②）；1 基分页、`PageResult` 返回、`pageNum/pageSize`（兼容 `page/size`） |
 | `DeletedParamFilter` / `@IncludeDeleted` | scaffold-starter-query | query 通路自动注入 `deleted=false`（检索类含 `deleted` 字段才生效），前端不可篡改；查已删除数据须服务端标 `@IncludeDeleted`，与 `@TenantIgnore` 正交可叠加 |
-| `@CrudResource` | scaffold-common | 类级声明 entity/dto/module 与各动作权限点（any-of），权限拦截器与审计切面共用 |
-| `AbstractCrudController<E,D,S>` | scaffold-starter-web | 模板方法实现 list/get/save/delete；子类零方法，仅贴 `@CrudResource` + 构造器注入 |
+| `BaseCrudController<E,D,S>` | scaffold-starter-web | 固定 list/get/save/delete 四个端点的 HTTP 契约与 Service 编排；子类构造器传 Service 与实体 Class 即零方法接入；三处可覆盖点 `filtersOf`（改写条件）/`toEntity`（装配实体）/`beforeDelete`（删除前钩子）；`/list` 走子类实体、`/list/{plan}` 走 `@QueryPlanX` 白名单检索模型 |
 
 - **系统字段命名固定**：租户字段一律 `tenantId`（列 `tenant_id`）、逻辑删除标记一律 `deleted`（列 `deleted`），三条通路（findById 兜底 / Hibernate Filter / query ParamFilter）统一按字段名探测，不再支持自定义字段名（框架已移除 `@TenantIdField`）。
 - 页码基准**全平台统一 1 基**（对齐 common 的 `PageParam`/`PageResult`），禁止再用 `PageRequest.of(page,size)` 的 0 基裸语义。
-- `QuerySupport` 的 plan/entity 派发是**派发器**而非通路混用：命中哪条通路该通路全程自洽，默认实体由后端写死、plan 只能选 `@QueryPlanX` 白名单内的类。
+- `BaseCrudController` 的 plan/entity 派发是**派发器**而非通路混用：命中哪条通路该通路全程自洽，默认实体由后端写死、plan 只能选 `@QueryPlanX` 白名单内的类。
 - **强业务特化资源不接基类**：如 config（加密/分组/明文副本）、dict（平台兜底/幂等 upsert）、iam 授权动作——它们保留各自的 Service/Controller 实现，只让 Service 继承 `BaseService` 复用 `get/delete` 骨架，Controller 保持特化端点不动。判定标准：写操作带业务规则（加密/兜底/唯一键/复杂装配）即不套 `save` 模板。
 
 ## 3. 认证与 Spring Security 边界
 
 - scaffold 只用 Spring Security 做**授权边界**：`SecurityFilterChain` + `anyRequest().authenticated()` 兜底、`@Anonymous` → permitAll、`TokenAuthenticationFilter` → `SecurityContextHolder`、`BCryptPasswordEncoder`、401/403 统一 JSON。
+
+### 3.1 授权：URL 拦截（强制，不用注解）
+
+- **授权按 URL + HTTP 方法裁决，禁止在 controller 方法上贴权限注解**（旧的 `@RequirePermission`/`PermissionInterceptor` 已移除）。
+- scaffold 提供 `UrlPermissionProvider` 契约与 `UrlPermissionInterceptor`（Spring `AntPathMatcher`，支持 `?`/`*`/`**`，多条命中取最具体）。业务实现 Provider 提供「URL 模式 → 权限点」规则：`@Anonymous` 接口短路放行、无规则命中的 URL 由 `anyRequest().authenticated()` 兜底（登录即可）、命中则 any-of 校验、无权 403。
+- matrix 侧 `MenuUrlPermissionProvider` 从 `sys_menu.api_pattern` 加载规则：多个模式逗号分隔，可带 `METHOD:` 前缀区分读写（如 `GET:/api/dict/**,POST:/api/dict/**` 分别落到 list/save 权限点）。**改权限=改菜单表数据，不发版。**
+- 平台菜单由 `PlatformInitializer.seedPlatformMenus` 幂等播种 api_pattern；新增受控端点必须同步补一条菜单 URL 规则，否则会「登录即可访问」形成权限缺口。
 - 认证**动作**按业务实现（与芋道 ruoyi-vue-pro 同构，不用 `AuthenticationManager` / `DaoAuthenticationProvider` / 表单登录），但必须：
   - 多登录方式归一到统一的认证策略接口（`AuthenticationStrategy`），再走公用的登录装配 `LoginAssembler`。
   - 当前用户一律用 `LoginContext.current()`，禁止裸用 `SecurityContextHolder` 取业务身份。

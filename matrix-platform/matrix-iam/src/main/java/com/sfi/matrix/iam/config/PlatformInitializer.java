@@ -64,25 +64,44 @@ public class PlatformInitializer implements ApplicationRunner {
         }
     }
 
-    /** 幂等播种平台菜单：以 permission 作为唯一判断，与管理接口的 @RequirePermission 一一对应 */
+    /**
+     * 幂等播种平台菜单：以 permission 作为唯一判断。
+     *
+     * <p>api_pattern 声明该权限点守护的后端 URL（Ant 风格，可带 METHOD: 前缀），
+     * URL 权限拦截器从菜单表加载这些规则，按 URL + 方法裁决权限。
+     * 读/写用 METHOD 区分，落到不同权限点（如字典的 list 与 save）。</p>
+     */
     private void seedPlatformMenus() {
-        seed(IamConstants.PERM_TENANT, "租户管理", "C", 10, null);
-        seed(IamConstants.PERM_PACKAGE, "套餐管理", "C", 20, null);
-        seed(IamConstants.PERM_USER, "用户管理", "C", 30, null);
-        seed(IamConstants.PERM_DEPT, "部门管理", "C", 40, null);
-        seed(IamConstants.PERM_ROLE, "角色管理", "C", 50, null);
-        seed(IamConstants.PERM_MENU, "菜单管理", "C", 60, null);
-        seed(IamConstants.PERM_DICT, "字典管理", "C", 70, null);
-        seed(IamConstants.PERM_DICT_SAVE, "字典维护", "C", 71, null);
-        seed(IamConstants.PERM_CONFIG, "参数管理", "C", 80, null);
-        seed(IamConstants.PERM_CONFIG_SAVE, "参数维护", "C", 81, null);
+        seed(IamConstants.PERM_TENANT, "租户管理", "C", 10,
+                "/api/iam/tenant/**,/api/iam/tenants,/api/iam/assign-tenant");
+        seed(IamConstants.PERM_PACKAGE, "套餐管理", "C", 20,
+                "/api/iam/package/**,/api/iam/packages,/api/iam/assign-package-menus");
+        seed(IamConstants.PERM_USER, "用户管理", "C", 30,
+                "/api/iam/user/**,/api/iam/users,/api/audit/**");
+        seed(IamConstants.PERM_DEPT, "部门管理", "C", 40,
+                "/api/iam/dept/**,/api/iam/depts");
+        seed(IamConstants.PERM_ROLE, "角色管理", "C", 50,
+                "/api/iam/role/**,/api/iam/roles,/api/iam/assign-roles,/api/iam/assign-menus,"
+                        + "/api/iam/user-roles,/api/iam/user-permissions");
+        seed(IamConstants.PERM_MENU, "菜单管理", "C", 60,
+                "/api/iam/menu/**,/api/iam/menus,/api/iam/my-menus");
+        seed(IamConstants.PERM_DICT, "字典管理", "C", 70,
+                "GET:/api/dict/**,GET:/api/dict-type/**");
+        seed(IamConstants.PERM_DICT_SAVE, "字典维护", "C", 71,
+                "POST:/api/dict/**,POST:/api/dict-type/**");
+        seed(IamConstants.PERM_CONFIG, "参数管理", "C", 80,
+                "GET:/api/config/**");
+        seed(IamConstants.PERM_CONFIG_SAVE, "参数维护", "C", 81,
+                "POST:/api/config/**");
     }
 
-    private void seed(String permission, String name, String type, int sortNo, Long parentId) {
+    private void seed(String permission, String name, String type, int sortNo, String apiPattern) {
         SysMenu exists = iamService.findMenuByPermission(permission);
         if (exists == null) {
-            iamService.createMenu(name, type, parentId, permission,
-                    IamConstants.MENU_SCOPE_PLATFORM, sortNo);
+            iamService.createMenu(name, type, null, permission,
+                    IamConstants.MENU_SCOPE_PLATFORM, sortNo, apiPattern);
+        } else {
+            iamService.ensureMenuApiPattern(permission, apiPattern);
         }
     }
 }

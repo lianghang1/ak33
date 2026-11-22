@@ -9,7 +9,6 @@ import com.sfi.matrix.support.service.DictTypeService;
 import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.starter.security.identity.LoginContext;
 import com.sfi.scaffold.starter.security.identity.LoginUser;
-import com.sfi.scaffold.starter.security.permission.RequirePermission;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,7 +34,6 @@ public class DictTypeController {
         this.dictTypeService = dictTypeService;
     }
 
-    @RequirePermission(SupportConstants.PERM_DICT_SAVE)
     @OperateLog(module = "字典管理", operation = "维护字典类型")
     @PostMapping
     public R<SysDictType> save(@Valid @RequestBody DictTypeRequest req) {
@@ -43,7 +41,6 @@ public class DictTypeController {
                 req.getRemark(), req.getStatus(), req.getTenantId()));
     }
 
-    @RequirePermission(SupportConstants.PERM_DICT_SAVE)
     @OperateLog(module = "字典管理", operation = "删除字典类型")
     @PostMapping("/delete")
     public R<Void> delete(@Valid @RequestBody IdRequest req) {

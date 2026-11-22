@@ -5,7 +5,6 @@ import com.sfi.matrix.iam.audit.entity.SysOperateLog;
 import com.sfi.matrix.iam.constant.IamConstants;
 import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.query.QueryUtilsX;
-import com.sfi.scaffold.starter.security.permission.RequirePermission;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,14 +22,12 @@ import javax.servlet.http.HttpServletRequest;
 @RequestMapping("/api/audit")
 public class AuditController {
 
-    @RequirePermission(IamConstants.PERM_USER)
     @GetMapping("/login-logs")
     public R<Page<SysLoginLog>> loginLogs(HttpServletRequest request) {
         return R.ok(QueryUtilsX.doQuery(QueryUtilsX.parse(request.getParameterMap()),
                 PageRequest.of(page(request), size(request)), SysLoginLog.class));
     }
 
-    @RequirePermission(IamConstants.PERM_USER)
     @GetMapping("/operate-logs")
     public R<Page<SysOperateLog>> operateLogs(HttpServletRequest request) {
         return R.ok(QueryUtilsX.doQuery(QueryUtilsX.parse(request.getParameterMap()),

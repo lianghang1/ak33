@@ -10,7 +10,6 @@ import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.query.QueryUtilsX;
 import com.sfi.scaffold.starter.security.identity.LoginContext;
 import com.sfi.scaffold.starter.security.identity.LoginUser;
-import com.sfi.scaffold.starter.security.permission.RequirePermission;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,7 +37,6 @@ public class ConfigController {
         this.configService = configService;
     }
 
-    @RequirePermission(SupportConstants.PERM_CONFIG_SAVE)
     @OperateLog(module = "参数管理", operation = "维护系统参数")
     @PostMapping
     public R<SysConfig> save(@Valid @RequestBody ConfigRequest req) {
@@ -46,7 +44,6 @@ public class ConfigController {
                 req.getValueType(), req.getSensitive(), req.getRemark(), req.getTenantId()));
     }
 
-    @RequirePermission(SupportConstants.PERM_CONFIG_SAVE)
     @OperateLog(module = "参数管理", operation = "删除系统参数")
     @PostMapping("/delete")
     public R<Void> delete(@Valid @RequestBody IdRequest req) {

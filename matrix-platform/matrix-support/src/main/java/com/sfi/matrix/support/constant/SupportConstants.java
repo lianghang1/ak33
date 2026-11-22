@@ -25,7 +25,7 @@ public final class SupportConstants {
     /** 默认配置分组（未指定 group 的参数归此组） */
     public static final String CONFIG_GROUP_DEFAULT = "DEFAULT";
 
-    // ===== 平台管理权限点 sys_menu.permission（@RequirePermission 用）=====
+    // ===== 平台管理权限点 sys_menu.permission（URL 权限拦截用）=====
     /** 字典管理（读：列表/详情/选项） */
     public static final String PERM_DICT = "platform:dict:list";
     /** 字典维护（写：新增/修改/删除） */

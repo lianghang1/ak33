@@ -55,7 +55,7 @@ public final class IamConstants {
     // 数据范围决策的会话键统一用框架 com.sfi.scaffold.common.datascope.DataScopeKeys.ATTR_DECISION，
     // 不在业务侧重复定义，避免与框架漂移。
 
-    // ===== 平台管理权限点 sys_menu.permission（@RequirePermission 用） =====
+    // ===== 平台管理权限点 sys_menu.permission（URL 权限拦截用） =====
     // 与 seedPlatformMenus 一一对应：接口标注的权限点必须在 PLATFORM 菜单里存在，
     // 否则平台超管动态推导时也拿不到、会被 403。
     /** 租户管理 */

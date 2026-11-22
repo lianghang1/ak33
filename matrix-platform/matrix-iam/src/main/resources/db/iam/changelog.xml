@@ -8,4 +8,5 @@
 
     <include file="db/iam/changes/001-create-iam-schema.xml"/>
     <include file="db/iam/changes/002-create-audit-log.xml"/>
+    <include file="db/iam/changes/003-add-menu-api-pattern.xml"/>
 </databaseChangeLog>

@@ -18,7 +18,6 @@ import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.query.QueryUtilsX;
 import com.sfi.scaffold.starter.security.identity.LoginContext;
 import com.sfi.scaffold.starter.security.identity.LoginUser;
-import com.sfi.scaffold.starter.security.permission.RequirePermission;
 import com.sfi.scaffold.starter.security.policy.PasswordPolicyValidator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -82,7 +81,6 @@ public class IamController {
     }
 
     @OperateLog(module = "租户管理", operation = "新增/修改租户")
-    @RequirePermission(IamConstants.PERM_TENANT)
     @PostMapping("/tenant")
     public R<SysTenant> saveTenant(@Valid @RequestBody TenantRequest req) {
         if (req.getId() == null) {
@@ -98,27 +96,23 @@ public class IamController {
                 req.getExpireTime(), req.getStatus(), req.getRemark()));
     }
 
-    @RequirePermission(IamConstants.PERM_TENANT)
     @GetMapping("/tenant")
     public R<SysTenant> getTenant(@RequestParam Long id) {
         return R.ok(iamService.getTenant(id));
     }
 
-    @RequirePermission(IamConstants.PERM_TENANT)
     @PostMapping("/tenant/delete")
     public R<Void> deleteTenant(@Valid @RequestBody IdRequest req) {
         iamService.deleteTenant(req.getId());
         return R.ok();
     }
 
-    @RequirePermission(IamConstants.PERM_TENANT)
     @GetMapping("/tenants")
     public R<Page<SysTenant>> tenants(HttpServletRequest request) {
         return R.ok(query(request, SysTenant.class));
     }
 
     // ===== 套餐 =====
-    @RequirePermission(IamConstants.PERM_PACKAGE)
     @PostMapping("/package")
     public R<SysTenantPackage> savePackage(@Valid @RequestBody PackageRequest req) {
         if (req.getId() == null) {
@@ -127,26 +121,22 @@ public class IamController {
         return R.ok(iamService.updatePackage(req.getId(), req.getPackageName(), req.getRemark(), req.getStatus()));
     }
 
-    @RequirePermission(IamConstants.PERM_PACKAGE)
     @GetMapping("/package")
     public R<SysTenantPackage> getPackage(@RequestParam Long id) {
         return R.ok(iamService.getPackage(id));
     }
 
-    @RequirePermission(IamConstants.PERM_PACKAGE)
     @PostMapping("/package/delete")
     public R<Void> deletePackage(@Valid @RequestBody IdRequest req) {
         iamService.deletePackage(req.getId());
         return R.ok();
     }
 
-    @RequirePermission(IamConstants.PERM_PACKAGE)
     @GetMapping("/packages")
     public R<Page<SysTenantPackage>> packages(HttpServletRequest request) {
         return R.ok(query(request, SysTenantPackage.class));
     }
 
-    @RequirePermission(IamConstants.PERM_PACKAGE)
     @PostMapping("/assign-package-menus")
     public R<Void> assignPackageMenus(@Valid @RequestBody AssignMenusRequest req) {
         iamService.assignPackageMenus(req.getPackageId(), req.getMenuIds());
@@ -155,7 +145,6 @@ public class IamController {
 
     // ===== 用户 =====
     @OperateLog(module = "用户管理", operation = "新增/修改用户")
-    @RequirePermission(IamConstants.PERM_USER)
     @PostMapping("/user")
     public R<SysUser> saveUser(@Valid @RequestBody UserRequest req) {
         if (req.getId() == null) {
@@ -167,40 +156,34 @@ public class IamController {
                 req.getAccountType(), req.getStatus()));
     }
 
-    @RequirePermission(IamConstants.PERM_USER)
     @GetMapping("/user")
     public R<SysUser> getUser(@RequestParam Long id) {
         return R.ok(iamService.getUser(id));
     }
 
     @OperateLog(module = "用户管理", operation = "删除用户")
-    @RequirePermission(IamConstants.PERM_USER)
     @PostMapping("/user/delete")
     public R<Void> deleteUser(@Valid @RequestBody IdRequest req) {
         iamService.deleteUser(req.getId());
         return R.ok();
     }
 
-    @RequirePermission(IamConstants.PERM_USER)
     @GetMapping("/users")
     public R<Page<SysUser>> users(HttpServletRequest request) {
         return R.ok(query(request, SysUser.class));
     }
 
-    @RequirePermission(IamConstants.PERM_USER)
     @PostMapping("/assign-tenant")
     public R<SysUserTenant> assignTenant(@Valid @RequestBody AssignTenantRequest req) {
         return R.ok(iamService.assignTenant(req.getUserId(), req.getTenantId(), req.getDeptId()));
     }
 
-    @RequirePermission(IamConstants.PERM_USER)
     @GetMapping("/user-tenants")
     public R<List<SysUserTenant>> userTenants(@RequestParam Long userId) {
         return R.ok(iamService.userTenants(userId));
     }
 
     // ===== 部门 =====
-    @RequirePermission(IamConstants.PERM_DEPT)
     @PostMapping("/dept")
     public R<SysDept> saveDept(@Valid @RequestBody DeptRequest req) {
         if (req.getId() == null) {
@@ -211,27 +194,23 @@ public class IamController {
                 req.getSortNo(), req.getLeaderId(), req.getStatus()));
     }
 
-    @RequirePermission(IamConstants.PERM_DEPT)
     @GetMapping("/dept")
     public R<SysDept> getDept(@RequestParam Long id) {
         return R.ok(iamService.getDept(id));
     }
 
-    @RequirePermission(IamConstants.PERM_DEPT)
     @PostMapping("/dept/delete")
     public R<Void> deleteDept(@Valid @RequestBody IdRequest req) {
         iamService.deleteDept(req.getId());
         return R.ok();
     }
 
-    @RequirePermission(IamConstants.PERM_DEPT)
     @GetMapping("/depts")
     public R<Page<SysDept>> depts(HttpServletRequest request) {
         return R.ok(query(request, SysDept.class));
     }
 
     // ===== 角色 =====
-    @RequirePermission(IamConstants.PERM_ROLE)
     @PostMapping("/role")
     public R<SysRole> saveRole(@Valid @RequestBody RoleRequest req) {
         if (req.getId() == null) {
@@ -243,27 +222,23 @@ public class IamController {
                 req.getDataScopeDeptIds(), req.getSortNo(), req.getRemark()));
     }
 
-    @RequirePermission(IamConstants.PERM_ROLE)
     @GetMapping("/role")
     public R<SysRole> getRole(@RequestParam Long id) {
         return R.ok(iamService.getRole(id));
     }
 
-    @RequirePermission(IamConstants.PERM_ROLE)
     @PostMapping("/role/delete")
     public R<Void> deleteRole(@Valid @RequestBody IdRequest req) {
         iamService.deleteRole(req.getId());
         return R.ok();
     }
 
-    @RequirePermission(IamConstants.PERM_ROLE)
     @GetMapping("/roles")
     public R<Page<SysRole>> roles(HttpServletRequest request) {
         return R.ok(query(request, SysRole.class));
     }
 
     // ===== 菜单（全局定义） =====
-    @RequirePermission(IamConstants.PERM_MENU)
     @PostMapping("/menu")
     public R<SysMenu> saveMenu(@Valid @RequestBody MenuRequest req) {
         if (req.getId() == null) {
@@ -277,13 +252,11 @@ public class IamController {
                 req.getPermission(), req.getMenuScope(), req.getSortNo(), req.getVisible()));
     }
 
-    @RequirePermission(IamConstants.PERM_MENU)
     @GetMapping("/menu")
     public R<SysMenu> getMenu(@RequestParam Long id) {
         return R.ok(iamService.getMenu(id));
     }
 
-    @RequirePermission(IamConstants.PERM_MENU)
     @PostMapping("/menu/delete")
     public R<Void> deleteMenu(@Valid @RequestBody IdRequest req) {
         iamService.deleteMenu(req.getId());
@@ -313,14 +286,12 @@ public class IamController {
 
     // ===== 授权 =====
     @OperateLog(module = "角色管理", operation = "分配角色")
-    @RequirePermission(IamConstants.PERM_ROLE)
     @PostMapping("/assign-roles")
     public R<Void> assignRoles(@Valid @RequestBody AssignRolesRequest req) {
         iamService.assignRoles(req.getUserId(), req.getRoleIds(), req.getTenantId());
         return R.ok();
     }
 
-    @RequirePermission(IamConstants.PERM_ROLE)
     @PostMapping("/assign-menus")
     public R<Void> assignMenus(@Valid @RequestBody AssignMenusRequest req) {
         iamService.assignMenus(req.getRoleId(), req.getMenuIds(), req.getTenantId());
@@ -328,13 +299,11 @@ public class IamController {
     }
 
     // ===== 权限计算（带租户维度） =====
-    @RequirePermission(IamConstants.PERM_ROLE)
     @GetMapping("/user-roles")
     public R<List<String>> userRoles(@RequestParam Long userId, @RequestParam String tenantId) {
         return R.ok(iamService.userRoleCodes(userId, tenantId));
     }
 
-    @RequirePermission(IamConstants.PERM_ROLE)
     @GetMapping("/user-permissions")
     public R<Set<String>> userPermissions(@RequestParam Long userId, @RequestParam String tenantId) {
         return R.ok(iamService.userPermissions(userId, tenantId));
