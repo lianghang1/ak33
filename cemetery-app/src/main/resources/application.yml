@@ -41,6 +41,9 @@ scaffold:
   security:
     token:
       ttl-seconds: ${TOKEN_TTL_SECONDS:3600}
+    # URL 权限严格模式：false=未配菜单 api_pattern 的 URL 放行（本地开发友好）；
+    # true=未命中规则的 URL 一律 403，强制每个受控端点补齐 pattern。生产必须打开。
+    url-permission-strict: ${URL_PERMISSION_STRICT:false}
   # 敏感参数存储加密（如支付密钥）：密钥必须环境变量注入，禁止硬编码；信创环境 type 改 SM4
   crypto:
     type: ${CRYPTO_TYPE:AES}

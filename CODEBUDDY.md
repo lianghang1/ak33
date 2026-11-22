@@ -59,9 +59,11 @@ query 通路的租户 / 部门过滤由 starter 的 `ParamFilter` / `QueryInterc
 ### 3.1 授权：URL 拦截（强制，不用注解）
 
 - **授权按 URL + HTTP 方法裁决，禁止在 controller 方法上贴权限注解**（旧的 `@RequirePermission`/`PermissionInterceptor` 已移除）。
-- scaffold 提供 `UrlPermissionProvider` 契约与 `UrlPermissionInterceptor`（Spring `AntPathMatcher`，支持 `?`/`*`/`**`，多条命中取最具体）。业务实现 Provider 提供「URL 模式 → 权限点」规则：`@Anonymous` 接口短路放行、无规则命中的 URL 由 `anyRequest().authenticated()` 兜底（登录即可）、命中则 any-of 校验、无权 403。
+- scaffold 提供 `UrlPermissionProvider` 契约与 `UrlPermissionInterceptor`（Spring `AntPathMatcher`，支持 `?`/`*`/`**`，多条命中取最具体）。业务实现 Provider 提供「URL 模式 → 权限点」规则：`@Anonymous` 与 `permit-urls` 白名单短路放行、命中规则则 any-of 校验无权 403、**无规则命中**由开关决定（见下）。
+- **`scaffold.security.url-permission-strict` 开关**（默认 `false`）：`false`（本地开发）= 未命中规则的 URL 放行，等价于隐式「登录即可」，不必给每个接口配 pattern；`true`（生产，**必须打开**）= 未命中规则的 URL 一律 403，强制每个受控端点补齐 pattern，fail-closed。matrix 用 `URL_PERMISSION_STRICT` 环境变量注入，生产配置显式设为 `true`。无论取值，`@Anonymous` 与 `permit-urls` 始终放行，命中规则正常鉴权。
 - matrix 侧 `MenuUrlPermissionProvider` 从 `sys_menu.api_pattern` 加载规则：多个模式逗号分隔，可带 `METHOD:` 前缀区分读写（如 `GET:/api/dict/**,POST:/api/dict/**` 分别落到 list/save 权限点）。**改权限=改菜单表数据，不发版。**
-- 平台菜单由 `PlatformInitializer.seedPlatformMenus` 幂等播种 api_pattern；新增受控端点必须同步补一条菜单 URL 规则，否则会「登录即可访问」形成权限缺口。
+- 平台菜单由 `PlatformInitializer.seedPlatformMenus` 幂等播种 api_pattern；新增受控端点必须同步补一条菜单 URL 规则——**严格模式下漏配会直接 403**，非严格模式下会「登录即可访问」形成权限缺口。
+- **禁止引入 actuator / 健康检查 / 指标暴露端点**（`/actuator/**` 等）：安全审计不允许，框架已移除 observability starter 及相关埋点；系统不对外暴露任何自带状态接口。
 - 认证**动作**按业务实现（与芋道 ruoyi-vue-pro 同构，不用 `AuthenticationManager` / `DaoAuthenticationProvider` / 表单登录），但必须：
   - 多登录方式归一到统一的认证策略接口（`AuthenticationStrategy`），再走公用的登录装配 `LoginAssembler`。
   - 当前用户一律用 `LoginContext.current()`，禁止裸用 `SecurityContextHolder` 取业务身份。
