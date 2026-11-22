@@ -21,10 +21,11 @@
     <!--
       按最终仓库边界聚合：每个顶层模块 = 未来一个独立 git 仓库。
       - matrix-platform → 平台仓（被复用的基础能力：iam + support）
-      将来加公墓/寄存等独立系统，新增顶层目录 + 这里加一行 module。
+      - cemetery-app     → 公墓系统宿主（可独立部署的 boot app，公墓业务后续在此扩展）
       拆仓时：把顶层文件夹整个拷到新仓库即可，其根 pom 已自包含版本声明。
     -->
     <modules>
         <module>matrix-platform</module>
+        <module>cemetery-app</module>
     </modules>
 </project>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  公墓 app 主 changelog：聚合所有依赖模块的 changelog。
+  新增能力模块时，在此追加一行 include 即可（被引入模块的 changelog 自包含）。
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <!-- 平台能力 -->
+    <include file="db/iam/changelog.xml"/>
+    <include file="db/support/changelog.xml"/>
+
+    <!-- 公墓业务表：后续在此追加 -->
+
+</databaseChangeLog>
