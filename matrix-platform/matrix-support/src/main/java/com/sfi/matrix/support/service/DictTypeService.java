@@ -35,24 +35,27 @@ public class DictTypeService extends BaseService<SysDictType> {
         this.iamService = iamService;
     }
 
+    /** 覆盖基类 save：base 控制器把 DTO 转成实体后调本方法，幂等/缓存逻辑留在 Service。 */
+    @Override
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = SupportConstants.CACHE_DICT_TYPE, allEntries = true)
-    public SysDictType save(Long id, String dictType, String dictName, String remark,
-                            Integer status, String tenantId) {
+    public SysDictType save(SysDictType incoming) {
         SysDictType entity;
-        if (id != null) {
-            entity = require(id); // 更新传入不存在的 id 按 NOT_FOUND 处理
+        if (incoming.getId() != null) {
+            entity = require(incoming.getId()); // 更新传入不存在的 id 按 NOT_FOUND 处理
         } else {
-            String tid = resolveTenantId(tenantId);
-            entity = typeRepository.findByDictTypeAndTenantIdAndDeletedFalse(dictType, tid).orElseGet(SysDictType::new);
+            String tid = resolveTenantId(incoming.getTenantId());
+            entity = typeRepository
+                    .findByDictTypeAndTenantIdAndDeletedFalse(incoming.getDictType(), tid)
+                    .orElseGet(SysDictType::new);
             if (entity.getId() == null) {
-                entity.setDictType(dictType);
+                entity.setDictType(incoming.getDictType());
                 entity.setTenantId(tid);
             }
         }
-        if (dictName != null) entity.setDictName(dictName);
-        if (remark != null) entity.setRemark(remark);
-        if (status != null) entity.setStatus(status);
+        if (incoming.getDictName() != null) entity.setDictName(incoming.getDictName());
+        if (incoming.getRemark() != null) entity.setRemark(incoming.getRemark());
+        if (incoming.getStatus() != null) entity.setStatus(incoming.getStatus());
         return typeRepository.save(entity);
     }
 

@@ -42,31 +42,39 @@ public class ConfigService extends BaseService<SysConfig> {
         this.iamService = iamService;
     }
 
+    /**
+     * 覆盖基类 save：base 控制器把 DTO 转成实体后调本方法。
+     *
+     * <p>业务骨架保持在 Service——按 (tenantId, group, key) 幂等定位、敏感值加密落库、
+     * 缓存失效， Controller 只负责请求绑定与 DTO 装配。API 入参 configValue 一律明文。</p>
+     */
+    @Override
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = {SupportConstants.CACHE_CONFIG, SupportConstants.CACHE_CONFIG_GROUP}, allEntries = true)
-    public SysConfig save(Long id, String configGroup, String configKey, String configValue,
-                          String valueType, Boolean sensitive, String remark, String tenantId) {
-        String group = defaultGroup(configGroup);
+    public SysConfig save(SysConfig incoming) {
+        String group = defaultGroup(incoming.getConfigGroup());
+        Long id = incoming.getId();
         SysConfig config;
         if (id != null) {
             config = getRaw(id);
         } else {
-            String tid = tenantId != null && !tenantId.isEmpty() ? tenantId : DictTypeService.currentTenantId();
+            String tid = incoming.getTenantId() != null && !incoming.getTenantId().isEmpty()
+                    ? incoming.getTenantId() : DictTypeService.currentTenantId();
             config = configRepository
-                    .findByTenantIdAndConfigGroupAndConfigKeyAndDeletedFalse(tid, group, configKey)
+                    .findByTenantIdAndConfigGroupAndConfigKeyAndDeletedFalse(tid, group, incoming.getConfigKey())
                     .orElseGet(SysConfig::new);
             if (config.getId() == null) {
                 config.setConfigGroup(group);
-                config.setConfigKey(configKey);
+                config.setConfigKey(incoming.getConfigKey());
                 config.setTenantId(tid);
             }
         }
-        boolean isSensitive = Boolean.TRUE.equals(sensitive);
+        boolean isSensitive = Boolean.TRUE.equals(incoming.getSensitive());
         // API 入参 configValue 一律为明文：敏感项加密后落库
-        config.setConfigValue(isSensitive ? DataCipherHolder.get().encrypt(configValue) : configValue);
+        config.setConfigValue(isSensitive ? DataCipherHolder.get().encrypt(incoming.getConfigValue()) : incoming.getConfigValue());
         config.setSensitive(isSensitive);
-        if (valueType != null) config.setValueType(valueType);
-        if (remark != null) config.setRemark(remark);
+        if (incoming.getValueType() != null) config.setValueType(incoming.getValueType());
+        if (incoming.getRemark() != null) config.setRemark(incoming.getRemark());
         configRepository.save(config);
         return plainCopy(config);
     }
@@ -163,8 +171,8 @@ public class ConfigService extends BaseService<SysConfig> {
         return raw;
     }
 
-    /** 明文副本：不修改被 JPA 管理的实体，避免脏检查把解密后的明文写回库。 */
-    private SysConfig plainCopy(SysConfig src) {
+    /** 明文副本：不修改被 JPA 管理的实体，避免脏检查把解密后的明文写回库。列表脱敏亦复用它。 */
+    public SysConfig plainCopy(SysConfig src) {
         SysConfig copy = new SysConfig();
         copy.setId(src.getId());
         copy.setTenantId(src.getTenantId());

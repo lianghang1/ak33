@@ -1,61 +1,55 @@
 package com.sfi.matrix.support.controller;
 
 import com.sfi.matrix.iam.audit.annotation.OperateLog;
-import com.sfi.matrix.support.constant.SupportConstants;
 import com.sfi.matrix.support.dto.DictTypeRequest;
-import com.sfi.matrix.support.dto.IdRequest;
 import com.sfi.matrix.support.entity.SysDictType;
 import com.sfi.matrix.support.service.DictTypeService;
+import com.sfi.scaffold.common.request.IdRequest;
 import com.sfi.scaffold.common.result.R;
-import com.sfi.scaffold.starter.security.identity.LoginContext;
-import com.sfi.scaffold.starter.security.identity.LoginUser;
+import com.sfi.scaffold.starter.web.crud.BaseCrudController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.util.List;
 
 /**
- * 字典类型接口。管理"有哪些字典"，列表带平台兜底。写操作 POST + JSON DTO。
+ * 字典类型接口：标准 CRUD 由 {@link BaseCrudController} 提供，平台兜底列表单独保留。
+ *
+ * <p>基类端点：GET /list、GET /get?id=、POST /save、POST /delete；
+ * 兜底列表避让到 GET /all。写操作仍走 DictTypeService.save(E) 的幂等+缓存逻辑。</p>
  *
  * @author matrix
  */
 @RestController
 @RequestMapping("/api/dict-type")
-public class DictTypeController {
+public class DictTypeController extends BaseCrudController<SysDictType, DictTypeRequest, DictTypeService> {
 
-    private final DictTypeService dictTypeService;
-
-    public DictTypeController(DictTypeService dictTypeService) {
-        this.dictTypeService = dictTypeService;
+    public DictTypeController(DictTypeService service) {
+        super(service, SysDictType.class);
     }
 
+    /** 覆盖基类 save 仅为叠加审计；映射注解需重新声明，业务仍走基类 → Service.save(E)。 */
+    @Override
     @OperateLog(module = "字典管理", operation = "维护字典类型")
-    @PostMapping
-    public R<SysDictType> save(@Valid @RequestBody DictTypeRequest req) {
-        return R.ok(dictTypeService.save(req.getId(), req.getDictType(), req.getDictName(),
-                req.getRemark(), req.getStatus(), req.getTenantId()));
+    @PostMapping("/save")
+    public R<SysDictType> save(@Valid @RequestBody DictTypeRequest dto) {
+        return super.save(dto);
     }
 
+    @Override
     @OperateLog(module = "字典管理", operation = "删除字典类型")
     @PostMapping("/delete")
     public R<Void> delete(@Valid @RequestBody IdRequest req) {
-        dictTypeService.delete(req.getId());
-        return R.ok();
+        return super.delete(req);
     }
 
-    @GetMapping
-    public R<SysDictType> get(@RequestParam Long id) {
-        return R.ok(dictTypeService.get(id));
-    }
-
-    /** 类型列表（带平台兜底） */
-    @GetMapping("/list")
-    public R<List<SysDictType>> list() {
-        return R.ok(dictTypeService.listWithPlatformFallback(DictTypeService.currentTenantId()));
+    /** 类型列表（带平台兜底）：避让基类 /list，保留原业务语义。 */
+    @GetMapping("/all")
+    public R<List<SysDictType>> all() {
+        return R.ok(service.listWithPlatformFallback(DictTypeService.currentTenantId()));
     }
 }

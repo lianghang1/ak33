@@ -38,26 +38,28 @@ public class DictDataService extends BaseService<SysDictData> {
         this.iamService = iamService;
     }
 
+    /** 覆盖基类 save：base 控制器把 DTO 转成实体后调本方法，幂等/缓存逻辑留在 Service。 */
+    @Override
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = SupportConstants.CACHE_DICT_DATA, allEntries = true)
-    public SysDictData save(Long id, String dictType, String dictCode, String dictLabel,
-                            int sortNo, Integer status, String tenantId) {
+    public SysDictData save(SysDictData incoming) {
         SysDictData data;
-        if (id != null) {
-            data = require(id); // 更新传入不存在的 id 按 NOT_FOUND 处理
+        if (incoming.getId() != null) {
+            data = require(incoming.getId()); // 更新传入不存在的 id 按 NOT_FOUND 处理
         } else {
-            String tid = tenantId != null && !tenantId.isEmpty() ? tenantId : DictTypeService.currentTenantId();
-            data = dataRepository.findByDictTypeAndDictCodeAndTenantIdAndDeletedFalse(dictType, dictCode, tid)
-                    .orElseGet(SysDictData::new);
+            String tid = incoming.getTenantId() != null && !incoming.getTenantId().isEmpty()
+                    ? incoming.getTenantId() : DictTypeService.currentTenantId();
+            data = dataRepository.findByDictTypeAndDictCodeAndTenantIdAndDeletedFalse(
+                    incoming.getDictType(), incoming.getDictCode(), tid).orElseGet(SysDictData::new);
             if (data.getId() == null) {
-                data.setDictType(dictType);
-                data.setDictCode(dictCode);
+                data.setDictType(incoming.getDictType());
+                data.setDictCode(incoming.getDictCode());
                 data.setTenantId(tid);
             }
         }
-        if (dictLabel != null) data.setDictLabel(dictLabel);
-        data.setSortNo(sortNo);
-        if (status != null) data.setStatus(status);
+        if (incoming.getDictLabel() != null) data.setDictLabel(incoming.getDictLabel());
+        data.setSortNo(incoming.getSortNo() == null ? 0 : incoming.getSortNo());
+        if (incoming.getStatus() != null) data.setStatus(incoming.getStatus());
         return dataRepository.save(data);
     }
 
