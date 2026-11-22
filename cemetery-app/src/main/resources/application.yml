@@ -41,6 +41,10 @@ scaffold:
   security:
     token:
       ttl-seconds: ${TOKEN_TTL_SECONDS:3600}
+  # 敏感参数存储加密（如支付密钥）：密钥必须环境变量注入，禁止硬编码；信创环境 type 改 SM4
+  crypto:
+    type: ${CRYPTO_TYPE:AES}
+    key: ${CRYPTO_KEY:dev-only-key-change-me}
   # 两级缓存：Caffeine L1 + Redis L2（字典/参数读多写少）
   cache:
     type: ${CACHE_TYPE:two-level}

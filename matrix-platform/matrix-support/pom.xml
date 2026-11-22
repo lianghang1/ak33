@@ -40,6 +40,11 @@
             <groupId>com.sfi.scaffold</groupId>
             <artifactId>scaffold-starter-cache</artifactId>
         </dependency>
+        <!-- 敏感参数（如支付密钥）选择性存储加密：DataCipher SPI -->
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-crypto</artifactId>
+        </dependency>
         <!-- 平台默认配置兜底：查 PLATFORM 租户 ID（iam 不反向依赖 support，无环） -->
         <dependency>
             <groupId>com.sfi.matrix.platform</groupId>

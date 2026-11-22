@@ -42,8 +42,8 @@ public class ConfigController {
     @OperateLog(module = "参数管理", operation = "维护系统参数")
     @PostMapping
     public R<SysConfig> save(@Valid @RequestBody ConfigRequest req) {
-        return R.ok(configService.save(req.getId(), req.getConfigKey(), req.getConfigValue(),
-                req.getValueType(), req.getRemark(), req.getTenantId()));
+        return R.ok(configService.save(req.getId(), req.getConfigGroup(), req.getConfigKey(), req.getConfigValue(),
+                req.getValueType(), req.getSensitive(), req.getRemark(), req.getTenantId()));
     }
 
     @RequirePermission(SupportConstants.PERM_CONFIG_SAVE)
@@ -68,12 +68,28 @@ public class ConfigController {
                 PageRequest.of(page, size), SysConfig.class));
     }
 
-    /** 取值：当前租户 → 平台兜底 */
+    /** 取值（默认分组）：当前租户 → 平台兜底，敏感值解密返回 */
     @GetMapping("/get")
     public R<String> get(@RequestParam String configKey) {
         LoginUser current = LoginContext.currentOrNull();
         String tenantId = current == null ? null : current.getTenantId();
         return R.ok(configService.get(configKey, tenantId));
+    }
+
+    /** 分组取值：如 /get?group=wechat.pay&configKey=apiKey */
+    @GetMapping("/get-by-group")
+    public R<String> getByGroup(@RequestParam String group, @RequestParam String configKey) {
+        LoginUser current = LoginContext.currentOrNull();
+        String tenantId = current == null ? null : current.getTenantId();
+        return R.ok(configService.get(group, configKey, tenantId));
+    }
+
+    /** 整组取值（带平台兜底，敏感值已解密） */
+    @GetMapping("/list-by-group")
+    public R<java.util.List<SysConfig>> listByGroup(@RequestParam String group) {
+        LoginUser current = LoginContext.currentOrNull();
+        String tenantId = current == null ? null : current.getTenantId();
+        return R.ok(configService.listByGroup(group, tenantId));
     }
 
     private static int parseInt(String v, int def) {

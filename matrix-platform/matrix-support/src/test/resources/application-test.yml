@@ -31,6 +31,12 @@ matrix:
 scaffold:
   tenant:
     enabled: true
+  # 测试专用密钥（非生产）：敏感参数加密链路验证用
+  crypto:
+    type: AES
+    key: test-only-crypto-key-for-support
+  cache:
+    type: two-level
   web:
     access-log:
       enabled: false

@@ -24,6 +24,10 @@ public class SysConfig extends BaseEntity {
     @Column(name = "tenant_id")
     private String tenantId;
 
+    /** 配置分组：DEFAULT 或如 wechat.pay（一组多 key 配置） */
+    @Column(name = "config_group")
+    private String configGroup;
+
     @Column(name = "config_key")
     private String configKey;
 
@@ -34,6 +38,10 @@ public class SysConfig extends BaseEntity {
     @Column(name = "value_type")
     private String valueType;
 
+    /** 是否敏感值：true 时写入加密落库、读取解密返回 */
+    @Column(name = "sensitive")
+    private Boolean sensitive = Boolean.FALSE;
+
     @Column(name = "remark")
     private String remark;
 
@@ -43,6 +51,14 @@ public class SysConfig extends BaseEntity {
 
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
+    }
+
+    public String getConfigGroup() {
+        return configGroup;
+    }
+
+    public void setConfigGroup(String configGroup) {
+        this.configGroup = configGroup;
     }
 
     public String getConfigKey() {
@@ -67,6 +83,14 @@ public class SysConfig extends BaseEntity {
 
     public void setValueType(String valueType) {
         this.valueType = valueType;
+    }
+
+    public Boolean getSensitive() {
+        return sensitive;
+    }
+
+    public void setSensitive(Boolean sensitive) {
+        this.sensitive = sensitive;
     }
 
     public String getRemark() {

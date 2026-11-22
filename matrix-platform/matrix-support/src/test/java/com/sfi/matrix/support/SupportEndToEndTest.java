@@ -188,4 +188,53 @@ class SupportEndToEndTest {
         JsonNode items = ok(list);
         assertTrue(items.isArray() && items.size() >= 1);
     }
+
+    @Test
+    @Order(7)
+    void configGroupAndSensitiveEncryption() throws Exception {
+        final String plainApiKey = "wechat-api-v3-key-plaintext-123456";
+        // 微信支付一组多 key：appId（非敏感）+ apiKey（敏感，加密落库）
+        Map<String, Object> appId = new HashMap<>();
+        appId.put("configGroup", "wechat.pay");
+        appId.put("configKey", "appId");
+        appId.put("configValue", "wx1234567890abcdef");
+        ok(postJson("/api/config", appId, adminToken));
+
+        Map<String, Object> apiKey = new HashMap<>();
+        apiKey.put("configGroup", "wechat.pay");
+        apiKey.put("configKey", "apiKey");
+        apiKey.put("configValue", plainApiKey);
+        apiKey.put("sensitive", true);
+        JsonNode saved = ok(postJson("/api/config", apiKey, adminToken));
+        assertTrue(saved.path("sensitive").asBoolean());
+        assertEquals(plainApiKey, saved.path("configValue").asText(), "保存响应应返回明文");
+
+        // 1) DB 原始值必须是密文（不等于明文）
+        String dbRaw = configRepository
+                .findByTenantIdAndConfigGroupAndConfigKeyAndDeletedFalse(
+                        saved.path("tenantId").asText(), "wechat.pay", "apiKey")
+                .orElseThrow().getConfigValue();
+        assertNotEquals(plainApiKey, dbRaw, "敏感值落库必须为密文");
+        assertFalse(dbRaw.contains(plainApiKey));
+
+        // 2) 按分组取值，API 返回解密明文
+        MvcResult got = mockMvc.perform(get("/api/config/get-by-group")
+                        .param("group", "wechat.pay").param("configKey", "apiKey")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn();
+        assertEquals(plainApiKey, ok(got).asText(), "分组取值应返回解密明文");
+
+        // 3) 整组读取：两条都在，apiKey 明文、appId 明文
+        MvcResult group = mockMvc.perform(get("/api/config/list-by-group")
+                        .param("group", "wechat.pay")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn();
+        JsonNode items = ok(group);
+        assertTrue(items.isArray() && items.size() >= 2);
+        for (JsonNode item : items) {
+            if ("apiKey".equals(item.path("configKey").asText())) {
+                assertEquals(plainApiKey, item.path("configValue").asText());
+            }
+        }
+    }
 }

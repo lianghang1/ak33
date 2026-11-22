@@ -18,8 +18,12 @@ public final class SupportConstants {
     public static final String CACHE_DICT_TYPE = "support:dictType";
     /** 字典选项列表缓存：key = 租户ID + 类型 */
     public static final String CACHE_DICT_DATA = "support:dictData";
-    /** 系统参数缓存：key = 租户ID + 参数键 */
+    /** 系统参数缓存：key = 租户ID + 分组 + 参数键 */
     public static final String CACHE_CONFIG = "support:config";
+    /** 系统参数分组列表缓存：key = 租户ID + 分组 */
+    public static final String CACHE_CONFIG_GROUP = "support:configGroup";
+    /** 默认配置分组（未指定 group 的参数归此组） */
+    public static final String CONFIG_GROUP_DEFAULT = "DEFAULT";
 
     // ===== 平台管理权限点 sys_menu.permission（@RequirePermission 用）=====
     /** 字典管理（读：列表/详情/选项） */

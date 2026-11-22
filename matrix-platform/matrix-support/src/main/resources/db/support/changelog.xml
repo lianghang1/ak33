@@ -8,4 +8,5 @@
 
     <include file="db/support/changes/001-create-support-schema.xml"/>
     <include file="db/support/changes/002-dict-split-and-config-valuetype.xml"/>
+    <include file="db/support/changes/003-config-group-sensitive.xml"/>
 </databaseChangeLog>
