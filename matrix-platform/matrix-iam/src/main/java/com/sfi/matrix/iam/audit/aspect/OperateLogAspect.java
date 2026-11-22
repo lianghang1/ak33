@@ -1,6 +1,8 @@
 package com.sfi.matrix.iam.audit.aspect;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sfi.scaffold.common.annotation.CrudResource;
+import com.sfi.scaffold.common.annotation.CrudResourceMeta;
 import com.sfi.matrix.iam.audit.annotation.OperateLog;
 import com.sfi.matrix.iam.audit.entity.SysOperateLog;
 import com.sfi.matrix.iam.audit.service.AuditService;
@@ -44,6 +46,29 @@ public class OperateLogAspect {
 
     @Around("@annotation(operateLog)")
     public Object around(ProceedingJoinPoint pjp, OperateLog operateLog) throws Throwable {
+        return proceedAndAudit(pjp, operateLog.module(), operateLog.operation());
+    }
+
+    /**
+     * 通用 CRUD 资源写操作审计：基类模板方法不带 @OperateLog，
+     * 这里对带 @CrudResource 的 controller 按方法名归约动作，只审计 save/delete。
+     */
+    @Around("@within(com.sfi.scaffold.common.annotation.CrudResource)")
+    public Object aroundCrudResource(ProceedingJoinPoint pjp) throws Throwable {
+        CrudResource cr = pjp.getTarget().getClass().getAnnotation(CrudResource.class);
+        if (cr == null) {
+            return pjp.proceed();
+        }
+        CrudResourceMeta.Action action =
+                CrudResourceMeta.actionOf(pjp.getSignature().getName());
+        // 只审计写操作，查询类不落审计
+        if (action != CrudResourceMeta.Action.SAVE && action != CrudResourceMeta.Action.DELETE) {
+            return pjp.proceed();
+        }
+        return proceedAndAudit(pjp, cr.module(), CrudResourceMeta.operationOf(action));
+    }
+
+    private Object proceedAndAudit(ProceedingJoinPoint pjp, String module, String operation) throws Throwable {
         long start = System.currentTimeMillis();
         boolean success = true;
         String errorMsg = null;
@@ -56,7 +81,7 @@ public class OperateLogAspect {
             throw t;
         } finally {
             try {
-                auditService.recordOperate(buildLog(pjp, operateLog, success, errorMsg,
+                auditService.recordOperate(buildLog(pjp, module, operation, success, errorMsg,
                         System.currentTimeMillis() - start));
             } catch (Exception ignored) {
                 // 审计失败不影响业务
@@ -64,11 +89,11 @@ public class OperateLogAspect {
         }
     }
 
-    private SysOperateLog buildLog(ProceedingJoinPoint pjp, OperateLog op, boolean success,
+    private SysOperateLog buildLog(ProceedingJoinPoint pjp, String module, String operation, boolean success,
                                    String errorMsg, long costMs) {
         SysOperateLog log = new SysOperateLog();
-        log.setModule(op.module());
-        log.setOperation(op.operation());
+        log.setModule(module);
+        log.setOperation(operation);
         log.setMethod(pjp.getSignature().toShortString());
         log.setSuccess(success);
         log.setErrorMsg(errorMsg);

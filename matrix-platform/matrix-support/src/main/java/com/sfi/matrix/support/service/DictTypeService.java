@@ -4,10 +4,9 @@ import com.sfi.matrix.iam.service.IamService;
 import com.sfi.matrix.support.constant.SupportConstants;
 import com.sfi.matrix.support.entity.SysDictType;
 import com.sfi.matrix.support.repository.SysDictTypeRepository;
-import com.sfi.scaffold.common.exception.BizException;
-import com.sfi.scaffold.common.exception.GlobalErrorCode;
 import com.sfi.scaffold.starter.security.identity.LoginContext;
 import com.sfi.scaffold.starter.security.identity.LoginUser;
+import com.sfi.scaffold.starter.data.jpa.service.BaseService;
 import com.sfi.scaffold.starter.tenant.annotation.TenantIgnore;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -25,12 +24,13 @@ import java.util.List;
  * @author matrix
  */
 @Service
-public class DictTypeService {
+public class DictTypeService extends BaseService<SysDictType> {
 
     private final SysDictTypeRepository typeRepository;
     private final IamService iamService;
 
     public DictTypeService(SysDictTypeRepository typeRepository, IamService iamService) {
+        super(typeRepository);
         this.typeRepository = typeRepository;
         this.iamService = iamService;
     }
@@ -56,18 +56,13 @@ public class DictTypeService {
         return typeRepository.save(entity);
     }
 
-    public SysDictType get(Long id) {
-        return typeRepository.findById(id)
-                .filter(t -> !Boolean.TRUE.equals(t.getDeleted()))
-                .orElseThrow(() -> BizException.of(GlobalErrorCode.NOT_FOUND, "字典类型不存在：" + id));
-    }
+    // get(Long) 继承 BaseService：逻辑删除过滤 + NOT_FOUND 统一语义。
 
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = SupportConstants.CACHE_DICT_TYPE, allEntries = true)
+    @Override
     public void delete(Long id) {
-        SysDictType t = get(id);
-        t.setDeleted(Boolean.TRUE);
-        typeRepository.save(t);
+        super.delete(id); // 逻辑删除骨架在基类，这里只叠加缓存失效
     }
 
     /** 类型列表（带平台兜底）：按租户缓存，key 为租户ID。 */

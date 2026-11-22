@@ -5,8 +5,7 @@ import com.sfi.matrix.support.constant.SupportConstants;
 import com.sfi.matrix.support.entity.SysConfig;
 import com.sfi.matrix.support.repository.SysConfigRepository;
 import com.sfi.scaffold.common.crypto.DataCipherHolder;
-import com.sfi.scaffold.common.exception.BizException;
-import com.sfi.scaffold.common.exception.GlobalErrorCode;
+import com.sfi.scaffold.starter.data.jpa.service.BaseService;
 import com.sfi.scaffold.starter.security.identity.LoginContext;
 import com.sfi.scaffold.starter.security.identity.LoginUser;
 import com.sfi.scaffold.starter.tenant.annotation.TenantIgnore;
@@ -32,12 +31,13 @@ import java.util.List;
  * @author matrix
  */
 @Service
-public class ConfigService {
+public class ConfigService extends BaseService<SysConfig> {
 
     private final SysConfigRepository configRepository;
     private final IamService iamService;
 
     public ConfigService(SysConfigRepository configRepository, IamService iamService) {
+        super(configRepository);
         this.configRepository = configRepository;
         this.iamService = iamService;
     }
@@ -71,23 +71,22 @@ public class ConfigService {
         return plainCopy(config);
     }
 
-    /** 详情：返回明文副本。 */
+    /** 详情：返回明文副本（覆盖基类，避免密文/污染 JPA 实体）。 */
+    @Override
     public SysConfig get(Long id) {
-        return plainCopy(getRaw(id));
+        return plainCopy(super.get(id));
     }
 
+    /** 取原始（可能为密文）实体，供 save 装配用；复用基类 get 的过滤+NOT_FOUND。 */
     private SysConfig getRaw(Long id) {
-        return configRepository.findById(id)
-                .filter(c -> !Boolean.TRUE.equals(c.getDeleted()))
-                .orElseThrow(() -> BizException.of(GlobalErrorCode.NOT_FOUND, "参数不存在：" + id));
+        return super.get(id);
     }
 
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = {SupportConstants.CACHE_CONFIG, SupportConstants.CACHE_CONFIG_GROUP}, allEntries = true)
+    @Override
     public void delete(Long id) {
-        SysConfig c = getRaw(id);
-        c.setDeleted(Boolean.TRUE);
-        configRepository.save(c);
+        super.delete(id); // 逻辑删除骨架在基类，这里只叠加缓存失效
     }
 
     /**

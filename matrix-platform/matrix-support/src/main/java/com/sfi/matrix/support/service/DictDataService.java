@@ -4,8 +4,7 @@ import com.sfi.matrix.iam.service.IamService;
 import com.sfi.matrix.support.constant.SupportConstants;
 import com.sfi.matrix.support.entity.SysDictData;
 import com.sfi.matrix.support.repository.SysDictDataRepository;
-import com.sfi.scaffold.common.exception.BizException;
-import com.sfi.scaffold.common.exception.GlobalErrorCode;
+import com.sfi.scaffold.starter.data.jpa.service.BaseService;
 import com.sfi.scaffold.starter.tenant.annotation.TenantIgnore;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -28,12 +27,13 @@ import java.util.stream.Collectors;
  * @author matrix
  */
 @Service
-public class DictDataService {
+public class DictDataService extends BaseService<SysDictData> {
 
     private final SysDictDataRepository dataRepository;
     private final IamService iamService;
 
     public DictDataService(SysDictDataRepository dataRepository, IamService iamService) {
+        super(dataRepository);
         this.dataRepository = dataRepository;
         this.iamService = iamService;
     }
@@ -61,18 +61,13 @@ public class DictDataService {
         return dataRepository.save(data);
     }
 
-    public SysDictData get(Long id) {
-        return dataRepository.findById(id)
-                .filter(d -> !Boolean.TRUE.equals(d.getDeleted()))
-                .orElseThrow(() -> BizException.of(GlobalErrorCode.NOT_FOUND, "字典选项不存在：" + id));
-    }
+    // get(Long) 继承 BaseService：逻辑删除过滤 + NOT_FOUND 统一语义。
 
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = SupportConstants.CACHE_DICT_DATA, allEntries = true)
+    @Override
     public void delete(Long id) {
-        SysDictData d = get(id);
-        d.setDeleted(Boolean.TRUE);
-        dataRepository.save(d);
+        super.delete(id); // 逻辑删除骨架在基类，这里只叠加缓存失效
     }
 
     /** 按类型取选项，租户过滤由 scaffold @Filter 自动完成。 */

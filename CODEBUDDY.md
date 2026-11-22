@@ -37,6 +37,21 @@ query 通路的租户 / 部门过滤由 starter 的 `ParamFilter` / `QueryInterc
 - **GET** 承载查询：从 request 直接提取参数 map 走 query starter（见 1.2）。
 - **POST** 承载写操作与动作：请求体**必须是 JSON**，用 `@RequestBody` + DTO（带 `@Valid` 校验），不用 `@RequestParam` 堆参数。
 
+### 2.1 通用 CRUD 分层（纯单表资源优先复用）
+
+平台基础层已提供自下而上的通用 CRUD 骨架，纯单表维护型资源**不再手写** list/get/save/delete：
+
+| 层 | 位置 | 职责 |
+|---|---|---|
+| `BaseService<E extends BaseEntity>` | scaffold-starter-data-jpa | `get`（逻辑删除过滤+NOT_FOUND）/`find`/`exists`/`delete`（逻辑删除）/`saveEntity`，差异方法留子类 |
+| `QuerySupport` | scaffold-starter-query | list 统一派发：有 `plan` 走白名单计划（通路③），无 plan 用默认实体（通路②）；1 基分页、`PageResult` 返回、`pageNum/pageSize`（兼容 `page/size`） |
+| `@CrudResource` | scaffold-common | 类级声明 entity/dto/module 与各动作权限点（any-of），权限拦截器与审计切面共用 |
+| `AbstractCrudController<E,D,S>` | scaffold-starter-web | 模板方法实现 list/get/save/delete；子类零方法，仅贴 `@CrudResource` + 构造器注入 |
+
+- 页码基准**全平台统一 1 基**（对齐 common 的 `PageParam`/`PageResult`），禁止再用 `PageRequest.of(page,size)` 的 0 基裸语义。
+- `QuerySupport` 的 plan/entity 派发是**派发器**而非通路混用：命中哪条通路该通路全程自洽，默认实体由后端写死、plan 只能选 `@QueryPlanX` 白名单内的类。
+- **强业务特化资源不接基类**：如 config（加密/分组/明文副本）、dict（平台兜底/幂等 upsert）、iam 授权动作——它们保留各自的 Service/Controller 实现，只让 Service 继承 `BaseService` 复用 `get/delete` 骨架，Controller 保持特化端点不动。判定标准：写操作带业务规则（加密/兜底/唯一键/复杂装配）即不套 `save` 模板。
+
 ## 3. 认证与 Spring Security 边界
 
 - scaffold 只用 Spring Security 做**授权边界**：`SecurityFilterChain` + `anyRequest().authenticated()` 兜底、`@Anonymous` → permitAll、`TokenAuthenticationFilter` → `SecurityContextHolder`、`BCryptPasswordEncoder`、401/403 统一 JSON。
