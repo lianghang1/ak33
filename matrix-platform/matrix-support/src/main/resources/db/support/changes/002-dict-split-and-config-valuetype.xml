@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <!-- 字典由单表 sys_dict 演进为主子表：sys_dict_type（类型）+ sys_dict_data（选项） -->
+
+    <changeSet id="support-002-sys-dict-type" author="matrix">
+        <createTable tableName="sys_dict_type" remarks="字典类型（主表）">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_dict_type"/>
+            </column>
+            <column name="tenant_id" type="VARCHAR(64)" remarks="租户ID"/>
+            <column name="dict_type" type="VARCHAR(64)" remarks="字典类型编码">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dict_name" type="VARCHAR(128)" remarks="字典类型名称"/>
+            <column name="remark" type="VARCHAR(255)"/>
+            <column name="status" type="INT" defaultValueNumeric="1" remarks="1启用 0停用">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_dict_type"
+                             columnNames="tenant_id, dict_type, deleted"
+                             constraintName="uk_sys_dict_type_code"/>
+        <createIndex tableName="sys_dict_type" indexName="idx_sys_dict_type_tenant">
+            <column name="tenant_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="support-002-sys-dict-data" author="matrix">
+        <createTable tableName="sys_dict_data" remarks="字典选项（明细表）">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_dict_data"/>
+            </column>
+            <column name="tenant_id" type="VARCHAR(64)" remarks="租户ID"/>
+            <column name="dict_type" type="VARCHAR(64)" remarks="所属类型编码">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dict_code" type="VARCHAR(64)" remarks="选项编码">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dict_label" type="VARCHAR(128)" remarks="选项显示名">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sort_no" type="INT"/>
+            <column name="status" type="INT" defaultValueNumeric="1" remarks="1启用 0停用">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_dict_data"
+                             columnNames="tenant_id, dict_type, dict_code, deleted"
+                             constraintName="uk_sys_dict_data_code"/>
+        <createIndex tableName="sys_dict_data" indexName="idx_sys_dict_data_type">
+            <column name="dict_type"/>
+        </createIndex>
+        <createIndex tableName="sys_dict_data" indexName="idx_sys_dict_data_tenant">
+            <column name="tenant_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- 迁移旧 sys_dict 选项到 sys_dict_data（列结构兼容，直接搬运，沿用原主键） -->
+    <changeSet id="support-002-migrate-sys-dict" author="matrix">
+        <sql>
+            INSERT INTO sys_dict_data (id, tenant_id, dict_type, dict_code, dict_label, sort_no,
+                                       status, create_time, update_time, create_by, update_by, deleted)
+            SELECT id, tenant_id, dict_type, dict_code, dict_label, sort_no,
+                   status, create_time, update_time, create_by, update_by, deleted
+            FROM sys_dict
+        </sql>
+    </changeSet>
+
+    <!-- 旧表保留但重命名归档，避免误用；类型记录由使用方按需补建（dict_type = 原 dict_type） -->
+    <changeSet id="support-002-archive-sys-dict" author="matrix">
+        <renameTable oldTableName="sys_dict" newTableName="sys_dict_legacy"/>
+    </changeSet>
+
+    <!-- config 增加 value_type：STRING（默认）/ INT / BOOL / JSON -->
+    <changeSet id="support-002-config-value-type" author="matrix">
+        <addColumn tableName="sys_config">
+            <column name="value_type" type="VARCHAR(16)" defaultValue="STRING" remarks="值类型 STRING/INT/BOOL/JSON"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

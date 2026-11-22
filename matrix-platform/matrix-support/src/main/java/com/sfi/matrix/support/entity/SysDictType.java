@@ -1,4 +1,4 @@
-package com.sfi.matrix.support.dict.entity;
+package com.sfi.matrix.support.entity;
 
 import com.sfi.scaffold.starter.data.jpa.entity.BaseEntity;
 import com.sfi.scaffold.starter.tenant.aspect.JpaTenantFilterAspect;
@@ -9,33 +9,34 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 /**
- * 数据字典项。
+ * 字典类型（主表）。
  *
- * <p>type + code 唯一定位一个字典项，type 相同的若干项构成一个下拉选项集。</p>
+ * <p>描述"有哪些字典"，如 sys_normal_disable（系统正常/停用）。
+ * 具体选项在 {@link SysDictData} 中按 dictType 关联。类型本身可独立命名、
+ * 备注、整组启停，这是单表设计无法表达的。</p>
  *
  * @author matrix
  */
 @Entity
-@Table(name = "sys_dict")
+@Table(name = "sys_dict_type")
 @Filter(name = JpaTenantFilterAspect.FILTER_NAME, condition = "tenant_id = :tenantId")
-public class SysDict extends BaseEntity {
+public class SysDictType extends BaseEntity {
 
     @Column(name = "tenant_id")
     private String tenantId;
 
+    /** 字典类型编码，如 sys_normal_disable */
     @Column(name = "dict_type")
     private String dictType;
 
-    @Column(name = "dict_code")
-    private String dictCode;
+    /** 字典类型名称，如"系统正常/停用" */
+    @Column(name = "dict_name")
+    private String dictName;
 
-    @Column(name = "dict_label")
-    private String dictLabel;
+    @Column(name = "remark")
+    private String remark;
 
-    @Column(name = "sort_no")
-    private Integer sortNo;
-
-    /** 状态：1启用 0停用 */
+    /** 状态：1启用 0停用（整组选项的开关） */
     @Column(name = "status")
     private Integer status = 1;
 
@@ -55,28 +56,20 @@ public class SysDict extends BaseEntity {
         this.dictType = dictType;
     }
 
-    public String getDictCode() {
-        return dictCode;
+    public String getDictName() {
+        return dictName;
     }
 
-    public void setDictCode(String dictCode) {
-        this.dictCode = dictCode;
+    public void setDictName(String dictName) {
+        this.dictName = dictName;
     }
 
-    public String getDictLabel() {
-        return dictLabel;
+    public String getRemark() {
+        return remark;
     }
 
-    public void setDictLabel(String dictLabel) {
-        this.dictLabel = dictLabel;
-    }
-
-    public Integer getSortNo() {
-        return sortNo;
-    }
-
-    public void setSortNo(Integer sortNo) {
-        this.sortNo = sortNo;
+    public void setRemark(String remark) {
+        this.remark = remark;
     }
 
     public Integer getStatus() {

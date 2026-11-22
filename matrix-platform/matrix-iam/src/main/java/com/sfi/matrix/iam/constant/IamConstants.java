@@ -70,8 +70,12 @@ public final class IamConstants {
     public static final String PERM_ROLE = "platform:role:list";
     /** 菜单管理 */
     public static final String PERM_MENU = "platform:menu:list";
-    /** 字典管理 */
+    /** 字典管理（读） */
     public static final String PERM_DICT = "platform:dict:list";
-    /** 参数管理 */
+    /** 字典维护（写）——与 support.SupportConstants.PERM_DICT_SAVE 值一致 */
+    public static final String PERM_DICT_SAVE = "platform:dict:save";
+    /** 参数管理（读） */
     public static final String PERM_CONFIG = "platform:config:list";
+    /** 参数维护（写）——与 support.SupportConstants.PERM_CONFIG_SAVE 值一致 */
+    public static final String PERM_CONFIG_SAVE = "platform:config:save";
 }

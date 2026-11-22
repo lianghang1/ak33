@@ -1,6 +1,6 @@
-package com.sfi.matrix.support.param.repository;
+package com.sfi.matrix.support.repository;
 
-import com.sfi.matrix.support.param.entity.SysConfig;
+import com.sfi.matrix.support.entity.SysConfig;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

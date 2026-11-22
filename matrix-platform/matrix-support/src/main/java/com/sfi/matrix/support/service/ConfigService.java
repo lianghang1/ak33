@@ -1,21 +1,25 @@
-package com.sfi.matrix.support.param.service;
+package com.sfi.matrix.support.service;
 
 import com.sfi.matrix.iam.service.IamService;
-import com.sfi.matrix.support.param.entity.SysConfig;
-import com.sfi.matrix.support.param.repository.SysConfigRepository;
+import com.sfi.matrix.support.constant.SupportConstants;
+import com.sfi.matrix.support.entity.SysConfig;
+import com.sfi.matrix.support.repository.SysConfigRepository;
 import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.exception.GlobalErrorCode;
 import com.sfi.scaffold.starter.security.identity.LoginContext;
 import com.sfi.scaffold.starter.security.identity.LoginUser;
 import com.sfi.scaffold.starter.tenant.annotation.TenantIgnore;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 系统参数服务：CRUD + 平台默认兜底。
+ * 系统参数服务：CRUD + 平台默认兜底 + 缓存。
  *
  * <p>取值顺序：当前租户配置 → 平台租户（PLATFORM）配置 → null。
- * 写入按 (tenant_id, config_key) 定位，支持租户覆盖平台默认。</p>
+ * 写入按 (tenant_id, config_key) 定位，支持租户覆盖平台默认。
+ * 值按租户+键缓存，写操作失效本租户与平台两级缓存。</p>
  *
  * @author matrix
  */
@@ -31,28 +35,23 @@ public class ConfigService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public SysConfig save(Long id, String configKey, String configValue, String remark, String tenantId) {
+    @CacheEvict(value = SupportConstants.CACHE_CONFIG, allEntries = true)
+    public SysConfig save(Long id, String configKey, String configValue, String valueType,
+                          String remark, String tenantId) {
         SysConfig config;
         if (id != null) {
             config = get(id);
         } else {
-            // 未显式指定租户时，归属当前登录租户（平台超管即在 PLATFORM 租户）
-            String tid = tenantId;
-            if (tid == null || tid.isEmpty()) {
-                LoginUser user = LoginContext.currentOrNull();
-                tid = user == null ? null : user.getTenantId();
-            }
-            final String finalTenantId = tid;
-            config = configRepository
-                    .findByTenantIdAndConfigKeyAndDeletedFalse(tid, configKey)
-                    .orElseGet(SysConfig::new);
+            String tid = tenantId != null && !tenantId.isEmpty() ? tenantId : DictTypeService.currentTenantId();
+            config = configRepository.findByTenantIdAndConfigKeyAndDeletedFalse(tid, configKey).orElseGet(SysConfig::new);
             if (config.getId() == null) {
                 config.setConfigKey(configKey);
-                config.setTenantId(finalTenantId);
+                config.setTenantId(tid);
             }
         }
         config.setConfigValue(configValue);
-        config.setRemark(remark);
+        if (valueType != null) config.setValueType(valueType);
+        if (remark != null) config.setRemark(remark);
         return configRepository.save(config);
     }
 
@@ -63,13 +62,15 @@ public class ConfigService {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = SupportConstants.CACHE_CONFIG, allEntries = true)
     public void delete(Long id) {
         SysConfig c = get(id);
         c.setDeleted(Boolean.TRUE);
         configRepository.save(c);
     }
 
-    /** 取值：当前租户 → 平台兜底。 */
+    /** 取值：当前租户 → 平台兜底，按租户+键缓存。 */
+    @Cacheable(value = SupportConstants.CACHE_CONFIG, key = "#tenantId + '|' + #configKey")
     @TenantIgnore
     public String get(String configKey, String currentTenantId) {
         SysConfig config = findInternal(configKey, currentTenantId);
@@ -85,11 +86,5 @@ public class ConfigService {
     @TenantIgnore
     private SysConfig findInternal(String configKey, String tenantId) {
         return configRepository.findByTenantIdAndConfigKeyAndDeletedFalse(tenantId, configKey).orElse(null);
-    }
-
-    /** 兼容旧签名：无显式租户时按值直查（有租户过滤器时即当前租户） */
-    public String get(String configKey) {
-        return configRepository.findByConfigKeyAndDeletedFalse(configKey)
-                .map(SysConfig::getConfigValue).orElse(null);
     }
 }

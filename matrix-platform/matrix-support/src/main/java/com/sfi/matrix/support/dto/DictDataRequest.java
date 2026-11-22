@@ -2,8 +2,8 @@ package com.sfi.matrix.support.dto;
 
 import javax.validation.constraints.NotBlank;
 
-/** 字典增改请求。id 为空=新增，非空=修改。 */
-public class DictRequest {
+/** 字典选项增改请求。id 为空=新增/覆盖，非空=修改。 */
+public class DictDataRequest {
 
     private Long id;
 

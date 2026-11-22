@@ -73,7 +73,9 @@ public class PlatformInitializer implements ApplicationRunner {
         seed(IamConstants.PERM_ROLE, "角色管理", "C", 50, null);
         seed(IamConstants.PERM_MENU, "菜单管理", "C", 60, null);
         seed(IamConstants.PERM_DICT, "字典管理", "C", 70, null);
+        seed(IamConstants.PERM_DICT_SAVE, "字典维护", "C", 71, null);
         seed(IamConstants.PERM_CONFIG, "参数管理", "C", 80, null);
+        seed(IamConstants.PERM_CONFIG_SAVE, "参数维护", "C", 81, null);
     }
 
     private void seed(String permission, String name, String type, int sortNo, Long parentId) {

@@ -35,6 +35,11 @@
             <groupId>com.sfi.scaffold</groupId>
             <artifactId>scaffold-starter-tenant</artifactId>
         </dependency>
+        <!-- 字典/参数读多写少：两级缓存（Caffeine L1 + Redis L2） -->
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-cache</artifactId>
+        </dependency>
         <!-- 平台默认配置兜底：查 PLATFORM 租户 ID（iam 不反向依赖 support，无环） -->
         <dependency>
             <groupId>com.sfi.matrix.platform</groupId>

@@ -13,6 +13,9 @@ public class ConfigRequest {
     @NotBlank(message = "参数值不能为空")
     private String configValue;
 
+    /** 值类型：STRING（默认）/ INT / BOOL / JSON */
+    private String valueType;
+
     private String remark;
     private String tenantId;
 
@@ -22,6 +25,8 @@ public class ConfigRequest {
     public void setConfigKey(String configKey) { this.configKey = configKey; }
     public String getConfigValue() { return configValue; }
     public void setConfigValue(String configValue) { this.configValue = configValue; }
+    public String getValueType() { return valueType; }
+    public void setValueType(String valueType) { this.valueType = valueType; }
     public String getRemark() { return remark; }
     public void setRemark(String remark) { this.remark = remark; }
     public String getTenantId() { return tenantId; }

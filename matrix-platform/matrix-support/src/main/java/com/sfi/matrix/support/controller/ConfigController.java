@@ -1,9 +1,11 @@
-package com.sfi.matrix.support.param.controller;
+package com.sfi.matrix.support.controller;
 
+import com.sfi.matrix.iam.audit.annotation.OperateLog;
+import com.sfi.matrix.support.constant.SupportConstants;
 import com.sfi.matrix.support.dto.ConfigRequest;
 import com.sfi.matrix.support.dto.IdRequest;
-import com.sfi.matrix.support.param.entity.SysConfig;
-import com.sfi.matrix.support.param.service.ConfigService;
+import com.sfi.matrix.support.entity.SysConfig;
+import com.sfi.matrix.support.service.ConfigService;
 import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.query.QueryUtilsX;
 import com.sfi.scaffold.starter.security.identity.LoginContext;
@@ -36,21 +38,22 @@ public class ConfigController {
         this.configService = configService;
     }
 
-    @RequirePermission("platform:config:list")
+    @RequirePermission(SupportConstants.PERM_CONFIG_SAVE)
+    @OperateLog(module = "参数管理", operation = "维护系统参数")
     @PostMapping
     public R<SysConfig> save(@Valid @RequestBody ConfigRequest req) {
         return R.ok(configService.save(req.getId(), req.getConfigKey(), req.getConfigValue(),
-                req.getRemark(), req.getTenantId()));
+                req.getValueType(), req.getRemark(), req.getTenantId()));
     }
 
-    @RequirePermission("platform:config:list")
+    @RequirePermission(SupportConstants.PERM_CONFIG_SAVE)
+    @OperateLog(module = "参数管理", operation = "删除系统参数")
     @PostMapping("/delete")
     public R<Void> delete(@Valid @RequestBody IdRequest req) {
         configService.delete(req.getId());
         return R.ok();
     }
 
-    @RequirePermission("platform:config:list")
     @GetMapping
     public R<SysConfig> get(@RequestParam Long id) {
         return R.ok(configService.get(id));
