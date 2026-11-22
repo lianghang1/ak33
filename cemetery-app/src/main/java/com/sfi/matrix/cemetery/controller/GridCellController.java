@@ -1,9 +1,11 @@
 package com.sfi.matrix.cemetery.controller;
 
+import com.sfi.matrix.cemetery.dto.GridCellSaveDto;
 import com.sfi.matrix.cemetery.dto.GridGenerateDto;
 import com.sfi.matrix.cemetery.entity.GridCell;
 import com.sfi.matrix.cemetery.service.GridCellService;
 import com.sfi.matrix.iam.audit.annotation.OperateLog;
+import com.sfi.scaffold.common.request.IdRequest;
 import com.sfi.scaffold.common.result.R;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,5 +49,20 @@ public class GridCellController {
     @GetMapping("/uninitialized")
     public R<List<GridCell>> uninitialized(@RequestParam Long areaId) {
         return R.ok(gridCellService.listUninitialized(areaId));
+    }
+
+    /** 修改空格位坐标（已初始化格位禁改）。 */
+    @OperateLog(module = "墓区管理", operation = "修改格位")
+    @PostMapping("/save")
+    public R<GridCell> save(@Valid @RequestBody GridCellSaveDto dto) {
+        return R.ok(gridCellService.update(dto.getId(), dto.getRowNo(), dto.getColNo()));
+    }
+
+    /** 删除空格位（已初始化格位禁删）。 */
+    @OperateLog(module = "墓区管理", operation = "删除格位")
+    @PostMapping("/delete")
+    public R<Void> delete(@Valid @RequestBody IdRequest req) {
+        gridCellService.delete(req.getId());
+        return R.ok();
     }
 }

@@ -106,6 +106,40 @@ public class TombService extends BaseService<Tomb> {
         return count;
     }
 
+    /**
+     * 修改墓位：仅穴位数与售价可改。编号/路径/策略/状态是初始化快照或由业务动作驱动，不在此改动。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Tomb update(Long id, int holes, BigDecimal salePrice) {
+        if (holes < 1) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "穴位数必须大于 0");
+        }
+        Tomb tomb = require(id);
+        tomb.setHoles(holes);
+        tomb.setSalePrice(salePrice);
+        return tombRepository.save(tomb);
+    }
+
+    /**
+     * 删除墓位：仅 INITIALIZED 态可删（已售/已落葬等业务态在 P1 流转后再定义删除规则）；
+     * 删除时回退来源格位——清空 tombId、initialized=false，使格位恢复为可再次初始化的空格。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(Long id) {
+        Tomb tomb = require(id);
+        if (!STATUS_INITIALIZED.equals(tomb.getStatus())) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "仅初始化状态的墓位可删除，当前状态：" + tomb.getStatus());
+        }
+        GridCell cell = gridCellRepository.findById(tomb.getGridCellId()).orElse(null);
+        if (cell != null) {
+            cell.setInitialized(Boolean.FALSE);
+            cell.setTombId(null);
+            gridCellRepository.save(cell);
+        }
+        super.delete(id);
+    }
+
     public List<Tomb> listByArea(Long areaId) {
         return tombRepository.findByAreaIdAndDeletedFalse(areaId);
     }

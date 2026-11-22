@@ -1,9 +1,11 @@
 package com.sfi.matrix.cemetery.controller;
 
 import com.sfi.matrix.cemetery.dto.TombInitDto;
+import com.sfi.matrix.cemetery.dto.TombSaveDto;
 import com.sfi.matrix.cemetery.entity.Tomb;
 import com.sfi.matrix.cemetery.service.TombService;
 import com.sfi.matrix.iam.audit.annotation.OperateLog;
+import com.sfi.scaffold.common.request.IdRequest;
 import com.sfi.scaffold.common.result.R;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,5 +49,20 @@ public class TombController {
     @GetMapping("/by-status")
     public R<List<Tomb>> byStatus(@RequestParam Long areaId, @RequestParam String status) {
         return R.ok(tombService.listByAreaAndStatus(areaId, status));
+    }
+
+    /** 修改墓位：仅穴位数与售价可改（编号/路径/状态快照不动）。 */
+    @OperateLog(module = "墓位管理", operation = "修改墓位")
+    @PostMapping("/save")
+    public R<Tomb> save(@Valid @RequestBody TombSaveDto dto) {
+        return R.ok(tombService.update(dto.getId(), dto.getHoles(), dto.getSalePrice()));
+    }
+
+    /** 删除墓位：仅初始化态可删，且回退来源格位为空闲。 */
+    @OperateLog(module = "墓位管理", operation = "删除墓位")
+    @PostMapping("/delete")
+    public R<Void> delete(@Valid @RequestBody IdRequest req) {
+        tombService.delete(req.getId());
+        return R.ok();
     }
 }

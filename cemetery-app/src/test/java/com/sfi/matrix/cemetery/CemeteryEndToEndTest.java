@@ -102,6 +102,14 @@ class CemeteryEndToEndTest {
                 .andExpect(status().isOk()).andReturn();
     }
 
+    /** 用于预期失败的场景：不断言 HTTP 状态（业务异常可能是 400）。 */
+    private MvcResult postJsonRaw(String url, Object body, String token) throws Exception {
+        MockHttpServletRequestBuilder b = post(url).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body));
+        if (token != null) b.header("Authorization", "Bearer " + token);
+        return mockMvc.perform(b).andReturn();
+    }
+
     @Test
     @Order(1)
     void login() throws Exception {
@@ -233,6 +241,88 @@ class CemeteryEndToEndTest {
         assertTrue(t.getBasePath().startsWith("林园/"), "基础路径应以根园名开头：" + t.getBasePath());
         assertTrue(t.getFullPath().startsWith("林园/"), "全路径应以根园名开头：" + t.getFullPath());
         assertEquals("BQU-01-01", t.getCode(), "区码应取叶子墓区编码");
+    }
+
+    @Test
+    @Order(6)
+    void gridCellUpdateAndDeleteRules() throws Exception {
+        long leafAreaId = findLeafAreaId();
+        List<GridCell> all = gridCellRepository.findByAreaIdAndDeletedFalse(leafAreaId);
+        GridCell free = all.stream().filter(c -> !Boolean.TRUE.equals(c.getInitialized())).findFirst().orElseThrow();
+        GridCell used = all.stream().filter(c -> Boolean.TRUE.equals(c.getInitialized())).findFirst().orElseThrow();
+
+        // 空格位：改坐标成功
+        Map<String, Object> upd = new HashMap<>();
+        upd.put("id", free.getId());
+        upd.put("rowNo", free.getRowNo());
+        upd.put("colNo", 99); // 改成未被占用的列
+        JsonNode updated = ok(postJson("/api/cemetery/grid/save", upd, adminToken));
+        assertEquals(99, updated.path("colNo").asInt());
+
+        // 空格位：删除成功（物理行 deleted 标记）
+        Map<String, Object> del = new HashMap<>();
+        del.put("id", free.getId());
+        ok(postJson("/api/cemetery/grid/delete", del, adminToken));
+        assertTrue(gridCellRepository.findById(free.getId()).orElseThrow().getDeleted());
+
+        // 已初始化格位：改坐标被拒
+        Map<String, Object> badUpd = new HashMap<>();
+        badUpd.put("id", used.getId());
+        badUpd.put("rowNo", 1);
+        badUpd.put("colNo", 1);
+        JsonNode updRej = okRaw(postJsonRaw("/api/cemetery/grid/save", badUpd, adminToken));
+        assertNotEquals(0, updRej.path("code").asInt(), "已初始化格位改坐标应被拒");
+
+        // 已初始化格位：删除被拒
+        Map<String, Object> badDel = new HashMap<>();
+        badDel.put("id", used.getId());
+        JsonNode delRej = okRaw(postJsonRaw("/api/cemetery/grid/delete", badDel, adminToken));
+        assertNotEquals(0, delRej.path("code").asInt(), "已初始化格位删除应被拒");
+    }
+
+    @Test
+    @Order(7)
+    void tombUpdateAndDeleteRollbackCell() throws Exception {
+        long leafAreaId = findLeafAreaId();
+        Tomb tomb = tombRepository.findByAreaIdAndDeletedFalse(leafAreaId).stream()
+                .filter(t -> TombService.STATUS_INITIALIZED.equals(t.getStatus())).findFirst().orElseThrow();
+        long tombId = tomb.getId();
+        long cellId = tomb.getGridCellId();
+        String codeBefore = tomb.getCode();
+
+        // 改：穴位/售价可变，编号快照不变
+        Map<String, Object> upd = new HashMap<>();
+        upd.put("id", tombId);
+        upd.put("holes", 8);
+        upd.put("salePrice", new BigDecimal("99999.00"));
+        JsonNode updated = ok(postJson("/api/cemetery/tomb/save", upd, adminToken));
+        assertEquals(8, updated.path("holes").asInt());
+        assertEquals(codeBefore, updated.path("code").asText(), "编号快照不应被修改");
+        assertEquals("INITIALIZED", updated.path("status").asText(), "状态不应被修改");
+
+        // 删：回退格位为空闲
+        Map<String, Object> del = new HashMap<>();
+        del.put("id", tombId);
+        ok(postJson("/api/cemetery/tomb/delete", del, adminToken));
+        assertTrue(tombRepository.findById(tombId).orElseThrow().getDeleted());
+        GridCell cell = gridCellRepository.findById(cellId).orElseThrow();
+        assertFalse(cell.getInitialized(), "删墓位后格位应回退为未初始化");
+        assertNull(cell.getTombId(), "删墓位后格位 tombId 应清空");
+
+        // 非 INITIALIZED 态删除被拒：直接改状态后尝试删除
+        Tomb another = tombRepository.findByAreaIdAndDeletedFalse(leafAreaId).stream()
+                .filter(t -> !t.getId().equals(tombId)).findFirst().orElseThrow();
+        another.setStatus("SOLD");
+        tombRepository.save(another);
+        Map<String, Object> del2 = new HashMap<>();
+        del2.put("id", another.getId());
+        JsonNode delRej = okRaw(postJsonRaw("/api/cemetery/tomb/delete", del2, adminToken));
+        assertNotEquals(0, delRej.path("code").asInt(), "非初始化态墓位删除应被拒");
+    }
+
+    /** 解析响应但不断言业务码（用于预期失败的场景）。 */
+    private JsonNode okRaw(MvcResult result) throws Exception {
+        return objectMapper.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8));
     }
 
     private long findLeafAreaId() {

@@ -63,6 +63,42 @@ public class GridCellService extends BaseService<GridCell> {
         return created;
     }
 
+    /**
+     * 修改空格位坐标（排/列）。仅未初始化的格位可改——已初始化格位的坐标已进入墓位编号快照，
+     * 改动会导致编号与坐标对不上。改后仍要满足同墓区内(排,列)唯一。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public GridCell update(Long id, Integer rowNo, Integer colNo) {
+        GridCell cell = require(id);
+        if (Boolean.TRUE.equals(cell.getInitialized())) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "已初始化的格位不能修改坐标");
+        }
+        if (rowNo == null || rowNo < 1 || colNo == null || colNo < 1) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "排号/列号必须大于 0");
+        }
+        gridCellRepository.findByAreaIdAndRowNoAndColNoAndDeletedFalse(cell.getAreaId(), rowNo, colNo)
+                .filter(other -> !other.getId().equals(id))
+                .ifPresent(other -> {
+                    throw BizException.of(GlobalErrorCode.BAD_REQUEST, "坐标已被占用：" + rowNo + "排" + colNo + "列");
+                });
+        cell.setRowNo(rowNo);
+        cell.setColNo(colNo);
+        return gridCellRepository.save(cell);
+    }
+
+    /**
+     * 删除格位：仅未初始化的空格位可删；已初始化格位关联着墓位，须先删除墓位。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(Long id) {
+        GridCell cell = require(id);
+        if (Boolean.TRUE.equals(cell.getInitialized())) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "已初始化的格位不能删除，请先删除对应墓位");
+        }
+        super.delete(id);
+    }
+
     public List<GridCell> listByArea(Long areaId) {
         return gridCellRepository.findByAreaIdAndDeletedFalse(areaId);
     }
