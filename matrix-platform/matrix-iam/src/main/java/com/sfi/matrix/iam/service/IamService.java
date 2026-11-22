@@ -426,7 +426,7 @@ public class IamService {
     // ===== 用户 =====
 
     @Transactional(rollbackFor = Exception.class)
-    public SysUser createUser(String username, String encodedPassword, String realName) {
+    public SysUser createUser(String username, String encodedPassword, String nickname) {
         userRepository.findByUsernameAndDeletedFalse(username).ifPresent(u -> {
             throw new IllegalArgumentException("用户名已存在：" + username);
         });
@@ -435,11 +435,11 @@ public class IamService {
         user.setPassword(encodedPassword);
         user.setStatus(1);
         user = userRepository.save(user);
-        saveProfile(user.getId(), realName);
+        saveProfile(user.getId(), nickname);
         return user;
     }
 
-    /** 建/更新用户资料（nickname 承接原 realName 语义），幂等。 */
+    /** 建/更新用户资料，幂等。 */
     private void saveProfile(Long userId, String nickname) {
         if (nickname == null || nickname.trim().isEmpty()) {
             return;
@@ -820,7 +820,7 @@ public class IamService {
      * 菜单不落库，权限由 roleType 动态推导。
      */
     @Transactional(rollbackFor = Exception.class)
-    public SysUser initPlatformAdmin(String username, String encodedPassword, String realName) {
+    public SysUser initPlatformAdmin(String username, String encodedPassword, String nickname) {
         SysTenant platform = initPlatformDomain();
         String tenantId = platform.getId().toString();
         SysRole adminRole = roleRepository.findByRoleCodeAndTenantIdAndDeletedFalse(
@@ -834,7 +834,7 @@ public class IamService {
             u.setStatus(1);
             return userRepository.save(u);
         });
-        saveProfile(admin.getId(), realName);
+        saveProfile(admin.getId(), nickname);
         userTenantRepository.findByUserIdAndTenantIdAndDeletedFalse(admin.getId(), tenantId).orElseGet(() -> {
             SysUserTenant ut = new SysUserTenant();
             ut.setUserId(admin.getId());
