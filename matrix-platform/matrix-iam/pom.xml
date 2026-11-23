@@ -44,6 +44,20 @@
             <artifactId>scaffold-starter-protection</artifactId>
         </dependency>
 
+        <!-- ===== Conflux 三方能力桥接（framework 收口，这里只写业务 SPI/调用） ===== -->
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-conflux-auth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-conflux-file</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sfi.scaffold</groupId>
+            <artifactId>scaffold-starter-conflux-pay</artifactId>
+        </dependency>
+
         <!-- ===== 测试：H2 + Liquibase + Redis 会话，端到端验证平台层 ===== -->
         <dependency>
             <groupId>com.sfi.scaffold</groupId>

@@ -20,12 +20,13 @@ import java.util.Map;
  *
  * <p><b>门面 = 骨架，不是实现</b>：本策略把社交登录的完整流程收口在一个地方——
  * 取 provider → 凭证核验 → 外部身份 → 绑定表找/建账号 → 统一 SysUser。骨架本身
- * <b>不接任何具体登录源</b>（微信/飞书/小程序/CAS 都不做），凭证核验仅留一个
- * 扩展点 {@link #resolveIdentity(String, Map)}，默认抛「未接入」显式失败而非静默放行。</p>
+ * <b>不接任何具体登录源</b>（微信/飞书/小程序等都不做），凭证核验委托
+ * {@link ConfluxIdentityResolver}——由 conflux 门面完成授权回调、state 校验、票据验签，
+ * 本策略只把它返回的身份翻译成账号，不碰任何授权流程细节。</p>
  *
- * <p>接入某个登录源时，只需覆盖 {@code resolveIdentity()}：自行从 credentials 取所需
- * 凭证键并核验、返回 {@link ExternalIdentity}。账号绑定/注册/资料建档等公共流程
- * 全部复用本门面，无需重写。</p>
+ * <p>{@link #resolveIdentity(String, Map)} 仍是可覆盖扩展点：默认走 conflux 核验；
+ * 特殊登录源可覆盖本方法自行核验并返回 {@link ExternalIdentity}，账号绑定/注册/资料建档
+ * 等公共流程全部复用本门面，无需重写。</p>
  *
  * @author matrix
  */
@@ -35,13 +36,16 @@ public class SocialAuthenticationStrategy implements AuthenticationStrategy {
     private final SysUserSocialRepository socialRepository;
     private final SysUserRepository userRepository;
     private final SysUserProfileRepository profileRepository;
+    private final ConfluxIdentityResolver identityResolver;
 
     public SocialAuthenticationStrategy(SysUserSocialRepository socialRepository,
                                         SysUserRepository userRepository,
-                                        SysUserProfileRepository profileRepository) {
+                                        SysUserProfileRepository profileRepository,
+                                        ConfluxIdentityResolver identityResolver) {
         this.socialRepository = socialRepository;
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
+        this.identityResolver = identityResolver;
     }
 
     @Override
@@ -109,15 +113,14 @@ public class SocialAuthenticationStrategy implements AuthenticationStrategy {
     /**
      * 凭证核验扩展点：把登录源凭证核验为统一外部身份。
      *
-     * <p>骨架默认抛「未接入」，显式失败。接入具体登录源时覆盖本方法：自行从 credentials
-     * 取所需键（code / ticket / SAMLResponse 等）、调用第三方核验、封装 ExternalIdentity 返回。
-     * 不声明为抽象，是为了让门面本身可作为 SOCIAL 策略注册而无需强制子类。</p>
+     * <p>默认委托 {@link ConfluxIdentityResolver} 走 conflux 门面核验（授权回调/state/验签
+     * 全在 conflux 内部）。特殊登录源可覆盖本方法自行核验并返回 {@link ExternalIdentity}。</p>
      *
      * @param provider    登录源标识
      * @param credentials 登录骨架转交的凭证（本策略不解释其内容）
      * @return 统一外部身份
      */
     protected ExternalIdentity resolveIdentity(String provider, Map<String, String> credentials) {
-        throw BizException.of(GlobalErrorCode.BAD_REQUEST, "登录源未接入：" + provider);
+        return identityResolver.resolve(provider, credentials);
     }
 }
