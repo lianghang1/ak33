@@ -8,6 +8,7 @@ import com.sfi.matrix.iam.repository.SysUserRepository;
 import com.sfi.matrix.iam.repository.SysUserSocialRepository;
 import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.exception.GlobalErrorCode;
+import com.sfi.scaffold.starter.security.online.AuthCredential;
 import com.sfi.scaffold.starter.security.online.ExternalIdentity;
 import com.sfi.scaffold.starter.security.online.OAuthIdentityProvider;
 import org.springframework.beans.factory.ObjectProvider;
@@ -21,8 +22,9 @@ import java.util.Map;
  * 社交认证策略：授权 code → 外部身份 → 绑定表找/建账号 → 统一 SysUser。
  *
  * <p><b>架构就位、实现可插拔</b>：本策略只依赖框架 SPI {@link OAuthIdentityProvider}，
- * 不接任何具体第三方。业务接入微信/支付宝/企业微信时，只需提供一个
- * {@code OAuthIdentityProvider} Bean（code 换 openId/unionId），无需改登录主流程。</p>
+ * 不接任何具体第三方。它按 provider 把登录骨架转交的 {@link AuthCredential} 路由到对应供应商，
+ * 不解释凭证内容（code / ticket / SAMLResponse 等由供应商自行取用）。接入新身份源只需提供
+ * 一个 {@code OAuthIdentityProvider} Bean，无需改登录主流程。</p>
  *
  * <p>没有配置任何实现时明确抛"未接入登录源"，而不是静默放行。</p>
  *
@@ -55,9 +57,8 @@ public class SocialAuthenticationStrategy implements AuthenticationStrategy {
     @Transactional(rollbackFor = Exception.class)
     public SysUser authenticate(Map<String, String> credentials) {
         String provider = credentials.get("provider");
-        String code = credentials.get("code");
-        if (provider == null || code == null) {
-            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "社交登录缺少 provider 或 code");
+        if (provider == null) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "社交登录缺少 provider");
         }
 
         OAuthIdentityProvider identityProvider = providers.stream()
@@ -66,7 +67,8 @@ public class SocialAuthenticationStrategy implements AuthenticationStrategy {
                 .orElseThrow(() -> BizException.of(GlobalErrorCode.BAD_REQUEST,
                         "登录源未接入：" + provider));
 
-        ExternalIdentity identity = identityProvider.exchange(code);
+        // 凭证原样转交供应商，本策略不解释凭证内容（code / ticket / SAMLResponse 由供应商自取）
+        ExternalIdentity identity = identityProvider.resolve(new AuthCredential(provider, credentials));
         if (identity == null || identity.getOpenId() == null) {
             throw BizException.of(GlobalErrorCode.UNAUTHORIZED, "社交身份换取失败");
         }
