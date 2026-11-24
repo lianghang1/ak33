@@ -1,6 +1,7 @@
 package com.sfi.matrix.cemetery.entity;
 
 import com.sfi.scaffold.starter.data.jpa.entity.BaseEntity;
+import com.sfi.scaffold.starter.data.jpa.logicdelete.JpaDeletedFilterAspect;
 import com.sfi.scaffold.starter.tenant.aspect.JpaTenantFilterAspect;
 import org.hibernate.annotations.Filter;
 
@@ -20,7 +21,12 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "cem_area")
 @Filter(name = JpaTenantFilterAspect.FILTER_NAME, condition = "tenant_id = :tenantId")
+@Filter(name = JpaDeletedFilterAspect.FILTER_NAME, condition = "deleted = false")
 public class CemeteryArea extends BaseEntity {
+
+    /** 逻辑删除标记，true=已删除；由字段名探测自动过滤 */
+    @Column(name = "deleted")
+    private Boolean deleted = Boolean.FALSE;
 
     /** 墓区编码，如 RY / A；同一 parent 下唯一 */
     @Column(name = "area_code", nullable = false, length = 32)
@@ -69,4 +75,12 @@ public class CemeteryArea extends BaseEntity {
 
     public String getTenantId() { return tenantId; }
     public void setTenantId(String tenantId) { this.tenantId = tenantId; }
+
+    public Boolean getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        this.deleted = deleted;
+    }
 }

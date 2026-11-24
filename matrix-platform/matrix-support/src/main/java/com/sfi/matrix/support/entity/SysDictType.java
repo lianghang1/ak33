@@ -1,6 +1,7 @@
 package com.sfi.matrix.support.entity;
 
 import com.sfi.scaffold.starter.data.jpa.entity.BaseEntity;
+import com.sfi.scaffold.starter.data.jpa.logicdelete.JpaDeletedFilterAspect;
 import com.sfi.scaffold.starter.tenant.aspect.JpaTenantFilterAspect;
 import org.hibernate.annotations.Filter;
 
@@ -20,7 +21,12 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "sys_dict_type")
 @Filter(name = JpaTenantFilterAspect.FILTER_NAME, condition = "tenant_id = :tenantId")
+@Filter(name = JpaDeletedFilterAspect.FILTER_NAME, condition = "deleted = false")
 public class SysDictType extends BaseEntity {
+
+    /** 逻辑删除标记，true=已删除；由字段名探测自动过滤 */
+    @Column(name = "deleted")
+    private Boolean deleted = Boolean.FALSE;
 
     @Column(name = "tenant_id")
     private String tenantId;
@@ -78,5 +84,13 @@ public class SysDictType extends BaseEntity {
 
     public void setStatus(Integer status) {
         this.status = status;
+    }
+
+    public Boolean getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        this.deleted = deleted;
     }
 }

@@ -1,6 +1,8 @@
 package com.sfi.matrix.iam.entity;
 
 import com.sfi.scaffold.starter.data.jpa.entity.BaseEntity;
+import com.sfi.scaffold.starter.data.jpa.logicdelete.JpaDeletedFilterAspect;
+import org.hibernate.annotations.Filter;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -17,7 +19,12 @@ import java.time.LocalDate;
  */
 @Entity
 @Table(name = "sys_tenant")
+@Filter(name = JpaDeletedFilterAspect.FILTER_NAME, condition = "deleted = false")
 public class SysTenant extends BaseEntity {
+
+    /** 逻辑删除标记，true=已删除；由字段名探测自动过滤 */
+    @Column(name = "deleted")
+    private Boolean deleted = Boolean.FALSE;
 
     @Column(name = "tenant_code")
     private String tenantCode;
@@ -86,5 +93,13 @@ public class SysTenant extends BaseEntity {
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    public Boolean getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        this.deleted = deleted;
     }
 }

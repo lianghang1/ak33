@@ -1,6 +1,8 @@
 package com.sfi.matrix.iam.audit.entity;
 
 import com.sfi.scaffold.starter.data.jpa.entity.BaseEntity;
+import com.sfi.scaffold.starter.data.jpa.logicdelete.JpaDeletedFilterAspect;
+import org.hibernate.annotations.Filter;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -16,7 +18,12 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "sys_login_log")
+@Filter(name = JpaDeletedFilterAspect.FILTER_NAME, condition = "deleted = false")
 public class SysLoginLog extends BaseEntity {
+
+    /** 逻辑删除标记，true=已删除；由字段名探测自动过滤 */
+    @Column(name = "deleted")
+    private Boolean deleted = Boolean.FALSE;
 
     @Column(name = "username")
     private String username;
@@ -59,4 +66,12 @@ public class SysLoginLog extends BaseEntity {
     public void setReason(String reason) { this.reason = reason; }
     public LocalDateTime getLoginTime() { return loginTime; }
     public void setLoginTime(LocalDateTime loginTime) { this.loginTime = loginTime; }
+
+    public Boolean getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        this.deleted = deleted;
+    }
 }

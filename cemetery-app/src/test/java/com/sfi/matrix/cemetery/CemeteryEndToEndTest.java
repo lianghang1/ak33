@@ -262,11 +262,11 @@ class CemeteryEndToEndTest {
         JsonNode updated = ok(postJson("/api/cemetery/grid/save", upd, adminToken));
         assertEquals(99, updated.path("colNo").asInt());
 
-        // 空格位：删除成功（物理行 deleted 标记）
+        // 空格位：删除成功（逻辑删除后按主键查不到）
         Map<String, Object> del = new HashMap<>();
         del.put("id", free.getId());
         ok(postJson("/api/cemetery/grid/delete", del, adminToken));
-        assertTrue(gridCellRepository.findById(free.getId()).orElseThrow().getDeleted());
+        assertTrue(gridCellRepository.findById(free.getId()).isEmpty());
 
         // 已初始化格位：改坐标被拒
         Map<String, Object> badUpd = new HashMap<>();
@@ -307,7 +307,7 @@ class CemeteryEndToEndTest {
         Map<String, Object> del = new HashMap<>();
         del.put("id", tombId);
         ok(postJson("/api/cemetery/tomb/delete", del, adminToken));
-        assertTrue(tombRepository.findById(tombId).orElseThrow().getDeleted());
+        assertTrue(tombRepository.findById(tombId).isEmpty());
         GridCell cell = gridCellRepository.findById(cellId).orElseThrow();
         assertFalse(cell.getInitialized(), "删墓位后格位应回退为未初始化");
         assertNull(cell.getTombId(), "删墓位后格位 tombId 应清空");
