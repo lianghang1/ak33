@@ -56,25 +56,6 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-
-        <createIndex tableName="sys_file" indexName="idx_sys_file_object">
-            <column name="tenant_id"/>
-            <column name="object_type"/>
-            <column name="object_id"/>
-        </createIndex>
-        <createIndex tableName="sys_file" indexName="idx_sys_file_location">
-            <column name="config_id"/>
-            <column name="channel_code"/>
-            <column name="path"/>
-        </createIndex>
-        <createIndex tableName="sys_file" indexName="idx_sys_file_md5">
-            <column name="tenant_id"/>
-            <column name="hash_md5"/>
-        </createIndex>
-        <createIndex tableName="sys_file" indexName="idx_sys_file_type">
-            <column name="tenant_id"/>
-            <column name="file_type"/>
-        </createIndex>
     </changeSet>
 
     <!-- 分片明细：临时数据，complete/abort 后物理删除，无 deleted 列 -->
@@ -95,11 +76,6 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-
-        <createIndex tableName="sys_file_part" indexName="idx_sys_file_part_upload">
-            <column name="multipart_upload_id"/>
-            <column name="part_number"/>
-        </createIndex>
     </changeSet>
 
 </databaseChangeLog>
