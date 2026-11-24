@@ -44,26 +44,18 @@
             <artifactId>scaffold-starter-protection</artifactId>
         </dependency>
 
-        <!-- ===== Conflux 三方能力桥接（framework 收口，这里只写业务 SPI/调用） ===== -->
+        <!-- ===== Conflux 登录能力：直接用 conflux 包，分布式 state 缓存由本模块适配（RedisStateCache） ===== -->
         <dependency>
-            <groupId>com.sfi.scaffold</groupId>
-            <artifactId>scaffold-starter-conflux-auth</artifactId>
+            <groupId>com.sfi.conflux</groupId>
+            <artifactId>conflux-auth-spring-boot-starter</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.sfi.scaffold</groupId>
-            <artifactId>scaffold-starter-conflux-file</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sfi.scaffold</groupId>
-            <artifactId>scaffold-starter-conflux-pay</artifactId>
-        </dependency>
-
-        <!-- ===== 测试：H2 + Liquibase + Redis 会话，端到端验证平台层 ===== -->
+        <!-- RedisStateCache 用 scaffold 的 RedisOps 落分布式 state，main 依赖故为 compile -->
         <dependency>
             <groupId>com.sfi.scaffold</groupId>
             <artifactId>scaffold-starter-redis</artifactId>
-            <scope>test</scope>
         </dependency>
+
+        <!-- ===== 测试：H2 + Liquibase + Redis 会话，端到端验证平台层 ===== -->
         <dependency>
             <groupId>com.sfi.scaffold</groupId>
             <artifactId>scaffold-starter-test</artifactId>

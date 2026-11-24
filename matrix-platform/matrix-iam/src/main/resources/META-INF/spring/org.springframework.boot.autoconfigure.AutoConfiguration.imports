@@ -1,1 +1,2 @@
 com.sfi.matrix.iam.config.IamAutoConfiguration
+com.sfi.matrix.iam.auth.config.ConfluxAuthBridgeAutoConfiguration
