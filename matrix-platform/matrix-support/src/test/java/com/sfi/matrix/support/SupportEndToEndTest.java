@@ -2,7 +2,11 @@ package com.sfi.matrix.support;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sfi.conflux.auth.config.AuthConfigProvider;
+import com.sfi.conflux.file.config.FileConfigProvider;
 import com.sfi.matrix.iam.config.IamAutoConfiguration;
+import com.sfi.matrix.support.config.DbAuthConfigProvider;
+import com.sfi.matrix.support.config.DbFileConfigProvider;
 import com.sfi.matrix.support.repository.SysConfigRepository;
 import com.sfi.matrix.support.repository.SysDictDataRepository;
 import com.sfi.matrix.support.repository.SysDictTypeRepository;
@@ -73,6 +77,8 @@ class SupportEndToEndTest {
 
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
+    @Autowired AuthConfigProvider authConfigProvider;
+    @Autowired FileConfigProvider fileConfigProvider;
     @Autowired SysDictTypeRepository dictTypeRepository;
     @Autowired SysDictDataRepository dictDataRepository;
     @Autowired SysConfigRepository configRepository;
@@ -170,9 +176,10 @@ class SupportEndToEndTest {
         cfg.put("configValue", "100");
         cfg.put("valueType", "INT");
         cfg.put("remark", "全局超时");
-        JsonNode saved = ok(postJson("/api/config/save", cfg, adminToken));
+        JsonNode saved = ok(postJson("/api/config/create", cfg, adminToken));
         assertNotNull(saved.path("id"));
         assertEquals("INT", saved.path("valueType").asText());
+        assertEquals("100", saved.path("configValue").asText(), "非敏感值对外明文");
 
         // 平台租户取值命中（验证缓存路径）——避让端点 /value
         MvcResult got = mockMvc.perform(get("/api/config/value")
@@ -198,7 +205,7 @@ class SupportEndToEndTest {
     @Test
     @Order(6)
     void dictTypeFallbackListEndpoint() throws Exception {
-        MvcResult list = mockMvc.perform(get("/api/dict-type/all")
+        MvcResult list = mockMvc.perform(get("/api/dict-type/options")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn();
         JsonNode items = ok(list);
@@ -207,70 +214,109 @@ class SupportEndToEndTest {
 
     @Test
     @Order(7)
-    void configGroupAndSensitiveEncryption() throws Exception {
+    void configSensitiveProtection() throws Exception {
         final String plainApiKey = "wechat-api-v3-key-plaintext-123456";
-        // 微信支付一组多 key：appId（非敏感）+ apiKey（敏感，加密落库）
+        // 微信支付一组多 key：appId（非敏感）+ apiKey（敏感）
         Map<String, Object> appId = new HashMap<>();
         appId.put("configGroup", "wechat.pay");
         appId.put("configKey", "appId");
         appId.put("configValue", "wx1234567890abcdef");
-        ok(postJson("/api/config/save", appId, adminToken));
+        ok(postJson("/api/config/create", appId, adminToken));
 
         Map<String, Object> apiKey = new HashMap<>();
         apiKey.put("configGroup", "wechat.pay");
         apiKey.put("configKey", "apiKey");
         apiKey.put("configValue", plainApiKey);
         apiKey.put("sensitive", true);
-        JsonNode saved = ok(postJson("/api/config/save", apiKey, adminToken));
+        JsonNode saved = ok(postJson("/api/config/create", apiKey, adminToken));
         assertTrue(saved.path("sensitive").asBoolean());
-        assertEquals(plainApiKey, saved.path("configValue").asText(), "保存响应应返回明文");
+        // create 出口即加密：configValue 是密文对象，不是明文
+        JsonNode cipherOut = saved.path("configValue");
+        assertTrue(cipherOut.path("encrypted").asBoolean(), "敏感值出口应为密文对象");
+        assertTrue(cipherOut.has("cipher") && cipherOut.path("cipher").asText().length() > 0);
+        assertNotEquals(plainApiKey, cipherOut.path("cipher").asText(), "出口不应为明文");
+        String id = saved.path("id").asText();
+        String tid = saved.path("tenantId").asText();
 
-        // 1) DB 原始值必须是密文（不等于明文）
+        // 1) DB 存明文（不再加密落库）
         String dbRaw = configRepository
-                .findByTenantIdAndConfigGroupAndConfigKeyAndDeletedFalse(
-                        saved.path("tenantId").asText(), "wechat.pay", "apiKey")
+                .findByTenantIdAndConfigGroupAndConfigKeyAndDeletedFalse(tid, "wechat.pay", "apiKey")
                 .orElseThrow().getConfigValue();
-        assertNotEquals(plainApiKey, dbRaw, "敏感值落库必须为密文");
-        assertFalse(dbRaw.contains(plainApiKey));
+        assertEquals(plainApiKey, dbRaw, "DB 应存明文，内部可直接读取");
 
-        // 2) 基类详情端点 GET /get?id= 返回解密明文（ConfigService.get 覆盖）
-        MvcResult detail = mockMvc.perform(get("/api/config/get")
-                        .param("id", saved.path("id").asText())
+        // 2) GET /get 详情出口为密文对象
+        MvcResult detail = mockMvc.perform(get("/api/config/get").param("id", id)
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn();
-        assertEquals(plainApiKey, ok(detail).path("configValue").asText(), "详情应返回解密明文");
+        assertTrue(ok(detail).path("configValue").path("encrypted").asBoolean());
 
-        // 3) 基类列表 GET /list 经 rewriteList 脱敏，不泄露密文
+        // 3) GET /list 列表敏感值为密文对象
         MvcResult page = mockMvc.perform(get("/api/config/list")
                         .param("pageNum", "1").param("pageSize", "50")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn();
-        JsonNode rows = ok(page).path("list");
-        for (JsonNode item : rows) {
+        boolean foundSecretCipher = false;
+        for (JsonNode item : ok(page).path("list")) {
             if ("apiKey".equals(item.path("configKey").asText())) {
-                assertEquals(plainApiKey, item.path("configValue").asText(), "列表敏感值应为明文");
-                assertNotEquals(dbRaw, item.path("configValue").asText());
+                foundSecretCipher = item.path("configValue").path("encrypted").asBoolean();
             }
         }
+        assertTrue(foundSecretCipher, "列表敏感值应为密文对象");
 
-        // 4) 按分组取值，API 返回解密明文
-        MvcResult got = mockMvc.perform(get("/api/config/value-by-group")
+        // 4) /value 与 /values 出口同样加密
+        MvcResult got = mockMvc.perform(get("/api/config/value")
                         .param("group", "wechat.pay").param("configKey", "apiKey")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn();
-        assertEquals(plainApiKey, ok(got).asText(), "分组取值应返回解密明文");
-
-        // 5) 整组读取：两条都在，apiKey 明文、appId 明文
-        MvcResult group = mockMvc.perform(get("/api/config/values-by-group")
+        assertTrue(ok(got).path("encrypted").asBoolean(), "取值端点敏感值应为密文对象");
+        MvcResult group = mockMvc.perform(get("/api/config/values")
                         .param("group", "wechat.pay")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn();
-        JsonNode items = ok(group);
-        assertTrue(items.isArray() && items.size() >= 2);
-        for (JsonNode item : items) {
+        for (JsonNode item : ok(group)) {
             if ("apiKey".equals(item.path("configKey").asText())) {
-                assertEquals(plainApiKey, item.path("configValue").asText());
+                assertTrue(item.path("configValue").path("encrypted").asBoolean());
             }
         }
+
+        // 5) GET /secret 返回明文（独立权限点 + 审计）
+        MvcResult secret = mockMvc.perform(get("/api/config/secret").param("id", id)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn();
+        assertEquals(plainApiKey, ok(secret).asText(), "/secret 应返回解密明文");
+
+        // 6) /update 传敏感值应被拒绝，且不改 sensitive
+        Map<String, Object> badUpdate = new HashMap<>();
+        badUpdate.put("id", Long.valueOf(id));
+        badUpdate.put("configValue", "hacked-value");
+        assertEquals(400, postJson("/api/config/update", badUpdate, adminToken)
+                .getResponse().getStatus(), "/update 不得改敏感值");
+
+        // 7) POST /secret 改值（明文提交），DB 落明文，出口仍密文
+        Map<String, Object> secretReq = new HashMap<>();
+        secretReq.put("id", Long.valueOf(id));
+        secretReq.put("configValue", "wechat-api-v3-key-updated-654321");
+        JsonNode changed = ok(postJson("/api/config/secret", secretReq, adminToken));
+        assertTrue(changed.path("configValue").path("encrypted").asBoolean());
+        assertEquals("wechat-api-v3-key-updated-654321", configRepository
+                .findByTenantIdAndConfigGroupAndConfigKeyAndDeletedFalse(tid, "wechat.pay", "apiKey")
+                .orElseThrow().getConfigValue(), "/secret 改值应明文落库");
+
+        // 8) /save 已停用
+        Map<String, Object> saveReq = new HashMap<>();
+        saveReq.put("configKey", "whatever");
+        saveReq.put("configValue", "x");
+        assertEquals(400, postJson("/api/config/save", saveReq, adminToken)
+                .getResponse().getStatus(), "/save 应停用");
+    }
+
+    /** conflux 配置源必须由 matrix 的 Db provider 覆盖 starter 默认 yml 实现。 */
+    @Test
+    @Order(8)
+    void confluxProvidersOverrideStarterDefaults() {
+        assertInstanceOf(DbAuthConfigProvider.class, authConfigProvider,
+                "登录配置源必须是 Db 版，不能是 starter 默认 yml 版");
+        assertInstanceOf(DbFileConfigProvider.class, fileConfigProvider,
+                "文件配置源必须是 Db 版，不能是 starter 默认 yml 版");
     }
 }
