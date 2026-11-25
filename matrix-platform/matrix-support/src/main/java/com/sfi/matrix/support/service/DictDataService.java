@@ -5,6 +5,7 @@ import com.sfi.matrix.support.constant.SupportConstants;
 import com.sfi.matrix.support.entity.SysDictData;
 import com.sfi.matrix.support.repository.SysDictDataRepository;
 import com.sfi.scaffold.starter.data.jpa.service.BaseService;
+import com.sfi.scaffold.starter.security.identity.LoginContext;
 import com.sfi.scaffold.starter.tenant.annotation.TenantIgnore;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -48,7 +49,7 @@ public class DictDataService extends BaseService<SysDictData> {
             data = require(incoming.getId()); // 更新传入不存在的 id 按 NOT_FOUND 处理
         } else {
             String tid = incoming.getTenantId() != null && !incoming.getTenantId().isEmpty()
-                    ? incoming.getTenantId() : DictTypeService.currentTenantId();
+                    ? incoming.getTenantId() : LoginContext.currentTenantIdOrNull();
             data = dataRepository.findByDictTypeAndDictCodeAndTenantIdAndDeletedFalse(
                     incoming.getDictType(), incoming.getDictCode(), tid).orElseGet(SysDictData::new);
             if (data.getId() == null) {

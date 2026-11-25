@@ -53,8 +53,6 @@ public class DictDataController extends BaseCrudController<SysDictData, DictData
     /** 按类型取选项（带平台兜底）：避让基类 /list，保留前端兼容端点语义。 */
     @GetMapping("/options")
     public R<List<SysDictData>> options(@RequestParam String dictType) {
-        LoginUser current = LoginContext.currentOrNull();
-        String tenantId = current == null ? null : current.getTenantId();
-        return R.ok(service.listByTypeWithPlatformFallback(dictType, tenantId));
+        return R.ok(service.listByTypeWithPlatformFallback(dictType, LoginContext.currentTenantIdOrNull()));
     }
 }

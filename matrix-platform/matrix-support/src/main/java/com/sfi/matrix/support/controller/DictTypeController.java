@@ -6,6 +6,7 @@ import com.sfi.matrix.support.entity.SysDictType;
 import com.sfi.matrix.support.service.DictTypeService;
 import com.sfi.scaffold.common.request.IdRequest;
 import com.sfi.scaffold.common.result.R;
+import com.sfi.scaffold.starter.security.identity.LoginContext;
 import com.sfi.scaffold.starter.web.crud.BaseCrudController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,6 +52,6 @@ public class DictTypeController extends BaseCrudController<SysDictType, DictType
     /** 类型下拉列表（带平台兜底）：避让基类 /list，命名与 /api/dict/options 对称。 */
     @GetMapping("/options")
     public R<List<SysDictType>> options() {
-        return R.ok(service.listWithPlatformFallback(DictTypeService.currentTenantId()));
+        return R.ok(service.listWithPlatformFallback(LoginContext.currentTenantIdOrNull()));
     }
 }

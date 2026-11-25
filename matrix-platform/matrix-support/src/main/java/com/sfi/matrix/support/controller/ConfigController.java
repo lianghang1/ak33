@@ -49,7 +49,7 @@ public class ConfigController extends BaseCrudController<SysConfig, ConfigCreate
     @PostMapping("/save")
     public R<SysConfig> save(@Valid @RequestBody ConfigCreateRequest dto) {
         throw BizException.of(GlobalErrorCode.BAD_REQUEST,
-                "/save 已停用：新增请走 /create，修改请走 /update，敏感值请走 /secret");
+                "未授权访问");
     }
 
     @PostMapping("/create")
@@ -114,7 +114,7 @@ public class ConfigController extends BaseCrudController<SysConfig, ConfigCreate
     @GetMapping("/value")
     public R<Object> value(@RequestParam String configKey,
                            @RequestParam(required = false) String group) {
-        SysConfig entry = service.valueEntry(group, configKey, currentTenantId());
+        SysConfig entry = service.valueEntry(group, configKey, LoginContext.currentTenantIdOrNull());
         return R.ok(service.valueOf(entry));
     }
 
@@ -125,14 +125,10 @@ public class ConfigController extends BaseCrudController<SysConfig, ConfigCreate
     @GetMapping("/values")
     public R<List<ConfigVO>> values(@RequestParam(required = false) String group) {
         List<ConfigVO> views = new ArrayList<>();
-        for (SysConfig c : service.listByGroup(group, currentTenantId())) {
+        for (SysConfig c : service.listByGroup(group, LoginContext.currentTenantIdOrNull())) {
             views.add(service.toVO(c));
         }
         return R.ok(views);
     }
 
-    private static String currentTenantId() {
-        LoginUser current = LoginContext.currentOrNull();
-        return current == null ? null : current.getTenantId();
-    }
 }

@@ -5,7 +5,6 @@ import com.sfi.matrix.support.constant.SupportConstants;
 import com.sfi.matrix.support.entity.SysDictType;
 import com.sfi.matrix.support.repository.SysDictTypeRepository;
 import com.sfi.scaffold.starter.security.identity.LoginContext;
-import com.sfi.scaffold.starter.security.identity.LoginUser;
 import com.sfi.scaffold.starter.data.jpa.service.BaseService;
 import com.sfi.scaffold.starter.tenant.annotation.TenantIgnore;
 import org.springframework.cache.annotation.CacheEvict;
@@ -91,14 +90,8 @@ public class DictTypeService extends BaseService<SysDictType> {
         return result;
     }
 
-    /** 当前登录租户ID（未登录时返回 null，走平台租户上下文下的查询）。 */
-    public static String currentTenantId() {
-        LoginUser user = LoginContext.currentOrNull();
-        return user == null ? null : user.getTenantId();
-    }
-
     private String resolveTenantId(String tenantId) {
         if (tenantId != null && !tenantId.isEmpty()) return tenantId;
-        return currentTenantId();
+        return LoginContext.currentTenantIdOrNull();
     }
 }

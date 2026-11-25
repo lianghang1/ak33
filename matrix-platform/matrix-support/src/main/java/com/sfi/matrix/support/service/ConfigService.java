@@ -13,6 +13,7 @@ import com.sfi.scaffold.common.crypto.DataCipherHolder;
 import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.exception.GlobalErrorCode;
 import com.sfi.scaffold.starter.data.jpa.service.BaseService;
+import com.sfi.scaffold.starter.security.identity.LoginContext;
 import com.sfi.scaffold.starter.tenant.annotation.TenantIgnore;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -58,7 +59,7 @@ public class ConfigService extends BaseService<SysConfig> {
     public SysConfig create(ConfigCreateRequest req) {
         String group = defaultGroup(req.getConfigGroup());
         String tid = req.getTenantId() != null && !req.getTenantId().isEmpty()
-                ? req.getTenantId() : DictTypeService.currentTenantId();
+                ? req.getTenantId() : LoginContext.currentTenantIdOrNull();
         boolean exists = configRepository
                 .findByTenantIdAndConfigGroupAndConfigKeyAndDeletedFalse(tid, group, req.getConfigKey())
                 .isPresent();
