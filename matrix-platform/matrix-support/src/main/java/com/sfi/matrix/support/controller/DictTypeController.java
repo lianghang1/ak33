@@ -20,7 +20,8 @@ import java.util.List;
  * 字典类型接口：标准 CRUD 由 {@link BaseCrudController} 提供，平台兜底列表单独保留。
  *
  * <p>基类端点：GET /list、GET /get?id=、POST /save、POST /delete；
- * 兜底列表避让到 GET /all。写操作仍走 DictTypeService.save(E) 的幂等+缓存逻辑。</p>
+ * 兜底列表避让到 GET /options（与字典选项的 /api/dict/options 对称）。
+ * 写操作仍走 DictTypeService.save(E) 的幂等+缓存逻辑。</p>
  *
  * @author matrix
  */
@@ -47,9 +48,9 @@ public class DictTypeController extends BaseCrudController<SysDictType, DictType
         return super.delete(req);
     }
 
-    /** 类型列表（带平台兜底）：避让基类 /list，保留原业务语义。 */
-    @GetMapping("/all")
-    public R<List<SysDictType>> all() {
+    /** 类型下拉列表（带平台兜底）：避让基类 /list，命名与 /api/dict/options 对称。 */
+    @GetMapping("/options")
+    public R<List<SysDictType>> options() {
         return R.ok(service.listWithPlatformFallback(DictTypeService.currentTenantId()));
     }
 }

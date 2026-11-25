@@ -2,10 +2,15 @@ package com.sfi.matrix.support.dto;
 
 import javax.validation.constraints.NotBlank;
 
-/** 参数增改请求。id 为空=新增/覆盖，非空=修改。 */
-public class ConfigRequest {
-
-    private Long id;
+/**
+ * 参数新增请求（纯新增，业务键重复则拒绝，不做覆盖）。
+ *
+ * <p>configValue 只收明文字符串；sensitive 在此定初值。敏感值也以明文传入，
+ * 落库即明文，对外读取时才加密成 {@link SecretCipher}。</p>
+ *
+ * @author matrix
+ */
+public class ConfigCreateRequest {
 
     /** 配置分组，默认 DEFAULT */
     private String configGroup;
@@ -19,14 +24,12 @@ public class ConfigRequest {
     /** 值类型：STRING（默认）/ INT / BOOL / JSON */
     private String valueType;
 
-    /** 是否敏感值（写入加密落库、读取解密返回） */
+    /** 是否敏感值（创建时定初值，后续只能通过 /secret 改） */
     private Boolean sensitive;
 
     private String remark;
     private String tenantId;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
     public String getConfigGroup() { return configGroup; }
     public void setConfigGroup(String configGroup) { this.configGroup = configGroup; }
     public String getConfigKey() { return configKey; }

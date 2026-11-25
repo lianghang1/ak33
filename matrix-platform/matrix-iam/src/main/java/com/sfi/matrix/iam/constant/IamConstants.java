@@ -78,4 +78,10 @@ public final class IamConstants {
     public static final String PERM_CONFIG = "platform:config:list";
     /** 参数维护（写）——与 support.SupportConstants.PERM_CONFIG_SAVE 值一致 */
     public static final String PERM_CONFIG_SAVE = "platform:config:save";
+    /** 敏感参数（读明文/改值与标志）——与 support.SupportConstants.PERM_CONFIG_SECRET 值一致 */
+    public static final String PERM_CONFIG_SECRET = "platform:config:secret";
+    /** 文件管理（读）——与 support.SupportConstants.PERM_FILE 值一致 */
+    public static final String PERM_FILE = "platform:file:list";
+    /** 文件维护（写）——与 support.SupportConstants.PERM_FILE_SAVE 值一致 */
+    public static final String PERM_FILE_SAVE = "platform:file:save";
 }

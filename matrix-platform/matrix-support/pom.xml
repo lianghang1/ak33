@@ -45,6 +45,19 @@
             <groupId>com.sfi.scaffold</groupId>
             <artifactId>scaffold-starter-crypto</artifactId>
         </dependency>
+        <!-- 文件上传/访问：直接用 conflux 包，门面装配 FileGateway；系统文件记录落 sys_file -->
+        <dependency>
+            <groupId>com.sfi.conflux</groupId>
+            <artifactId>conflux-file-spring-boot-starter</artifactId>
+        </dependency>
+        <!-- x-file-storage 的 FileStorageProperties 反序列化时需反射 CommonClientPoolConfig，
+             该类引用 commons-pool2；x-file-storage-core 把该依赖声明为 provided 不传递，
+             这里显式补齐，否则 Jackson 绑定 FileStorageProperties 时 NoClassDefFoundError -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+            <version>2.11.1</version>
+        </dependency>
         <!-- 平台默认配置兜底：查 PLATFORM 租户 ID（iam 不反向依赖 support，无环） -->
         <dependency>
             <groupId>com.sfi.matrix.platform</groupId>

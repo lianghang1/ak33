@@ -1,9 +1,14 @@
 package com.sfi.matrix.support.controller;
 
 import com.sfi.matrix.iam.audit.annotation.OperateLog;
-import com.sfi.matrix.support.dto.ConfigRequest;
+import com.sfi.matrix.support.dto.ConfigCreateRequest;
+import com.sfi.matrix.support.dto.ConfigSecretRequest;
+import com.sfi.matrix.support.dto.ConfigUpdateRequest;
+import com.sfi.matrix.support.dto.ConfigVO;
 import com.sfi.matrix.support.entity.SysConfig;
 import com.sfi.matrix.support.service.ConfigService;
+import com.sfi.scaffold.common.exception.BizException;
+import com.sfi.scaffold.common.exception.GlobalErrorCode;
 import com.sfi.scaffold.common.request.IdRequest;
 import com.sfi.scaffold.common.result.PageResult;
 import com.sfi.scaffold.common.result.R;
@@ -22,26 +27,55 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 系统参数接口：标准 CRUD 由 {@link BaseCrudController} 提供，取值/分组端点单独保留。
+ * 系统参数接口。
  *
- * <p>基类端点：GET /list、GET /get?id=、POST /save、POST /delete。敏感值在列表与详情
- * 均经 {@link ConfigService#plainCopy} 脱敏后返回；取值端点避让到 /value 系列。</p>
+ * <p>读端点（基类 list/get + value/values/secret）敏感值出口一律经
+ * {@link ConfigService#toVO} / {@link ConfigService#valueOf} 加密成密文对象；只有 GET /secret
+ * 返回明文。写端点拆成 create（纯新增）/update（基础信息，不碰 sensitive）/secret（敏感值与
+ * 标志，独立权限+审计）/delete，基类 save 已覆盖为拒绝。</p>
  *
  * @author matrix
  */
 @RestController
 @RequestMapping("/api/config")
-public class ConfigController extends BaseCrudController<SysConfig, ConfigRequest, ConfigService> {
+public class ConfigController extends BaseCrudController<SysConfig, ConfigCreateRequest, ConfigService> {
 
     public ConfigController(ConfigService service) {
         super(service, SysConfig.class);
     }
 
+    /** save 已停用：新增走 /create，修改走 /update 或 /secret。 */
     @Override
-    @OperateLog(module = "参数管理", operation = "维护系统参数")
     @PostMapping("/save")
-    public R<SysConfig> save(@Valid @RequestBody ConfigRequest dto) {
-        return super.save(dto);
+    public R<SysConfig> save(@Valid @RequestBody ConfigCreateRequest dto) {
+        throw BizException.of(GlobalErrorCode.BAD_REQUEST,
+                "/save 已停用：新增请走 /create，修改请走 /update，敏感值请走 /secret");
+    }
+
+    @PostMapping("/create")
+    @OperateLog(module = "参数管理", operation = "新增系统参数")
+    public R<ConfigVO> create(@Valid @RequestBody ConfigCreateRequest req) {
+        return R.ok(service.toVO(service.create(req)));
+    }
+
+    @PostMapping("/update")
+    @OperateLog(module = "参数管理", operation = "修改系统参数")
+    public R<ConfigVO> update(@Valid @RequestBody ConfigUpdateRequest req) {
+        return R.ok(service.toVO(service.update(req)));
+    }
+
+    /** 敏感值与标志的唯一写入口，独立权限点 + 审计。 */
+    @PostMapping("/secret")
+    @OperateLog(module = "参数管理", operation = "修改敏感参数")
+    public R<ConfigVO> secret(@Valid @RequestBody ConfigSecretRequest req) {
+        return R.ok(service.toVO(service.updateSecret(req)));
+    }
+
+    /** 敏感明文读取，独立权限点 + 审计。 */
+    @GetMapping("/secret")
+    @OperateLog(module = "参数管理", operation = "读取敏感参数明文")
+    public R<String> secretPlain(@RequestParam("id") Long id) {
+        return R.ok(service.secretPlain(id));
     }
 
     @Override
@@ -51,39 +85,50 @@ public class ConfigController extends BaseCrudController<SysConfig, ConfigReques
         return super.delete(req);
     }
 
+    /** 详情出口加密：经基类 detailOf 钩子转对外视图，不覆盖 get 签名。 */
+    @Override
+    protected Object detailOf(SysConfig entity) {
+        return service.toVO(entity);
+    }
+
     /**
-     * 列表结果脱敏：基类 page 走 QueryUtilsX 返回 JPA 实体，config_value 仍是密文。
-     * 这里整体改写成明文副本（详情由 ConfigService.get 覆盖已脱敏，不经过这里）。
+     * 列表出口加密：基类 page 走 QueryUtilsX 返回明文实体，这里整体转成对外视图。
      */
     @Override
     protected PageResult<?> rewriteList(PageResult<?> result) {
-        List<Object> plain = new ArrayList<>();
+        List<Object> views = new ArrayList<>();
         for (Object item : result.getList()) {
             if (item instanceof SysConfig) {
-                plain.add(service.plainCopy((SysConfig) item));
+                views.add(service.toVO((SysConfig) item));
             } else {
-                plain.add(item);
+                views.add(item);
             }
         }
-        return PageResult.of(plain, result.getTotal(), result.getPageNum(), result.getPageSize());
+        return PageResult.of(views, result.getTotal(), result.getPageNum(), result.getPageSize());
     }
 
-    /** 取值（默认分组）：当前租户 → 平台兜底，敏感值解密返回。 */
+    /**
+     * 单值取值：group 可选（空走 DEFAULT），敏感值返回密文对象、非敏感返回明文。
+     * 例：/value?configKey=apiKey&group=wechat.pay
+     */
     @GetMapping("/value")
-    public R<String> value(@RequestParam String configKey) {
-        return R.ok(service.get(configKey, currentTenantId()));
+    public R<Object> value(@RequestParam String configKey,
+                           @RequestParam(required = false) String group) {
+        SysConfig entry = service.valueEntry(group, configKey, currentTenantId());
+        return R.ok(service.valueOf(entry));
     }
 
-    /** 分组取值：如 /value-by-group?group=wechat.pay&configKey=apiKey */
-    @GetMapping("/value-by-group")
-    public R<String> valueByGroup(@RequestParam String group, @RequestParam String configKey) {
-        return R.ok(service.get(group, configKey, currentTenantId()));
-    }
-
-    /** 整组取值（带平台兜底，敏感值已解密）。 */
-    @GetMapping("/values-by-group")
-    public R<List<SysConfig>> valuesByGroup(@RequestParam String group) {
-        return R.ok(service.listByGroup(group, currentTenantId()));
+    /**
+     * 整组取值：group 可选（空走 DEFAULT），返回该组全部参数视图（带平台兜底）。
+     * 例：/values?group=wechat.pay
+     */
+    @GetMapping("/values")
+    public R<List<ConfigVO>> values(@RequestParam(required = false) String group) {
+        List<ConfigVO> views = new ArrayList<>();
+        for (SysConfig c : service.listByGroup(group, currentTenantId())) {
+            views.add(service.toVO(c));
+        }
+        return R.ok(views);
     }
 
     private static String currentTenantId() {

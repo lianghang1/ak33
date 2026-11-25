@@ -34,4 +34,10 @@ public final class SupportConstants {
     public static final String PERM_CONFIG = "platform:config:list";
     /** 参数维护（写：新增/修改/删除） */
     public static final String PERM_CONFIG_SAVE = "platform:config:save";
+    /** 敏感参数（读明文/改值与标志，独立权限点 + 审计） */
+    public static final String PERM_CONFIG_SECRET = "platform:config:secret";
+    /** 文件管理（读：取访问地址） */
+    public static final String PERM_FILE = "platform:file:list";
+    /** 文件维护（写：上传/删除） */
+    public static final String PERM_FILE_SAVE = "platform:file:save";
 }

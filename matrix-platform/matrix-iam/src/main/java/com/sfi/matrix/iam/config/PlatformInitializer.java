@@ -93,6 +93,13 @@ public class PlatformInitializer implements ApplicationRunner {
                 "GET:/api/config/**");
         seed(IamConstants.PERM_CONFIG_SAVE, "参数维护", "C", 81,
                 "POST:/api/config/**");
+        // 敏感参数独立权限：精确 pattern 优先于 POST:/api/config/**，读明文与改值都受此点保护
+        seed(IamConstants.PERM_CONFIG_SECRET, "敏感参数", "C", 82,
+                "GET:/api/config/secret,POST:/api/config/secret");
+        seed(IamConstants.PERM_FILE, "文件管理", "C", 90,
+                "GET:/api/file/url");
+        seed(IamConstants.PERM_FILE_SAVE, "文件维护", "C", 91,
+                "POST:/api/file/upload");
     }
 
     private void seed(String permission, String name, String type, int sortNo, String apiPattern) {

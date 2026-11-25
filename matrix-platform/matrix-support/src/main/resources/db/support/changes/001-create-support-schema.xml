@@ -5,20 +5,86 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
 
-    <!-- 数据字典 -->
-    <changeSet id="support-001-sys-dict" author="matrix">
-        <createTable tableName="sys_dict" remarks="数据字典">
+    <!-- 系统参数：key-value 配置，分组 + 值类型 + 敏感加密，唯一键含 deleted 支持同键重建 -->
+    <changeSet id="support-001-sys-config" author="matrix">
+        <createTable tableName="sys_config" remarks="系统参数">
             <column name="id" type="BIGINT">
-                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_dict"/>
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_config"/>
             </column>
             <column name="tenant_id" type="VARCHAR(64)" remarks="租户ID"/>
-            <column name="dict_type" type="VARCHAR(64)" remarks="字典类型">
+            <column name="config_group" type="VARCHAR(64)" defaultValue="DEFAULT"
+                    remarks="配置分组，如 wechat.pay；默认 DEFAULT">
                 <constraints nullable="false"/>
             </column>
-            <column name="dict_code" type="VARCHAR(64)" remarks="字典编码">
+            <column name="config_key" type="VARCHAR(128)" remarks="参数键">
                 <constraints nullable="false"/>
             </column>
-            <column name="dict_label" type="VARCHAR(128)" remarks="字典显示名">
+            <!-- CLOB：conflux 渠道配置整条 JSON 可能含 RSA 私钥（4096 位 base64 约 3168 字符），
+                 VARCHAR(2048) 不够；明文落库，对外出口由 Controller 加密 -->
+            <column name="config_value" type="CLOB" remarks="参数值（明文落库，敏感项对外出口加密）"/>
+            <column name="value_type" type="VARCHAR(16)" defaultValue="STRING" remarks="值类型 STRING/INT/BOOL/JSON"/>
+            <column name="sensitive" type="BOOLEAN" defaultValueBoolean="false"
+                    remarks="是否敏感值（写入加密落库、读取解密返回）">
+                <constraints nullable="false"/>
+            </column>
+            <column name="remark" type="VARCHAR(255)"/>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_config"
+                             columnNames="tenant_id, config_group, config_key, deleted"
+                             constraintName="uk_sys_config_group_key"/>
+        <createIndex tableName="sys_config" indexName="idx_sys_config_tenant">
+            <column name="tenant_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- 字典类型（主表）：描述有哪些字典，控制整组启停 -->
+    <changeSet id="support-001-sys-dict-type" author="matrix">
+        <createTable tableName="sys_dict_type" remarks="字典类型（主表）">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_dict_type"/>
+            </column>
+            <column name="tenant_id" type="VARCHAR(64)" remarks="租户ID"/>
+            <column name="dict_type" type="VARCHAR(64)" remarks="字典类型编码">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dict_name" type="VARCHAR(128)" remarks="字典类型名称"/>
+            <column name="remark" type="VARCHAR(255)"/>
+            <column name="status" type="INT" defaultValueNumeric="1" remarks="1启用 0停用">
+                <constraints nullable="false"/>
+            </column>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="sys_dict_type"
+                             columnNames="tenant_id, dict_type, deleted"
+                             constraintName="uk_sys_dict_type_code"/>
+        <createIndex tableName="sys_dict_type" indexName="idx_sys_dict_type_tenant">
+            <column name="tenant_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- 字典选项（明细表）：type + code 唯一定位，平台兜底按 code 合并租户与平台两份 -->
+    <changeSet id="support-001-sys-dict-data" author="matrix">
+        <createTable tableName="sys_dict_data" remarks="字典选项（明细表）">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_dict_data"/>
+            </column>
+            <column name="tenant_id" type="VARCHAR(64)" remarks="租户ID"/>
+            <column name="dict_type" type="VARCHAR(64)" remarks="所属类型编码">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dict_code" type="VARCHAR(64)" remarks="选项编码">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dict_label" type="VARCHAR(128)" remarks="选项显示名">
                 <constraints nullable="false"/>
             </column>
             <column name="sort_no" type="INT"/>
@@ -31,35 +97,15 @@
             <column name="update_by" type="VARCHAR(64)"/>
             <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
         </createTable>
-        <createIndex tableName="sys_dict" indexName="idx_sys_dict_type">
+        <addUniqueConstraint tableName="sys_dict_data"
+                             columnNames="tenant_id, dict_type, dict_code, deleted"
+                             constraintName="uk_sys_dict_data_code"/>
+        <createIndex tableName="sys_dict_data" indexName="idx_sys_dict_data_type">
             <column name="dict_type"/>
         </createIndex>
-        <createIndex tableName="sys_dict" indexName="idx_sys_dict_tenant">
+        <createIndex tableName="sys_dict_data" indexName="idx_sys_dict_data_tenant">
             <column name="tenant_id"/>
         </createIndex>
     </changeSet>
 
-    <!-- 系统参数 -->
-    <changeSet id="support-002-sys-config" author="matrix">
-        <createTable tableName="sys_config" remarks="系统参数">
-            <column name="id" type="BIGINT">
-                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_config"/>
-            </column>
-            <column name="tenant_id" type="VARCHAR(64)" remarks="租户ID"/>
-            <column name="config_key" type="VARCHAR(128)" remarks="参数键">
-                <constraints nullable="false"/>
-            </column>
-            <column name="config_value" type="VARCHAR(512)" remarks="参数值"/>
-            <column name="remark" type="VARCHAR(255)"/>
-            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
-            <column name="update_time" type="DATETIME"/>
-            <column name="create_by" type="VARCHAR(64)"/>
-            <column name="update_by" type="VARCHAR(64)"/>
-            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
-        </createTable>
-        <addUniqueConstraint tableName="sys_config" columnNames="tenant_id, config_key" constraintName="uk_sys_config_key"/>
-        <createIndex tableName="sys_config" indexName="idx_sys_config_tenant">
-            <column name="tenant_id"/>
-        </createIndex>
-    </changeSet>
 </databaseChangeLog>
