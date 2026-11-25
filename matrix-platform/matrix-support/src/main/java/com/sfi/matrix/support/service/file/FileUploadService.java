@@ -23,9 +23,7 @@ import static com.sfi.matrix.support.exception.FileErrorCode.FILE_READ_FAILED;
 import static com.sfi.matrix.support.exception.FileErrorCode.FILE_TYPE_NOT_ALLOWED;
 
 /**
- * 普通文件上传编排：门禁 → 上传+缩略图 → 落库，只暴露一个上传方法，调用方零重复。
- *
- * <p>决策/落库/重建的公共能力在 {@link FileUploadSupport}，分片上传复用同一套。</p>
+ * 普通文件上传：门禁、上传及缩略图、落库。
  *
  * @author lianghang
  */
@@ -45,7 +43,7 @@ public class FileUploadService {
         this.support = support;
     }
 
-    /** 基础上传：读+门禁 → 上传+缩略图 → 落库 */
+    /** 上传文件 */
     @Transactional(rollbackFor = Exception.class)
     public SysFile upload(UploadCommand cmd) {
         FileTypeInfo type;
@@ -63,7 +61,7 @@ public class FileUploadService {
         return fileService.save(support.persist(ctx, info));
     }
 
-    /** 上传 + 缩略图二选一，异常能力固定 fail-soft */
+    /** 上传文件并按需生成缩略图 */
     private FileInfo uploadWithThumbnail(UploadContext ctx, UploadCommand cmd) {
         FileStorageService storage = fileGateway.nativeService(ctx.getConfigId(), ctx.getChannelCode());
         boolean supportAcl = storage.isSupportAcl(ctx.getChannelCode());
@@ -88,7 +86,7 @@ public class FileUploadService {
         return pre.upload();
     }
 
-    /** 来源归一：只接受可重复读的两类，门禁读完不消耗上传对象 */
+    /** 将上传来源转为输入流 */
     private static InputStream openStream(Object source) throws IOException {
         if (source instanceof MultipartFile) {
             return ((MultipartFile) source).getInputStream();
@@ -99,7 +97,7 @@ public class FileUploadService {
         throw new BizException(FILE_TYPE_NOT_ALLOWED, "不支持的上传来源");
     }
 
-    /** 实体转 DTO，使用方自选 */
+    /** 实体转 DTO */
     public FileDTO toDto(SysFile f) {
         FileDTO dto = new FileDTO();
         dto.setId(f.getId());

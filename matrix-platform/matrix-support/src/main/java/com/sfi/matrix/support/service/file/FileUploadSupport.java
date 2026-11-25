@@ -22,9 +22,7 @@ import java.util.Map;
 import static com.sfi.matrix.support.exception.FileErrorCode.FILE_READ_FAILED;
 
 /**
- * 上传决策与落库的公共能力：普通上传与分片上传共用，避免决策/落库/重建逻辑重复。
- *
- * <p>只做无状态的装配与校验，具体上传动作由各 service 走 nativeService 完成。</p>
+ * 上传决策与落库的公共能力。
  *
  * @author lianghang
  */
@@ -37,10 +35,7 @@ public class FileUploadSupport {
         this.fileConfigProvider = fileConfigProvider;
     }
 
-    /**
-     * 解析上传决策：默认配置/渠道兜底、module 校验、路径、权限、元数据。
-     * 不门禁、不检测 MIME——真实类型由调用方在拿到文件内容后填入。
-     */
+    /** 解析上传决策：配置/渠道兜底、module、路径、权限、元数据 */
     public UploadContext resolve(String configId, String channelCode, String originalFilename,
                                  String objectType, String objectId, String module, Map<String, String> metadata) {
         FileConfigInfo config = fileConfigProvider.getConfig();
@@ -59,7 +54,7 @@ public class FileUploadSupport {
         return ctx;
     }
 
-    /** 按检测结果补全上下文的类型信息与默认元数据 */
+    /** 补全上下文的类型信息与默认元数据 */
     public void applyType(UploadContext ctx, FileTypeInfo type) {
         ctx.setMime(type.getMime());
         ctx.setFileType(type.getFileType());
@@ -68,7 +63,7 @@ public class FileUploadSupport {
         }
     }
 
-    /** 新建文件记录：决策字段 + FileInfo 存储字段 */
+    /** 新建文件记录 */
     public SysFile persist(UploadContext ctx, FileInfo info) {
         SysFile record = new SysFile();
         record.setConfigId(ctx.getConfigId());
@@ -84,7 +79,7 @@ public class FileUploadSupport {
         return record;
     }
 
-    /** 回填分片完成后 FileInfo 的存储字段（记录已存在，不动决策字段） */
+    /** 回填 FileInfo 的存储字段 */
     public void fillStorageFields(SysFile record, FileInfo info) {
         record.setPath(info.getPath());
         record.setFilename(info.getFilename());
@@ -106,7 +101,7 @@ public class FileUploadSupport {
         }
     }
 
-    /** 从记录重建带 uploadId 的 FileInfo：分片各步骤共用，靠 platform+path+filename+uploadId 定位对象 */
+    /** 从记录重建带 uploadId 的 FileInfo */
     public FileInfo rebuild(SysFile file) {
         FileInfo info = new FileInfo();
         info.setPlatform(file.getChannelCode());
@@ -119,7 +114,7 @@ public class FileUploadSupport {
         return info;
     }
 
-    /** 解析文件访问权限：模块在允许公开列表内返回 public-read，否则用配置的默认权限 */
+    /** 解析文件访问权限 */
     private String resolveFileAcl(FileConfigInfo config, String module) {
         if (CollUtils.isNotEmpty(config.getAllowedModules()) && config.getAllowedModules().contains(module)) {
             return Constant.ACL.PUBLIC_READ;

@@ -31,13 +31,7 @@ import static com.sfi.matrix.support.exception.FileErrorCode.FILE_READ_FAILED;
 import static com.sfi.matrix.support.exception.FileErrorCode.FILE_TYPE_NOT_ALLOWED;
 
 /**
- * 手动分片上传编排：初始化 → 逐片上传 → 完成/取消，数据落 sys_file 与 sys_file_part。
- *
- * <p>存储平台能力走 nativeService；决策/落库/重建复用 {@link FileUploadSupport}。
- * 门禁延迟到首片上传时用该片字节头检测（initiate 阶段无文件内容）。</p>
- *
- * <p>任一步骤失败（门禁/分片/合并）仅靠事务回滚，会话状态停留在 INITIATED/UPLOADING；
- * 超时会话由后续计划任务扫描两张表统一清理。本 service 不做删除、不 abort 远程对象。</p>
+ * 手动分片上传：初始化、逐片上传、完成、取消。
  *
  * @author lianghang
  */
@@ -84,7 +78,7 @@ public class FileMultipartService {
             throw new BizException(FILE_MULTIPART_NOT_SUPPORTED, "存储平台不支持分片上传");
         }
 
-        // 无文件内容，按文件名粗判类型（只用于 attachment 与落库，真正门禁在首片）
+        // 按文件名粗判类型
         FileTypeInfo naive = fileTypeGuard.detectByName(cmd.getOriginalFilename());
         support.applyType(ctx, naive);
 
@@ -189,7 +183,7 @@ public class FileMultipartService {
         partService.clearByUploadId(record.getMultipartUploadId());
     }
 
-    /** 已上传分片列表（本地明细，供断点续传） */
+    /** 已上传分片列表 */
     public List<SysFilePart> listParts(Long fileId) {
         SysFile record = fileService.get(fileId);
         if (record == null) {
@@ -211,7 +205,7 @@ public class FileMultipartService {
         return record;
     }
 
-    /** 首片门禁：用字节头检测真实类型，回填 contentType/fileType 并按真实类型修正元数据 */
+    /** 首片门禁：检测真实类型并回填记录 */
     private void checkFirstPart(SysFile record, Object source) {
         try (InputStream in = toStream(source)) {
             FileTypeInfo type = fileTypeGuard.detectAndCheck(in, record.getOriginalFilename());
