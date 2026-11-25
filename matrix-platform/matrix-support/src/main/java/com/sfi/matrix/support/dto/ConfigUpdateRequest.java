@@ -8,7 +8,7 @@ import javax.validation.constraints.NotNull;
  * <p><b>不碰 sensitive 标志</b>——放宽或收紧保护都走 /secret。configValue 仅在目标配置
  * 非敏感时可改；敏感配置传 configValue 由 Service 拒绝并引导走 /secret。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 public class ConfigUpdateRequest {
 

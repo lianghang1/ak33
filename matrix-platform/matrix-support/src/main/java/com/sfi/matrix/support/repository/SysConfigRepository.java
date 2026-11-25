@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * 系统参数 Repository。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysConfigRepository extends JpaRepository<SysConfig, Long> {

@@ -16,7 +16,7 @@ import javax.persistence.Table;
  * 可读路径（如 玫瑰园/东区/二区），新增或移动节点时联动刷新。墓位编号的"区码/区名"
  * 取叶子墓区，"园名"取根节点。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "cem_area")

@@ -28,7 +28,7 @@ import java.util.Map;
  * 特殊登录源可覆盖本方法自行核验并返回 {@link ExternalIdentity}，账号绑定/注册/资料建档
  * 等公共流程全部复用本门面，无需重写。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Component
 public class SocialAuthenticationStrategy implements AuthenticationStrategy {

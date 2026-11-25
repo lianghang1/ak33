@@ -1,8 +1,6 @@
-package com.sfi.matrix.support.service;
+package com.sfi.matrix.support.service.file;
 
-import com.sfi.conflux.common.util.JsonUtils;
-import com.sfi.matrix.iam.service.IamService;
-import com.sfi.matrix.support.dto.FileConfig;
+import com.sfi.matrix.support.dto.FileConfigInfo;
 import com.sfi.matrix.support.dto.FileTypeInfo;
 import com.sfi.matrix.support.enums.FileType;
 import com.sfi.matrix.support.exception.FileErrorCode;
@@ -30,13 +28,10 @@ import static com.sfi.matrix.support.exception.FileErrorCode.FILE_TYPE_NOT_ALLOW
  *
  * <p>检测结果封装为 {@link FileTypeInfo}，门禁、MIME、归类、落库共用这一份，避免多处检测不一致。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Component
 public class FileTypeGuard {
-
-    private static final String CONFIG_GROUP = "matrix.file";
-    private static final String CONFIG_KEY = "config";
 
     /** MIME 检测只读文件头：64KB 兼顾容错与开销（比 8KB 每次多约 0.03ms，可忽略），
      *  避免整文件读入内存导致大文件 OOM */
@@ -45,12 +40,10 @@ public class FileTypeGuard {
     /** 复用 x-file-storage 传递进来的 Tika，懒加载单例、线程安全 */
     private static final Tika TIKA = new DefaultTikaFactory().getTika();
 
-    private final ConfigService configService;
-    private final IamService iamService;
+    private final FileConfigProvider fileConfigProvider;
 
-    public FileTypeGuard(ConfigService configService, IamService iamService) {
-        this.configService = configService;
-        this.iamService = iamService;
+    public FileTypeGuard(FileConfigProvider fileConfigProvider) {
+        this.fileConfigProvider = fileConfigProvider;
     }
 
     /**
@@ -104,8 +97,7 @@ public class FileTypeGuard {
 
     /** 读平台租户的白名单配置；缺失或为空按 fail-closed 拒绝 */
     private Map<String, Set<String>> loadAllowed() {
-        String json = configService.get(CONFIG_GROUP, CONFIG_KEY, iamService.getPlatformTenantId());
-        FileConfig config = JsonUtils.fromJson(json, FileConfig.class);
+        FileConfigInfo config = fileConfigProvider.getConfig();
         if (config == null || config.getAllowed() == null || config.getAllowed().isEmpty()) {
             throw new BizException(FileErrorCode.FILE_TYPE_CONFIG_MISSING);
         }

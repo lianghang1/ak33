@@ -5,7 +5,7 @@ import javax.validation.constraints.NotBlank;
 /**
  * 社交登录请求：provider + 授权 code + 目标租户。
  *
- * @author matrix
+ * @author lianghang
  */
 public class SocialLoginRequest {
 

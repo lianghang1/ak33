@@ -13,7 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * <p>当前阶段公墓核心业务（墓区 / 墓位 / 寄存）尚未实现，本 app 提供平台基座：
  * 登录、租户、用户、角色、菜单、数据权限、字典参数、审计日志。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @SpringBootApplication
 public class CemeteryApplication {

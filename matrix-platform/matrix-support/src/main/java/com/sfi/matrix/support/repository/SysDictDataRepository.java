@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * 字典选项 Repository。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysDictDataRepository extends JpaRepository<SysDictData, Long> {

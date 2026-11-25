@@ -12,7 +12,7 @@ import javax.persistence.Table;
 /**
  * 角色-菜单（权限）关联（IAM 通用能力）。
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_role_menu")

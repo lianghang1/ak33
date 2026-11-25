@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  * <p>注意：登录/切租户发生在无登录态阶段，scaffold 的租户 @Filter 不生效，
  * 因此本类所有按租户的查询都<b>显式带 tenantId 条件</b>，不依赖过滤器。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Service
 public class IamService {

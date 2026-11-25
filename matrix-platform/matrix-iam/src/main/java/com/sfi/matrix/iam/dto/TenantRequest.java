@@ -6,7 +6,7 @@ import java.time.LocalDate;
 /**
  * 租户增改请求。id 为空=新增，非空=修改。
  *
- * @author matrix
+ * @author lianghang
  */
 public class TenantRequest {
 

@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 部门 Repository。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysDeptRepository extends JpaRepository<SysDept, Long> {

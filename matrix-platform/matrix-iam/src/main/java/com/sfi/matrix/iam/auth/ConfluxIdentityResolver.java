@@ -26,7 +26,7 @@ import java.util.Map;
  * <p>独成 Bean 而非写死在门面策略里，是为了可插拔：有 conflux starter 时本 Bean 存在、社交登录
  * 走真实核验；单测可 mock 本 Bean 隔离 conflux。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Component
 public class ConfluxIdentityResolver {

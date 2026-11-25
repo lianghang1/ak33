@@ -17,7 +17,7 @@ import javax.persistence.Table;
  * 本表不加租户 @Filter（全局只读定义）。parentId 自关联构成菜单树；
  * menuType 区分目录/菜单/按钮；permission 为权限标识（如 cemetery:tomb:list）。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_menu")

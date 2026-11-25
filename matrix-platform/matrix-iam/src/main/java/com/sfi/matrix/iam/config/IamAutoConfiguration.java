@@ -14,7 +14,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  *
  * <p>各声明只覆盖本模块包，不碰 com.sfi.scaffold（框架走自己的自动配置）。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @AutoConfiguration
 @ComponentScan(basePackages = "com.sfi.matrix.iam")

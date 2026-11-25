@@ -15,7 +15,7 @@ import java.time.LocalDate;
  * <p>租户表是平台级元数据，不加租户 @Filter——否则登录还没定位到租户时无从过滤。
  * packageId 指向该租户开通的套餐，决定租户能用哪些菜单；expireTime 到期后停用。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_tenant")

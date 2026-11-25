@@ -1,7 +1,8 @@
-package com.sfi.matrix.support.service;
+package com.sfi.matrix.support.service.file;
 
 import com.sfi.conflux.file.engine.FileGateway;
 import com.sfi.matrix.support.entity.SysFile;
+import com.sfi.matrix.support.service.SysFileService;
 import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.exception.GlobalErrorCode;
 import org.dromara.x.file.storage.core.FileInfo;
@@ -20,7 +21,7 @@ import java.util.Date;
  * <p>签名用的 basePath/密钥来自平台配置（FileConfigProvider），不落库；这里只负责
  * 把记录里的 path + filename 喂给官方 API，不自己拼对象键、不碰签名算法。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Service
 public class FileAccessService {

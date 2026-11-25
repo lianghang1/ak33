@@ -6,7 +6,7 @@ package com.sfi.matrix.support.constant;
  * <p>权限点值与 iam 端已播种的菜单保持一致（platform:dict:list / platform:config:list），
  * 写操作新增细粒度权限由 PlatformInitializer 同步播种。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 public final class SupportConstants {
 

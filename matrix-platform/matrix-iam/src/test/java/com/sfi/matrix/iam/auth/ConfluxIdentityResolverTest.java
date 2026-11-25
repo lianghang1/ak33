@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
  * Conflux 身份核验适配器单测：凭证原样转交、AuthUser→ExternalIdentity 转换、失败显式抛错。
  * mock AuthGateway，不触发真实 conflux 网络。
  *
- * @author matrix
+ * @author lianghang
  */
 class ConfluxIdentityResolverTest {
 

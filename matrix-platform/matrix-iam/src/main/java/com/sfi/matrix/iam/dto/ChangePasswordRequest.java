@@ -5,7 +5,7 @@ import javax.validation.constraints.NotBlank;
 /**
  * 修改密码请求（当前登录用户）。
  *
- * @author matrix
+ * @author lianghang
  */
 public class ChangePasswordRequest {
 

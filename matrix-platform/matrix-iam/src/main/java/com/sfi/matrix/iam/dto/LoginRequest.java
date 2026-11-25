@@ -5,7 +5,7 @@ import javax.validation.constraints.NotBlank;
 /**
  * 登录请求（账密 + 租户编码）。多登录方式后续通过认证策略扩展，本 DTO 承载账密方式。
  *
- * @author matrix
+ * @author lianghang
  */
 public class LoginRequest {
 

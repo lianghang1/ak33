@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * support 端到端测试：字典类型/选项两张表 CRUD、平台兜底、config value_type、缓存失效。
  *
- * @author matrix
+ * @author lianghang
  */
 @SpringBootTest
 @AutoConfigureMockMvc

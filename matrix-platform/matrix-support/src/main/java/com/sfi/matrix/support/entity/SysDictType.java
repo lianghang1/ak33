@@ -16,7 +16,7 @@ import javax.persistence.Table;
  * 具体选项在 {@link SysDictData} 中按 dictType 关联。类型本身可独立命名、
  * 备注、整组启停，这是单表设计无法表达的。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_dict_type")

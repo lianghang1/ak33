@@ -16,7 +16,7 @@ import javax.persistence.Table;
  * unionId 是跨应用统一标识（微信等有，其他平台可空），extInfo 兜住其余
  * 所有第三方返回字段——加新平台零改表。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_user_social")

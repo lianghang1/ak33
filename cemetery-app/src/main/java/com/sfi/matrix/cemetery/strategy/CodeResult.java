@@ -3,7 +3,7 @@ package com.sfi.matrix.cemetery.strategy;
 /**
  * 编号策略产出：编号 + 基础路径 + 全路径，落库为快照。
  *
- * @author matrix
+ * @author lianghang
  */
 public class CodeResult {
 

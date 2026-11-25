@@ -14,7 +14,7 @@ import javax.persistence.Table;
  * <p>全局表，不加租户 @Filter。sys_tenant.packageId 指向本表；
  * sys_package_menu 描述套餐含哪些菜单。最终权限 = 角色菜单 ∩ 套餐菜单。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_tenant_package")

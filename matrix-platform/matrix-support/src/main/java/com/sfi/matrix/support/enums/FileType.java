@@ -12,7 +12,7 @@ import java.util.Locale;
  * </ul>
  * 入库时由 {@link #fromMime(String)} 按 Tika 检测的真实 MIME 归类一次，无法识别归 {@link #OTHER}。
  *
- * @author matrix
+ * @author lianghang
  */
 public enum FileType {
 

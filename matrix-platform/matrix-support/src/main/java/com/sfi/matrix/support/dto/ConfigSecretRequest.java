@@ -9,7 +9,7 @@ import javax.validation.constraints.NotNull;
  * configValue 只收明文字符串——对外密文是结构化对象，无法直接塞进这个字段（类型隔离）。
  * 两个字段都可选，但至少提供一个，否则无意义。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 public class ConfigSecretRequest {
 

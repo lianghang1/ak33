@@ -3,7 +3,7 @@ package com.sfi.matrix.support.dto;
 /**
  * 文件对外 DTO：从 {@link com.sfi.matrix.support.entity.SysFile} 转换，字段精简。
  *
- * @author matrix
+ * @author lianghang
  */
 public class FileDTO {
 

@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * 套餐-菜单 Repository（全局，不参与租户过滤）。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysPackageMenuRepository extends JpaRepository<SysPackageMenu, Long> {

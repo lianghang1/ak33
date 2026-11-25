@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
  * 无登录态时 tenantId 传 null（由 ConfigService 回落平台），公共字段以入参为准，
  * 配置缺失抛 CONFIG_MISSING。
  *
- * @author matrix
+ * @author lianghang
  */
 class DbAuthConfigProviderTest {
 

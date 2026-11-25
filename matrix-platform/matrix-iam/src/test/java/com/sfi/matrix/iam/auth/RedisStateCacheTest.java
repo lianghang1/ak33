@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
  * RedisStateCache 单测：save 落 Redis + TTL、loadAndRemove 原子取出即删、未命中返回 null。
  * 不连真实 Redis，mock StringRedisTemplate 的原子 getAndDelete。
  *
- * @author matrix
+ * @author lianghang
  */
 class RedisStateCacheTest {
 

@@ -6,7 +6,7 @@ package com.sfi.matrix.cemetery;
  * <p>权限点用于 URL 权限拦截（菜单 api_pattern）与编程式校验，读/写分离，
  * 与平台层 dict/config 的权限点设计保持一致。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 public final class CemeteryConstants {
 

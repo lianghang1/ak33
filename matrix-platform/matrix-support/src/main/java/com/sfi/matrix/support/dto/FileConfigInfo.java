@@ -1,5 +1,8 @@
 package com.sfi.matrix.support.dto;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -13,20 +16,31 @@ import java.util.Set;
  * <p>目前只有 {@link #allowed}（MIME→后缀白名单），后续文件系统配置（缩略图尺寸、
  * 分片大小等）作为同级字段往本对象加即可，读取入口不变。</p>
  *
- * @author matrix
+ * @author lianghang
  */
-public class FileConfig {
+@Getter
+@Setter
+public class FileConfigInfo {
+
+    /**
+     * 默认配置 ID
+     */
+    private String defaultConfigId;
+
+    /**
+     * 默认渠道码
+     * eg: aliyunOss、tencentCos
+     */
+    private String defaultChannelCode;
+
+    /**
+     * 允许访问的模块码列表，文件可以设置为 acl public
+     * eg: ['portal']
+     */
+    private List<String> allowedModules;
 
     /** MIME 白名单：一个 MIME 允许一组后缀 */
     private List<MimeRule> allowed;
-
-    public List<MimeRule> getAllowed() {
-        return allowed;
-    }
-
-    public void setAllowed(List<MimeRule> allowed) {
-        this.allowed = allowed;
-    }
 
     /**
      * 归一倍对表：MIME 与后缀统一小写，供门禁直接 contains 判断。
@@ -56,24 +70,10 @@ public class FileConfig {
     }
 
     /** 一条白名单规则：{@code image/jpeg -> [jpg, jpeg, JPG, png]} */
+    @Getter
+    @Setter
     public static class MimeRule {
         private String mime;
         private List<String> exts;
-
-        public String getMime() {
-            return mime;
-        }
-
-        public void setMime(String mime) {
-            this.mime = mime;
-        }
-
-        public List<String> getExts() {
-            return exts;
-        }
-
-        public void setExts(List<String> exts) {
-            this.exts = exts;
-        }
     }
 }

@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * 租户 Repository。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysTenantRepository extends JpaRepository<SysTenant, Long> {

@@ -40,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * <p>覆盖完整链路：平台初始化 → 列租户 → 登录 → 建租户/用户/角色/部门 →
  * QueryBean 列表 → 审计日志 → 登出。使用 MockMvc 走真实 HTTP 层。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @SpringBootTest
 @AutoConfigureMockMvc

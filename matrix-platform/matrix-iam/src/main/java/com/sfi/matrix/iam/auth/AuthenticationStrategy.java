@@ -11,7 +11,7 @@ import java.util.Map;
  * 后续由 IamService 的公用装配逻辑按租户组装 LoginUser。新增登录方式不改登录主流程，
  * 只需新增一个策略 Bean，符合开闭原则。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 public interface AuthenticationStrategy {
 

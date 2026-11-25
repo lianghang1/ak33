@@ -15,7 +15,7 @@ import javax.persistence.Table;
  * <p>规划 100 格、只建 50 位——100 条 GridCell，其中 50 条已初始化关联墓位，
  * 50 条仍是待建空格。initialized=false 表示待建。格位只挂叶子墓区。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "cem_grid_cell")

@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * 用户-角色关联 Repository。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysUserRoleRepository extends JpaRepository<SysUserRole, Long> {

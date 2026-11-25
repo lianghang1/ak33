@@ -11,7 +11,7 @@ import javax.persistence.Table;
 /**
  * 套餐-菜单关联（套餐能开通哪些菜单，全局表）。
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_package_menu")

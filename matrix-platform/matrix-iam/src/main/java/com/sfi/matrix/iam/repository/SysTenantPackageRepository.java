@@ -9,7 +9,7 @@ import java.util.Optional;
 /**
  * 租户套餐 Repository（全局，不参与租户过滤）。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysTenantPackageRepository extends JpaRepository<SysTenantPackage, Long> {

@@ -40,7 +40,7 @@ import java.util.Set;
  * <p>规范：只用 GET / POST；POST 一律 {@code @RequestBody} JSON DTO；
  * 列表 / 分页查询统一走 QueryUtilsX 通路②（JPA 实体），不返回 findAll()。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @RestController
 @RequestMapping("/api/iam")

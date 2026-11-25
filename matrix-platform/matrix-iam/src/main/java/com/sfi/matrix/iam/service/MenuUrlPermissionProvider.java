@@ -16,7 +16,7 @@ import java.util.List;
  * （如 {@code POST:/api/iam/user,GET:/api/iam/users}），无前缀表示不限方法。
  * 改菜单即改权限，无需改代码、不发版。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Component
 public class MenuUrlPermissionProvider implements UrlPermissionProvider {

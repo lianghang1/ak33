@@ -3,7 +3,7 @@ package com.sfi.matrix.iam.auth;
 /**
  * 认证方式标识。登录入口统一，具体凭证校验由对应 {@link AuthenticationStrategy} 实现。
  *
- * @author matrix
+ * @author lianghang
  */
 public final class AuthType {
 

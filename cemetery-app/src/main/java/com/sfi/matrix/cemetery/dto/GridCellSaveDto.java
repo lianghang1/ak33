@@ -6,7 +6,7 @@ import javax.validation.constraints.NotNull;
 /**
  * 格位修改请求：只允许改坐标（排/列），墓区归属与初始化状态不可改。
  *
- * @author matrix
+ * @author lianghang
  */
 public class GridCellSaveDto {
 

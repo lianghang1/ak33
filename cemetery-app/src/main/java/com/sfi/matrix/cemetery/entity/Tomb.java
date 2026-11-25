@@ -17,7 +17,7 @@ import java.math.BigDecimal;
  * 策略或墓区树后续变更不反向改写历史数据。status 由业务动作驱动流转，P0 阶段
  * 初始化后固定为 INITIALIZED。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "cem_tomb")

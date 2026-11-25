@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
  * 编号策略装配：默认注册"区-排-号"策略。客户注册任意自定义 {@link TombCodeStrategy}
  * Bean 时默认策略自动退让，编号规则可插拔由此落地。
  *
- * @author matrix
+ * @author lianghang
  */
 @Configuration
 public class CodeStrategyConfig {

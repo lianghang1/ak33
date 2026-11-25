@@ -18,7 +18,7 @@ import javax.persistence.Table;
  * 加了过滤就查不全；它只存归属关系、不含业务数据，按 userId 查询即安全。
  * 切换到具体租户后，由 repository 显式按 tenantId 条件取当前归属。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_user_tenant")

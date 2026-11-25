@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
  * ConfigService 租户兜底：按传入 tenantId 查、缺则回落平台。
  * ConfigService 不判断登录态——传什么 tenantId 就查什么，查不到照常回落平台。
  *
- * @author matrix
+ * @author lianghang
  */
 class ConfigServiceTenantFallbackTest {
 

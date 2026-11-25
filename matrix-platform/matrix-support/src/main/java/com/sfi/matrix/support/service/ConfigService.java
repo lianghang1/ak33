@@ -36,7 +36,7 @@ import java.util.List;
  *
  * <p>取值顺序：当前租户 → 平台租户（PLATFORM）→ null。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Service
 public class ConfigService extends BaseService<SysConfig> {

@@ -6,7 +6,6 @@ import com.sfi.conflux.auth.exception.AuthErrorCode;
 import com.sfi.conflux.common.util.JsonUtils;
 import com.sfi.matrix.support.service.ConfigService;
 import com.sfi.scaffold.starter.security.identity.LoginContext;
-import com.sfi.scaffold.starter.security.identity.LoginUser;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,7 +21,7 @@ import org.springframework.stereotype.Component;
  * <p>用 {@code @Component} 注册，starter 的 {@code @ConditionalOnMissingBean(AuthConfigProvider)}
  * 自动让位，无需改 conflux 源码。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Component
 public class DbAuthConfigProvider implements AuthConfigProvider {
@@ -37,7 +36,7 @@ public class DbAuthConfigProvider implements AuthConfigProvider {
 
     @Override
     public AuthConfig getConfig(String configId, String channelCode) {
-        String json = configService.get(GROUP_PREFIX + configId, channelCode, currentTenantId());
+        String json = configService.get(GROUP_PREFIX + configId, channelCode, LoginContext.currentTenantIdOrNull());
         if (json == null) {
             throw AuthErrorCode.CONFIG_MISSING.of(
                     "登录配置缺失: configId=" + configId + ", channelCode=" + channelCode);
@@ -52,9 +51,4 @@ public class DbAuthConfigProvider implements AuthConfigProvider {
         }
     }
 
-    /** 当前登录租户；无登录态返回 null（由 ConfigService 回落平台）。 */
-    private static String currentTenantId() {
-        LoginUser user = LoginContext.currentOrNull();
-        return user == null ? null : user.getTenantId();
-    }
 }

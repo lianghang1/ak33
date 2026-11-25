@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * 用户社交绑定 Repository（1:N）。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysUserSocialRepository extends JpaRepository<SysUserSocial, Long> {

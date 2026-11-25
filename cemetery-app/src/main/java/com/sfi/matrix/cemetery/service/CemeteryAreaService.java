@@ -19,7 +19,7 @@ import java.util.Set;
  * <p>level 按父节点自动计算（根=1，子=父+1），fullPath 为根到当前节点的可读路径；
  * 新增/重命名/移动时级联刷新自身与全部后代的这两项派生字段。同 parent 下编码唯一。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Service
 public class CemeteryAreaService extends BaseService<CemeteryArea> {

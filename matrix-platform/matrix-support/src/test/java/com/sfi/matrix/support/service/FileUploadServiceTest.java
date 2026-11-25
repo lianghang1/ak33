@@ -5,6 +5,9 @@ import com.sfi.matrix.support.dto.FileTypeInfo;
 import com.sfi.matrix.support.dto.UploadCommand;
 import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.matrix.support.enums.FileType;
+import com.sfi.matrix.support.service.file.FileConfigProvider;
+import com.sfi.matrix.support.service.file.FileTypeGuard;
+import com.sfi.matrix.support.service.file.FileUploadService;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.dromara.x.file.storage.core.FileStorageService;
 import org.dromara.x.file.storage.core.upload.UploadPretreatment;
@@ -26,7 +29,7 @@ import static org.mockito.Mockito.when;
 /**
  * FileUploadService：门禁结果复用、上传链路、逐字段落库、缩略图随传、DTO 转换。
  *
- * @author matrix
+ * @author lianghang
  */
 class FileUploadServiceTest {
 
@@ -37,6 +40,7 @@ class FileUploadServiceTest {
     private UploadPretreatment pre;
     private FileUploadService service;
     private HashInfo hash;
+    private FileConfigProvider fileConfigProvider;
 
     @BeforeEach
     void setUp() {
@@ -46,6 +50,7 @@ class FileUploadServiceTest {
         storage = mock(FileStorageService.class);
         pre = mock(UploadPretreatment.class);
         hash = mock(HashInfo.class);
+        fileConfigProvider = mock(FileConfigProvider.class);
         when(hash.getMd5()).thenReturn("d41d8cd98f00b204e9800998ecf8427e");
 
         when(gateway.nativeService("cfg-1", "oss")).thenReturn(storage);
@@ -56,7 +61,7 @@ class FileUploadServiceTest {
         when(pre.setIgnoreThumbnailException(anyBoolean(), anyBoolean())).thenReturn(pre);
         when(fileService.save(any(SysFile.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        service = new FileUploadService(gateway, fileService, fileTypeGuard);
+        service = new FileUploadService(gateway, fileService, fileTypeGuard, fileConfigProvider);
     }
 
     private FileTypeInfo imageType() {

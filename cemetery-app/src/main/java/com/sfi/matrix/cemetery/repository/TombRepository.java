@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * 墓位 Repository。租户过滤由 @Filter 全局处理，编号唯一为租户内（配合租户过滤器）。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface TombRepository extends JpaRepository<Tomb, Long> {

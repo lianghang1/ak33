@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
  * <p>不继承 BaseEntity：分片是短生命周期的过程数据，只需要雪花主键与创建时间，
  * 创建时间同时供兜底清理任务判断会话是否过期。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_file_part")

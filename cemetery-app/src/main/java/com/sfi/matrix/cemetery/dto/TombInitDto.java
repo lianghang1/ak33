@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 墓位初始化请求：勾选若干空格位 + 穴位数 + 销售价，批量建成墓位。
  *
- * @author matrix
+ * @author lianghang
  */
 public class TombInitDto {
 

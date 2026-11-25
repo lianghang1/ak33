@@ -6,7 +6,7 @@ import javax.validation.constraints.Positive;
 /**
  * 铺格位请求：在指定墓区按 rows×cols 生成规划格位。
  *
- * @author matrix
+ * @author lianghang
  */
 public class GridGenerateDto {
 

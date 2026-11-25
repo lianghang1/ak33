@@ -17,7 +17,7 @@ import static org.mockito.Mockito.when;
  * {@link MenuUrlPermissionProvider}：从菜单表 api_pattern 解析 URL 权限规则，
  * 覆盖逗号分隔多模式、METHOD: 前缀、无 api_pattern 跳过。
  *
- * @author matrix
+ * @author lianghang
  */
 class MenuUrlPermissionProviderTest {
 

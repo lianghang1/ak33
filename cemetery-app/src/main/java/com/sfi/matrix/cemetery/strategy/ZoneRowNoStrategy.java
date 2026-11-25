@@ -7,7 +7,7 @@ package com.sfi.matrix.cemetery.strategy;
  * 基础路径：{园}/{区}/{排}排；全路径：基础路径/{位}号。多级墓区下区码取叶子墓区、
  * 园名取根节点，由 Service 组装上下文时保证。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 public class ZoneRowNoStrategy implements TombCodeStrategy {
 

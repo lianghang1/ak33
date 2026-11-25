@@ -16,7 +16,7 @@ import java.util.Map;
  * <p>把原来揉在 AuthController 里的 checkPassword 收敛到这里，
  * 所有登录入口共用同一套密码校验与防刷逻辑。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Component
 public class PasswordAuthenticationStrategy implements AuthenticationStrategy {

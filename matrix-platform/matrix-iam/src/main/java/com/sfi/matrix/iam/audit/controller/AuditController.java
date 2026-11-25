@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * 审计日志查询（QueryBean 通路②）。
  *
- * @author matrix
+ * @author lianghang
  */
 @RestController
 @RequestMapping("/api/audit")

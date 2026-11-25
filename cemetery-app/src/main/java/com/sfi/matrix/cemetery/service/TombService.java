@@ -24,7 +24,7 @@ import java.util.List;
  * P0 初始化后状态固定为 INITIALIZED，售价随初始化录入。整批在一个事务内完成，
  * 单个格位失败整批回滚。编号策略通过 {@link TombCodeStrategy} 可插拔。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Service
 public class TombService extends BaseService<Tomb> {

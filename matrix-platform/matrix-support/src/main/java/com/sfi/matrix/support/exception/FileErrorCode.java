@@ -5,7 +5,7 @@ import com.sfi.scaffold.common.exception.ErrorCode;
 /**
  * 文件系统业务错误码（6xxx 段）。
  *
- * @author matrix
+ * @author lianghang
  */
 public enum FileErrorCode implements ErrorCode {
 

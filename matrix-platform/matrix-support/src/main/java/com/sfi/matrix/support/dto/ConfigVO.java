@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  * 对外视图里 sensitive=true 时是 {@link SecretCipher} 密文对象、否则是明文字符串。这样对外永不
  * 直接暴露敏感明文，且密文是结构化对象而非字符串，无法被误当明文提交。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 public class ConfigVO {
 

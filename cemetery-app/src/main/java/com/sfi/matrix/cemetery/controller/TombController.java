@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * 墓位接口：初始化（业务动作，不接基类）+ 查询。
  *
- * @author matrix
+ * @author lianghang
  */
 @RestController
 @RequestMapping("/api/cemetery/tomb")

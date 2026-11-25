@@ -4,8 +4,8 @@ import com.sfi.matrix.iam.audit.annotation.OperateLog;
 import com.sfi.matrix.support.dto.FileUploadRequest;
 import com.sfi.matrix.support.dto.UploadCommand;
 import com.sfi.matrix.support.entity.SysFile;
-import com.sfi.matrix.support.service.FileAccessService;
-import com.sfi.matrix.support.service.FileUploadService;
+import com.sfi.matrix.support.service.file.FileAccessService;
+import com.sfi.matrix.support.service.file.FileUploadService;
 import com.sfi.scaffold.common.result.R;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
  * <p>非标准 CRUD——上传走 multipart、访问走地址解析，故独立成类。
  * 存储平台、签名算法全在 conflux / x-file-storage 内部，本类只做入参编排与结果返回。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @RestController
 @RequestMapping("/api/file")
@@ -46,7 +46,6 @@ public class FileController {
         cmd.setChannelCode(req.getChannelCode());
         cmd.setSource(file);
         cmd.setOriginalFilename(file.getOriginalFilename());
-        cmd.setPrivateAccess(Boolean.TRUE.equals(req.getPrivateAccess()));
         cmd.setObjectType(req.getObjectType());
         cmd.setObjectId(req.getObjectId());
         return R.ok(uploadService.upload(cmd));

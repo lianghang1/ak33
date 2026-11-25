@@ -8,7 +8,7 @@ import javax.validation.constraints.NotBlank;
  * <p>configValue 只收明文字符串；sensitive 在此定初值。敏感值也以明文传入，
  * 落库即明文，对外读取时才加密成 {@link SecretCipher}。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 public class ConfigCreateRequest {
 

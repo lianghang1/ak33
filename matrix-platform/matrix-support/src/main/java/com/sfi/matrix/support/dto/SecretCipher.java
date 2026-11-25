@@ -8,7 +8,7 @@ package com.sfi.matrix.support.dto;
  * 提交明文字符串。这是「类型隔离」：靠结构差异防误操作，而不是靠前缀/格式检测（后者可被
  * 简单改写绕过）。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 public class SecretCipher {
 

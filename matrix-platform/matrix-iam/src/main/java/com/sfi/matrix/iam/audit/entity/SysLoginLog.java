@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  *
  * <p>不加租户 @Filter：登录失败时可能尚未定位租户，按 user 审计即可。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_login_log")

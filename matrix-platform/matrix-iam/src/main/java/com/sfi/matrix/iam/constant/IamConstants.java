@@ -6,7 +6,7 @@ package com.sfi.matrix.iam.constant;
  * <p>集中定义，避免魔法字符串散落在实体 / 服务 / 初始化器里。
  * 约定：特殊角色用 roleType 区分行为，built_in 只表达"系统内置、不可删"。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 public final class IamConstants {
 

@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * 菜单 Repository。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysMenuRepository extends JpaRepository<SysMenu, Long> {

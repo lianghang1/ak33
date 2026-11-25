@@ -20,7 +20,7 @@ import java.util.List;
  * <p>类型列表按租户缓存；"读"走平台兜底（租户未定义的类型补充平台那份）。
  * 写操作失效本租户与平台租户的类型列表缓存。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Service
 public class DictTypeService extends BaseService<SysDictType> {

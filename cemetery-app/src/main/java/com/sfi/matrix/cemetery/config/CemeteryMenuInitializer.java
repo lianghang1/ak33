@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
  *
  * <p>可通过 {@code matrix.cemetery.seed-menus=false} 关闭播种。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE - 10)

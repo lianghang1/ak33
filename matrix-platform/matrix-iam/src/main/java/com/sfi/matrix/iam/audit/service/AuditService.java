@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
  * <p>日志写入用 REQUIRES_NEW：即使业务失败回滚，审计记录也保留。
  * 任何审计异常都被吞掉，绝不影响主流程。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Service
 public class AuditService {

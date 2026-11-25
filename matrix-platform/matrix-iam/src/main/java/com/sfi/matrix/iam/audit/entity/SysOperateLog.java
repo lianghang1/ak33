@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 /**
  * 操作审计日志：记录被 {@code @OperateLog} 标注的方法调用。
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_operate_log")

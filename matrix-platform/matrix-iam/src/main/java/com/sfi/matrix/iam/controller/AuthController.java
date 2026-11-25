@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
  * </ol>
  * 所有写操作 POST 一律 {@link RequestBody} JSON + {@link Valid} DTO。
  *
- * @author matrix
+ * @author lianghang
  */
 @RestController
 @RequestMapping("/api/auth")

@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Bean;
  * {@link StateCache} Bean 即可覆盖默认实现；如需把登录配置接到 DB/配置中心，
  * 提供自己的 {@code AuthConfigProvider} Bean 覆盖 conflux 默认实现。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @AutoConfiguration
 @AutoConfigureBefore(name = "com.sfi.conflux.auth.autoconfigure.AuthAutoConfiguration")

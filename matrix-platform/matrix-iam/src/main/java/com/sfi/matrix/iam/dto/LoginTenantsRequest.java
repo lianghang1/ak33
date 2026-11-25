@@ -5,7 +5,7 @@ import javax.validation.constraints.NotBlank;
 /**
  * 列租户请求：校验账密后返回该账号可登录的租户列表。
  *
- * @author matrix
+ * @author lianghang
  */
 public class LoginTenantsRequest {
 

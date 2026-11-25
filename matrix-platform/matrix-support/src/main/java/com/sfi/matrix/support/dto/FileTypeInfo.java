@@ -5,7 +5,7 @@ import com.sfi.matrix.support.enums.FileType;
 /**
  * 文件类型检测结果：一次读头算全，门禁校验、上传 MIME、落库共用这一份。
  *
- * @author matrix
+ * @author lianghang
  */
 public final class FileTypeInfo {
 

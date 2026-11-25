@@ -15,7 +15,7 @@ import javax.persistence.Table;
  * <p>一个 key 对应一个 value，面向系统行为控制（开关/阈值），
  * 与"一组选项"的字典明确区分。valueType 标注值类型，供客户端正确解析。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_config")

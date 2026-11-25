@@ -9,7 +9,7 @@ import java.util.Optional;
 /**
  * 用户 Repository。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysUserRepository extends JpaRepository<SysUser, Long> {

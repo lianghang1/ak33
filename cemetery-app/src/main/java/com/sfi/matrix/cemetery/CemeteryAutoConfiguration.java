@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * <p>宿主 CemeteryApplication 不带包扫描注解，本类负责把公墓业务的
  * Controller/Service/Repository/Entity 纳入 Spring 管理。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @AutoConfiguration
 @ComponentScan(basePackages = "com.sfi.matrix.cemetery")

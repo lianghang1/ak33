@@ -5,7 +5,7 @@ import javax.validation.constraints.NotNull;
 /**
  * 墓区移动请求。newParentId 为 null 表示提升为根。
  *
- * @author matrix
+ * @author lianghang
  */
 public class AreaMoveDto {
 

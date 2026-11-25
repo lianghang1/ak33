@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  * <p>参数经 JSON 序列化 + 敏感字段脱敏 + 截断；序列化失败降级为类型名，
  * 审计失败不影响业务主流程。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Aspect
 @Component

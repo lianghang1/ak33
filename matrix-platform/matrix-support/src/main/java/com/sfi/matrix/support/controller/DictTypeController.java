@@ -24,7 +24,7 @@ import java.util.List;
  * 兜底列表避让到 GET /options（与字典选项的 /api/dict/options 对称）。
  * 写操作仍走 DictTypeService.save(E) 的幂等+缓存逻辑。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @RestController
 @RequestMapping("/api/dict-type")

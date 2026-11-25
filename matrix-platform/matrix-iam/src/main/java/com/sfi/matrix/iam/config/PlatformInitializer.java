@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
  * <p>账号密码走配置，可用 {@code matrix.platform.admin.enabled=false} 关闭账号初始化，
  * 仅保留租户域与菜单种子。密码由 PasswordEncoder 编码后传给 service。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Component
 public class PlatformInitializer implements ApplicationRunner {

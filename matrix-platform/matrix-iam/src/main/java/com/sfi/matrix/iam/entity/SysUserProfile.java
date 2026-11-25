@@ -14,7 +14,7 @@ import javax.persistence.Table;
  * <p>只放低频的"人"资料，不参与登录鉴权；与社交平台返回的原始资料
  * （在 {@link SysUserSocial}.extInfo）分离——本表是系统的权威资料。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_user_profile")

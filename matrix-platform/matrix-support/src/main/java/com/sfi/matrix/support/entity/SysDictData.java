@@ -15,7 +15,7 @@ import javax.persistence.Table;
  * <p>type + code 唯一定位一个选项；type 相同的若干项构成一个下拉选项集，
  * 通过 dictType 关联 {@link SysDictType}。平台兜底按 code 合并租户与平台两份。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_dict_data")

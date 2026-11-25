@@ -21,7 +21,7 @@ import javax.persistence.Table;
  * 归属关系在 {@link SysUserTenant}，部门也挂在该关联上——同一账号在不同
  * 租户下可属于不同部门。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_user")

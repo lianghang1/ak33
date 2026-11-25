@@ -55,6 +55,12 @@
             <artifactId>scaffold-starter-redis</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- ===== 测试：H2 + Liquibase + Redis 会话，端到端验证平台层 ===== -->
         <dependency>
             <groupId>com.sfi.scaffold</groupId>

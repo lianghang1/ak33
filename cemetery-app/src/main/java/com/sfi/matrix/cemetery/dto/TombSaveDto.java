@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 /**
  * 墓位修改请求：只允许改穴位数与售价。编号/路径/状态是快照或由业务动作驱动，不在此改。
  *
- * @author matrix
+ * @author lianghang
  */
 public class TombSaveDto {
 

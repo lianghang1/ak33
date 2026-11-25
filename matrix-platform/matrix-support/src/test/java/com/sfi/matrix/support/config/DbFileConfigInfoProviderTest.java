@@ -21,9 +21,9 @@ import static org.mockito.Mockito.when;
  * 统一走 conflux 框架共享的 JsonUtils 反序列化，
  * 平台配置字段正确落位，配置缺失/坏 JSON 抛 CONFIG_MISSING。
  *
- * @author matrix
+ * @author lianghang
  */
-class DbFileConfigProviderTest {
+class DbFileConfigInfoProviderTest {
 
     private ConfigService configService;
     private DbFileConfigProvider provider;

@@ -13,7 +13,7 @@ import java.util.List;
  * <p>不继承 BaseService（SysFilePart 非 BaseEntity、逻辑删除不适用）：
  * 分片明细在 complete/abort 后按会话物理删除。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Service
 public class SysFilePartService {

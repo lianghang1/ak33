@@ -2,6 +2,7 @@ package com.sfi.matrix.support.service;
 
 import com.sfi.conflux.file.engine.FileGateway;
 import com.sfi.matrix.support.entity.SysFile;
+import com.sfi.matrix.support.service.file.FileAccessService;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.when;
  * FileAccessService：公开文件直出原始地址、私有文件按对象坐标签名、缩略图用独立坐标、
  * 记录不存在抛异常、平台不支持签名时抛异常。
  *
- * @author matrix
+ * @author lianghang
  */
 class FileAccessServiceTest {
 

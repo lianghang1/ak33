@@ -4,6 +4,8 @@ import com.sfi.matrix.iam.service.IamService;
 import com.sfi.matrix.support.dto.FileTypeInfo;
 import com.sfi.matrix.support.enums.FileType;
 import com.sfi.matrix.support.exception.FileErrorCode;
+import com.sfi.matrix.support.service.file.FileConfigProvider;
+import com.sfi.matrix.support.service.file.FileTypeGuard;
 import com.sfi.scaffold.common.exception.BizException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +23,7 @@ import static org.mockito.Mockito.when;
  * FileTypeGuard：读取与门禁分离；detect 不依赖配置、一次算出 mime/ext/fileType，
  * check 依赖白名单校验，命中放行、不匹配/配置缺失拒绝（fail-closed）。
  *
- * @author matrix
+ * @author lianghang
  */
 class FileTypeGuardTest {
 
@@ -36,14 +38,14 @@ class FileTypeGuardTest {
     };
 
     private ConfigService configService;
+    private FileConfigProvider fileConfigProvider;
     private FileTypeGuard guard;
 
     @BeforeEach
     void setUp() {
         configService = mock(ConfigService.class);
-        IamService iamService = mock(IamService.class);
-        when(iamService.getPlatformTenantId()).thenReturn(PLATFORM);
-        guard = new FileTypeGuard(configService, iamService);
+        fileConfigProvider = mock(FileConfigProvider.class);
+        guard = new FileTypeGuard(fileConfigProvider);
     }
 
     private void stubConfig(String json) {

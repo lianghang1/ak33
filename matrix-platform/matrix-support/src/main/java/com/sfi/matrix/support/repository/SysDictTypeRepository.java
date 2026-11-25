@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * 字典类型 Repository。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysDictTypeRepository extends JpaRepository<SysDictType, Long> {

@@ -26,7 +26,7 @@ import java.util.List;
  * 基类端点：GET /list、GET /get?id=、POST /save、POST /delete；
  * 兼容取值端点避让到 GET /options?dictType=。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @RestController
 @RequestMapping("/api/dict")

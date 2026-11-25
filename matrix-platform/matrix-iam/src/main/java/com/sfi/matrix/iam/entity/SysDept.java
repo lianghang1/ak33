@@ -15,7 +15,7 @@ import javax.persistence.Table;
  * <p>部门必须属于某个租户，标租户 @Filter；parentId 自关联构成部门树。
  * 同一账号在不同租户下可属于不同部门（见 SysUserTenant.deptId）。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_dept")

@@ -5,7 +5,7 @@ import javax.validation.constraints.NotNull;
 /**
  * 踢人请求：使目标账号全部会话失效。
  *
- * @author matrix
+ * @author lianghang
  */
 public class KickOutRequest {
 

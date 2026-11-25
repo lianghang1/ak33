@@ -34,7 +34,7 @@ import java.util.List;
  * 返回明文。写端点拆成 create（纯新增）/update（基础信息，不碰 sensitive）/secret（敏感值与
  * 标志，独立权限+审计）/delete，基类 save 已覆盖为拒绝。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @RestController
 @RequestMapping("/api/config")

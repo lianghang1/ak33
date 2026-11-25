@@ -21,7 +21,7 @@ import java.util.Map;
  * <p>属业务侧（matrix）对 conflux 的适配：framework 不再收口 conflux starter，
  * 该类随 matrix-iam 直接依赖 conflux-auth-spring-boot-starter 落地。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 public class RedisStateCache implements StateCache {
 

@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * 角色-菜单关联 Repository。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysRoleMenuRepository extends JpaRepository<SysRoleMenu, Long> {

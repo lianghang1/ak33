@@ -12,7 +12,7 @@ import javax.persistence.Table;
 /**
  * 用户-角色关联（IAM 通用能力）。
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_user_role")

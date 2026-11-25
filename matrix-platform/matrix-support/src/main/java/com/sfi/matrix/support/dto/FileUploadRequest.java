@@ -6,7 +6,7 @@ package com.sfi.matrix.support.dto;
  * <p>configId/channelCode 指定存储配置与平台；privateAccess 标记是否签名访问；
  * objectType/objectId 为可选业务归属。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 public class FileUploadRequest {
 

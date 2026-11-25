@@ -21,7 +21,7 @@ import javax.persistence.Table;
  * <p>三个"类型"维度彼此正交：{@code extension/contentType} 是原始技术属性，
  * {@code fileType} 是媒体大类（是什么），{@code objectType} 是业务归属（挂在哪）。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Entity
 @Table(name = "sys_file")

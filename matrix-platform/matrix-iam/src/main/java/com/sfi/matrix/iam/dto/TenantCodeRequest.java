@@ -5,7 +5,7 @@ import javax.validation.constraints.NotBlank;
 /**
  * 租户编码请求：切换租户 / 超管进入租户 / 列租户凭证共用。
  *
- * @author matrix
+ * @author lianghang
  */
 public class TenantCodeRequest {
 

@@ -4,7 +4,7 @@ package com.sfi.matrix.cemetery.strategy;
  * 墓位编号策略接口（可插拔）。客户实现本接口并注册为 Spring Bean 即可替换默认规则，
  * 无需改动业务代码。
  *
- * @author matrix
+ * @author lianghang
  */
 public interface TombCodeStrategy {
 

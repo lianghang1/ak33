@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * <p>登录主流程 = 认证（策略） + 装配（IamService），所有登录方式共用。
  * 新增登录方式只需新增 {@link AuthenticationStrategy} Bean，无需改 Controller。</p>
  *
- * @author matrix
+ * @author lianghang
  */
 @Service
 public class AuthService {

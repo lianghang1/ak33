@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * 用户-租户归属 Repository（不参与租户过滤，登录时要跨租户查全部归属）。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysUserTenantRepository extends JpaRepository<SysUserTenant, Long> {

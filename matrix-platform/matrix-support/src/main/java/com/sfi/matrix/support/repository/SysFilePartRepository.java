@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 分片明细 Repository（临时数据，物理删除）。
  *
- * @author matrix
+ * @author lianghang
  */
 @Repository
 public interface SysFilePartRepository extends JpaRepository<SysFilePart, Long> {
