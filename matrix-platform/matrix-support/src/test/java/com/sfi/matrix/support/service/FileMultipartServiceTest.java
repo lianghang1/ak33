@@ -55,6 +55,7 @@ class FileMultipartServiceTest {
     private FileTypeGuard fileTypeGuard;
     private FileStorageService storage;
     private FileService service;
+    private FileUrlResolver urlResolver;
 
     @BeforeEach
     void setUp() {
@@ -76,7 +77,7 @@ class FileMultipartServiceTest {
         when(fileService.save(any(SysFile.class))).thenAnswer(inv -> inv.getArgument(0));
 
         FileUploadSupport support = new FileUploadSupport(provider);
-        FileUrlResolver urlResolver = mock(FileUrlResolver.class);
+        urlResolver = mock(FileUrlResolver.class);
         service = new FileService(gateway, fileService, partService, fileTypeGuard, support, urlResolver);
     }
 
@@ -264,6 +265,7 @@ class FileMultipartServiceTest {
 
         assertEquals("COMPLETED", done.getMultipartState());
         assertEquals("abc.mp4", done.getFilename());
+        verify(urlResolver).fillLocalUrls(any(SysFile.class));
         verify(partService).clearByUploadId("upload-1");
     }
 

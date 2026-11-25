@@ -138,6 +138,7 @@ class FileUploadServiceTest {
         assertEquals("https://cdn/portal/2026/11/abc.min.jpg", dto.getThumbUrl());
         assertEquals("https://cdn/portal/2026/11/abc.jpg", dto.getRawUrl());
         assertEquals("https://cdn/portal/2026/11/abc.min.jpg", dto.getRawThumbUrl());
+        org.mockito.Mockito.verify(urlResolver).fillLocalUrls(any(com.sfi.matrix.support.entity.SysFile.class));
     }
 
     @Test

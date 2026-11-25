@@ -86,6 +86,7 @@ public class FileService {
 
         FileInfo info = uploadWithThumbnail(ctx, cmd);
         SysFile record = fileService.save(support.persist(ctx, info));
+        urlResolver.fillLocalUrls(record);
         return toDto(record);
     }
 
@@ -222,6 +223,7 @@ public class FileService {
         support.fillStorageFields(record, merged);
         record.setMultipartState(STATE_COMPLETED);
         record = fileService.save(record);
+        urlResolver.fillLocalUrls(record);
         partService.clearByUploadId(record.getMultipartUploadId());
         return record;
     }

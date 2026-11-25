@@ -26,8 +26,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * FileUrlResolver：公开文件直出原始地址、私有对象存储走预签名、
- * 本地文件走 /self/ 限时签名、验签覆盖过期与常量时间比较、domain 拼接。
+ * FileUrlResolver：本地 rawUrl 回填 /self/ 地址、公开直出不签名、私有本地动态签名、
+ * 对象存储预签名、checkAccess 公开放行与私有验签、过期与篡改拒绝。
  *
  * @author lianghang
  */
@@ -70,12 +70,82 @@ class FileUrlResolverTest {
                 .thenReturn(new FileChannelConfig("cfg-1", "local-plus", attr));
     }
 
+    // ---- fillLocalUrls：本地回填 /self/ 基础地址 ----
+
+    @Test
+    void fillLocalUrls_nginxMode_writesSelfBaseUrl() {
+        stubDomain("http://localhost/");
+        SysFile f = file(false, "local-plus");
+
+        resolver.fillLocalUrls(f);
+
+        assertEquals("http://localhost/self/file?fileId=1&thumb=0", f.getRawUrl());
+        assertEquals("http://localhost/self/file?fileId=1&thumb=1", f.getThRawUrl());
+    }
+
+    @Test
+    void fillLocalUrls_streamMode_usesAccessPath() {
+        ReflectionTestUtils.setField(resolver, "mode", "stream");
+        stubDomain("http://localhost");
+        SysFile f = file(false, "local-plus");
+
+        resolver.fillLocalUrls(f);
+
+        assertEquals("http://localhost/self/access?fileId=1&thumb=0", f.getRawUrl());
+    }
+
+    @Test
+    void fillLocalUrls_noThumbnail_leavesThRawUrlUntouched() {
+        stubDomain("http://localhost/");
+        SysFile f = file(false, "local-plus");
+        f.setThFilename(null);
+        String originalTh = f.getThRawUrl();
+
+        resolver.fillLocalUrls(f);
+
+        assertEquals(originalTh, f.getThRawUrl());
+    }
+
+    @Test
+    void fillLocalUrls_objectStorage_keepsSdkUrl() {
+        SysFile f = file(false, "oss");
+
+        resolver.fillLocalUrls(f);
+
+        assertEquals("https://cdn/2026/11/abc.jpg", f.getRawUrl());
+        verify(configProvider, never()).getConfig(any(), any());
+    }
+
+    // ---- url：公开直出 / 私有分流 ----
+
     @Test
     void publicFile_returnsRawUrl_noSign() {
         SysFile f = file(false, "oss");
         assertEquals("https://cdn/2026/11/abc.jpg", resolver.url(f, false));
         assertEquals("https://cdn/2026/11/abc.min.jpg", resolver.url(f, true));
         verify(gateway, never()).generatePresignedUrl(any(), any(), any(), any(Date.class));
+    }
+
+    @Test
+    void publicLocal_returnsRawUrl_noSign() {
+        stubDomain("http://localhost/");
+        SysFile f = file(false, "local-plus");
+        resolver.fillLocalUrls(f);
+
+        String url = resolver.url(f, false);
+        assertEquals("http://localhost/self/file?fileId=1&thumb=0", url);
+        assertFalse(url.contains("&s="), "公开文件不应带签名");
+    }
+
+    @Test
+    void privateLocal_appendsDynamicSignToRawUrl() {
+        stubDomain("http://localhost/");
+        SysFile f = file(true, "local-plus");
+        resolver.fillLocalUrls(f);
+
+        String url = resolver.url(f, false);
+        assertTrue(url.startsWith("http://localhost/self/file?fileId=1&thumb=0&t="), url);
+        assertTrue(url.contains("&s="), url);
     }
 
     @Test
@@ -113,44 +183,39 @@ class FileUrlResolverTest {
         assertThrows(com.sfi.scaffold.common.exception.BizException.class, () -> resolver.url(f, false));
     }
 
-    @Test
-    void localFile_nginxMode_signsSelfUrl() {
-        stubDomain("http://localhost/");
-        SysFile f = file(true, "local-plus");
+    // ---- checkAccess：公开放行 / 私有验签 ----
 
-        String url = resolver.url(f, false);
-        assertTrue(url.startsWith("http://localhost/self/file?"), url);
-        assertTrue(url.contains("fileId=1"), url);
-        assertTrue(url.contains("thumb=0"), url);
-        assertTrue(url.contains("&s="), url);
+    @Test
+    void checkAccess_publicLocal_allowsWithoutSign() {
+        when(fileService.get(1L)).thenReturn(file(false, "local-plus"));
+        assertTrue(resolver.checkAccess(1L, 0L, false, null), "公开本地文件无需签名即放行");
     }
 
     @Test
-    void localFile_streamMode_usesAccessPath() {
-        ReflectionTestUtils.setField(resolver, "mode", "stream");
-        stubDomain("http://localhost");
-        SysFile f = file(true, "local-plus");
-
-        String url = resolver.url(f, true);
-        assertTrue(url.startsWith("http://localhost/self/access?"), url);
-        assertTrue(url.contains("thumb=1"), url);
+    void checkAccess_privateLocal_validSign_allows() {
+        when(fileService.get(1L)).thenReturn(file(true, "local-plus"));
+        long t = System.currentTimeMillis() / 1000L + 300;
+        assertTrue(resolver.checkAccess(1L, t, false, resolver.sign(1L, t, false)));
     }
 
     @Test
-    void signAndVerify_roundTrip() {
+    void checkAccess_privateLocal_tamperOrExpired_rejects() {
+        when(fileService.get(1L)).thenReturn(file(true, "local-plus"));
         long t = System.currentTimeMillis() / 1000L + 300;
         String sign = resolver.sign(1L, t, false);
-        assertTrue(resolver.verify(1L, t, false, sign));
-        assertFalse(resolver.verify(1L, t, true, sign), "thumb 参与签名，篡改后应失败");
-        assertFalse(resolver.verify(2L, t, false, sign), "fileId 参与签名，篡改后应失败");
+        assertFalse(resolver.checkAccess(1L, t, true, sign), "thumb 篡改应拒绝");
+        assertFalse(resolver.checkAccess(2L, t, false, sign), "fileId 篡改应拒绝");
+        assertFalse(resolver.checkAccess(1L, t, false, ""), "空签名应拒绝");
+        assertFalse(resolver.checkAccess(1L, System.currentTimeMillis() / 1000L - 1, false,
+                resolver.sign(1L, System.currentTimeMillis() / 1000L - 1, false)), "过期应拒绝");
     }
 
     @Test
-    void verify_expiredOrBlank_rejects() {
-        long past = System.currentTimeMillis() / 1000L - 1;
-        String sign = resolver.sign(1L, past, false);
-        assertFalse(resolver.verify(1L, past, false, sign), "过期签名应拒绝");
-        assertFalse(resolver.verify(1L, System.currentTimeMillis() / 1000L + 300, false, ""));
+    void checkAccess_objectStorageOrMissing_rejects() {
+        when(fileService.get(1L)).thenReturn(file(false, "oss"));
+        assertFalse(resolver.checkAccess(1L, 0L, false, null), "非本地文件不走本地准入");
+        when(fileService.get(2L)).thenReturn(null);
+        assertFalse(resolver.checkAccess(2L, 0L, false, null), "不存在的文件拒绝");
     }
 
     @Test

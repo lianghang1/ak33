@@ -14,15 +14,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 
-import static com.sfi.matrix.support.exception.FileErrorCode.FILE_ACCESS_SIGN_INVALID;
+import static com.sfi.scaffold.common.exception.GlobalErrorCode.NOT_FOUND;
+import static com.sfi.scaffold.common.exception.GlobalErrorCode.SYSTEM_ERROR;
 
 /**
  * 文件访问地址解析：公开文件直出原始地址；私有文件按平台能力分流——
  * 对象存储走平台原生预签名，本地（local/local-plus）走自建 {@code /self/} 限时签名地址。
  *
- * <p>{@code /self/} 是本地文件接口的固定标志，与对象存储直链区分；路径写死不配置化。
- * 两种模式统一 {@code fileId} 参数与签名串 {@code fileId|t|thumb}，仅动作段不同：
- * nginx 模式 {@code /self/file}，stream 模式 {@code /self/access}。</p>
+ * <p>本地文件入库时即把 rawUrl/thRawUrl 拼成 {@code /self/} 基础地址（含 fileId 与 thumb，
+ * 不含动态签名）。公开文件直接返回该地址；私有文件在取用时追加 {@code t}/{@code s} 签名。
+ * {@code /self/} 是本地接口的固定标志，与对象存储直链区分，路径写死不配置化。</p>
  *
  * @author lianghang
  */
@@ -62,7 +63,7 @@ public class FileUrlResolver {
     }
 
     /**
-     * 取访问地址：公开直出原始地址，私有按平台能力生成限时地址。
+     * 按 id 取可访问地址。
      *
      * @param fileId    文件记录 id
      * @param thumbnail true 取缩略图，false 取原图
@@ -71,36 +72,42 @@ public class FileUrlResolver {
     public String url(Long fileId, boolean thumbnail) {
         SysFile file = fileService.get(fileId);
         if (file == null) {
-            throw new BizException(com.sfi.scaffold.common.exception.GlobalErrorCode.NOT_FOUND,
-                    "文件记录不存在：{}", fileId);
+            throw new BizException(NOT_FOUND, "文件记录不存在：{}", fileId);
         }
         return url(file, thumbnail);
     }
 
-    /** 基于文件记录解析地址，供上传/查询组装 DTO 时复用，避免重复查库 */
+    /**
+     * 基于记录解析地址，供上传/查询组装 DTO 时复用，避免重复查库。
+     *
+     * <p>公开文件原样返回 rawUrl/thRawUrl（本地在入库时已拼成 /self/ 基础地址，
+     * 对象存储为平台原始直链）；私有本地追加动态签名，私有对象存储走平台预签名。</p>
+     */
     public String url(SysFile file, boolean thumbnail) {
+        String raw = thumbnail ? file.getThRawUrl() : file.getRawUrl();
         if (!Boolean.TRUE.equals(file.getPrivateAccess())) {
-            return thumbnail ? file.getThRawUrl() : file.getRawUrl();
+            return raw;
         }
         if (isLocal(file.getChannelCode())) {
-            return localUrl(file, thumbnail);
+            long t = System.currentTimeMillis() / 1000L + presignSeconds;
+            return raw + "&t=" + t + "&s=" + sign(file.getId(), t, thumbnail);
         }
         FileInfo info = toFileInfo(file, thumbnail);
         Date expiration = new Date(System.currentTimeMillis() + presignSeconds * 1000L);
         String signed = fileGateway.generatePresignedUrl(file.getConfigId(), file.getChannelCode(), info, expiration);
         if (signed == null) {
-            throw new BizException(com.sfi.scaffold.common.exception.GlobalErrorCode.SYSTEM_ERROR,
-                    "签名 URL 生成失败（平台可能不支持预签名）");
+            throw new BizException(SYSTEM_ERROR, "签名 URL 生成失败（平台可能不支持预签名）");
         }
         return signed;
     }
 
     /**
-     * 生成本地文件限时签名地址。
+     * 本地文件入库后回填 rawUrl/thRawUrl 为 {@code /self/} 基础地址，须先 save 生成雪花 id 再调用。
+     * 非本地文件（对象存储）保留 SDK 返回的原始地址，不改写。
      *
-     * <p>nginx 模式部署要求（{@code /self/file}）：请求先经 Java 验签，验签通过后由 Java 下发
-     * 响应头 {@code X-Accel-Redirect: /__self_internal__/{path}{filename}} 交 nginx 读盘；
-     * nginx 需配置内部 location（外部直连返回 404），alias 指向平台 storagePath：</p>
+     * <p>nginx 模式部署要求：/self/file 请求先经 Java 验签，验签通过后由 Java 下发响应头
+     * {@code X-Accel-Redirect: /__self_internal__/{path}{filename}} 交 nginx 读盘；nginx 需配置
+     * 内部 location（标 internal，禁止外部直连），alias 指向平台 storagePath：</p>
      * <pre>{@code
      * location /self/file { proxy_pass http://app-server; }        # 先到 Java 验签
      * location /__self_internal__/ {
@@ -108,48 +115,54 @@ public class FileUrlResolver {
      *     alias /data/file-storage/;                                # = storagePath
      * }
      * }</pre>
-     * <p>stream 模式（{@code /self/access}）无 nginx，由 Java 读流写回响应。</p>
-     *
-     * @param fileId    文件记录 id
-     * @param thumbnail true 取缩略图
-     * @return 本地签名 URL
+     * <p>stream 模式（/self/access）无 nginx，由 Java 读流写回响应。X-Accel-Redirect 的目标
+     * 必须由 fileId 查库得出，禁止接受客户端传 path。</p>
      */
-    public String localUrl(SysFile file, boolean thumbnail) {
-        long t = System.currentTimeMillis() / 1000L + presignSeconds;
-        Long fileId = file.getId();
-        String sign = sign(fileId, t, thumbnail);
-        String path = SELF_PREFIX + (MODE_NGINX.equalsIgnoreCase(mode) ? ACTION_NGINX : ACTION_STREAM);
-        FileChannelConfig cfg = configProvider.getConfig(file.getConfigId(), file.getChannelCode());
-        String domain = cfg.getAttr().get("domain");
-        return concat(domain, path)
-                + "?fileId=" + fileId
-                + "&t=" + t
-                + "&thumb=" + (thumbnail ? 1 : 0)
-                + "&s=" + sign;
+    public void fillLocalUrls(SysFile file) {
+        if (!isLocal(file.getChannelCode())) {
+            return;
+        }
+        String base = concat(domainOf(file), SELF_PREFIX + action());
+        file.setRawUrl(base + "?fileId=" + file.getId() + "&thumb=0");
+        if (file.getThFilename() != null) {
+            file.setThRawUrl(base + "?fileId=" + file.getId() + "&thumb=1");
+        }
     }
 
     /**
      * 生成本地签名串：HMAC-SHA256(fileId|t|thumb)，hex 小写。
      *
      * <p>密钥来自配置，缺省用 {@link #DEFAULT_SECRET}；{@code t} 为秒级到期时间戳，
-     * 参与签名以防篡改续期。nginx 模式下本签名由 {@code /self/file} 请求携带，
-     * Java 验签通过才下发 X-Accel-Redirect，部署配置见 {@link #localUrl}。</p>
+     * 参与签名以防篡改续期。nginx 模式下该签名由 /self/file 请求携带，Java 验签通过才下发
+     * X-Accel-Redirect，部署配置见 {@link #fillLocalUrls}。</p>
      */
     public String sign(Long fileId, long t, boolean thumbnail) {
         return SignUtil.hmacSha256Hex(fileId + "|" + t + "|" + (thumbnail ? 1 : 0), effectiveSecret());
     }
 
     /**
-     * 校验本地签名：先判是否过期，再常量时间比较签名串。
+     * 本地文件访问准入：查库确认是本地文件后，公开文件直接放行，私有文件校验限时签名。
      *
-     * <p>供两种模式的验签入口共用：nginx 模式（{@code /self/file}）验签通过后设置
-     * {@code X-Accel-Redirect} 交 nginx 读盘，nginx 侧 location 需标 {@code internal}
-     * 且 alias 指向平台 storagePath（配置示例见 {@link #localUrl}）；stream 模式
-     * （{@code /self/access}）验签通过后由 Java 读流写回。</p>
+     * <p>供 /self/file（nginx）与 /self/access（stream）两个端点共用。nginx 模式验签通过后
+     * 设置 X-Accel-Redirect 交 nginx 读盘（location 需标 internal，alias 指向 storagePath，
+     * 配置示例见 {@link #fillLocalUrls}）；stream 模式验签通过后由 Java 读流写回。
+     * 目标路径必须由 fileId 查库得出，禁止接受客户端传 path。</p>
      *
-     * @return 签名有效且未过期返回 true，否则 false
+     * @return 本地文件且（公开，或签名有效且未过期）返回 true，否则 false
      */
-    public boolean verify(Long fileId, long t, boolean thumbnail, String sign) {
+    public boolean checkAccess(Long fileId, long t, boolean thumbnail, String sign) {
+        SysFile file = fileService.get(fileId);
+        if (file == null || !isLocal(file.getChannelCode())) {
+            return false;
+        }
+        if (!Boolean.TRUE.equals(file.getPrivateAccess())) {
+            return true;
+        }
+        return verify(fileId, t, thumbnail, sign);
+    }
+
+    /** 校验签名：先判是否过期，再常量时间比较 */
+    private boolean verify(Long fileId, long t, boolean thumbnail, String sign) {
         if (t < System.currentTimeMillis() / 1000L) {
             return false;
         }
@@ -161,6 +174,20 @@ public class FileUrlResolver {
 
     private String effectiveSecret() {
         return StringUtils.isBlank(secret) ? DEFAULT_SECRET : secret;
+    }
+
+    private String action() {
+        return MODE_NGINX.equalsIgnoreCase(mode) ? ACTION_NGINX : ACTION_STREAM;
+    }
+
+    /** 取平台基础配置里的 domain，不新增独立配置项 */
+    private String domainOf(SysFile file) {
+        FileChannelConfig cfg = configProvider.getConfig(file.getConfigId(), file.getChannelCode());
+        if (cfg == null || cfg.getAttr() == null) {
+            return "";
+        }
+        String domain = cfg.getAttr().get("domain");
+        return StringUtils.isBlank(domain) ? "" : domain;
     }
 
     private static boolean isLocal(String channelCode) {
