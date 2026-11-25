@@ -105,18 +105,34 @@ public class FileUrlResolver {
      * 本地文件入库后回填 rawUrl/thRawUrl 为 {@code /self/} 基础地址，须先 save 生成雪花 id 再调用。
      * 非本地文件（对象存储）保留 SDK 返回的原始地址，不改写。
      *
-     * <p>nginx 模式部署要求：/self/file 请求先经 Java 验签，验签通过后由 Java 下发响应头
-     * {@code X-Accel-Redirect: /__self_internal__/{path}{filename}} 交 nginx 读盘；nginx 需配置
-     * 内部 location（标 internal，禁止外部直连），alias 指向平台 storagePath：</p>
+     * <p>nginx 部署配置：本地文件无论公开还是私有，都先到 Java 验签（公开放行、私有校验签名），
+     * nginx 模式验签通过后 Java 下发 X-Accel-Redirect 由 nginx 读盘，全程不经 Java 读文件；
+     * stream 模式（/self/access）则由 Java 读流写回。alias 必须等于平台 local-plus 的
+     * storagePath（物理硬盘根目录），internal 保证外部无法直连绕过验签：</p>
      * <pre>{@code
-     * location /self/file { proxy_pass http://app-server; }        # 先到 Java 验签
-     * location /__self_internal__/ {
-     *     internal;                                                 # 仅允许内部跳转
-     *     alias /data/file-storage/;                                # = storagePath
+     * upstream app-server { server 127.0.0.1:8080; }
+     *
+     * server {
+     *     listen 80;
+     *     server_name file.example.com;
+     *
+     *     # /self/file(nginx) 与 /self/access(stream) 都 proxy 到 Java：
+     *     #   /self/file   验签后下发 X-Accel-Redirect，由 nginx 读盘返回
+     *     #   /self/access 验签后由 Java 读流写回响应
+     *     location /self/ {
+     *         proxy_pass http://app-server;
+     *         proxy_set_header Host $host;
+     *         proxy_set_header X-Real-IP $remote_addr;
+     *     }
+     *
+     *     # 内部读盘 location：仅接受 X-Accel-Redirect 跳转，外部直连返回 404
+     *     # alias = 平台 storagePath，路径由 Java 按 fileId 查库得出，禁止接受客户端传 path
+     *     location /__self_internal__/ {
+     *         internal;
+     *         alias /data/file-storage/;
+     *     }
      * }
      * }</pre>
-     * <p>stream 模式（/self/access）无 nginx，由 Java 读流写回响应。X-Accel-Redirect 的目标
-     * 必须由 fileId 查库得出，禁止接受客户端传 path。</p>
      */
     public void fillLocalUrls(SysFile file) {
         if (!isLocal(file.getChannelCode())) {
