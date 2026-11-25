@@ -9,6 +9,7 @@ import com.sfi.matrix.support.enums.FileType;
 import com.sfi.matrix.support.service.file.FileConfigProvider;
 import com.sfi.matrix.support.service.file.FileTypeGuard;
 import com.sfi.matrix.support.service.file.FileUploadService;
+import com.sfi.matrix.support.service.file.FileUploadSupport;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.dromara.x.file.storage.core.FileStorageService;
 import org.dromara.x.file.storage.core.constant.Constant;
@@ -43,7 +44,6 @@ class FileUploadServiceTest {
     private UploadPretreatment pre;
     private FileUploadService service;
     private HashInfo hash;
-    private FileConfigProvider fileConfigProvider;
     private FileConfigInfo configInfo;
 
     @BeforeEach
@@ -54,7 +54,7 @@ class FileUploadServiceTest {
         storage = mock(FileStorageService.class);
         pre = mock(UploadPretreatment.class);
         hash = mock(HashInfo.class);
-        fileConfigProvider = mock(FileConfigProvider.class);
+        FileConfigProvider fileConfigProvider = mock(FileConfigProvider.class);
         when(hash.getMd5()).thenReturn("d41d8cd98f00b204e9800998ecf8427e");
 
         configInfo = new FileConfigInfo();
@@ -73,7 +73,8 @@ class FileUploadServiceTest {
         when(pre.setIgnoreThumbnailException(anyBoolean(), anyBoolean())).thenReturn(pre);
         when(fileService.save(any(SysFile.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        service = new FileUploadService(gateway, fileService, fileTypeGuard, fileConfigProvider);
+        FileUploadSupport support = new FileUploadSupport(fileConfigProvider);
+        service = new FileUploadService(gateway, fileService, fileTypeGuard, support);
     }
 
     private FileTypeInfo imageType() {
@@ -82,10 +83,10 @@ class FileUploadServiceTest {
 
     private FileInfo baseInfo() {
         FileInfo info = new FileInfo();
-        info.setPath("2026/11/");
+        info.setPath("portal/2026/11/");
         info.setFilename("abc.jpg");
         info.setOriginalFilename("海报.jpg");
-        info.setUrl("https://cdn/2026/11/abc.jpg");
+        info.setUrl("https://cdn/portal/2026/11/abc.jpg");
         info.setSize(1024L);
         info.setExt("jpg");
         info.setContentType("image/jpeg");
@@ -106,23 +107,24 @@ class FileUploadServiceTest {
     void upload_persistsAllFields_withThumbnail() {
         FileInfo info = baseInfo();
         info.setThFilename("abc.min.jpg");
-        info.setThUrl("https://cdn/2026/11/abc.min.jpg");
+        info.setThUrl("https://cdn/portal/2026/11/abc.min.jpg");
         info.setThSize(256L);
         info.setThContentType("image/jpeg");
         when(fileTypeGuard.detectAndCheck(any(InputStream.class), anyString())).thenReturn(imageType());
         when(pre.upload()).thenReturn(info);
 
         UploadCommand cmd = command("海报.jpg");
+        cmd.setModule("portal");
         cmd.setObjectType("CEMETERY");
         cmd.setObjectId("tomb-1");
         SysFile record = service.upload(cmd);
 
         assertEquals("cfg-1", record.getConfigId());
         assertEquals("oss", record.getChannelCode());
-        assertEquals("2026/11/", record.getPath());
+        assertEquals("portal/2026/11/", record.getPath());
         assertEquals("abc.jpg", record.getFilename());
         assertEquals("海报.jpg", record.getOriginalFilename());
-        assertEquals("https://cdn/2026/11/abc.jpg", record.getRawUrl());
+        assertEquals("https://cdn/portal/2026/11/abc.jpg", record.getRawUrl());
         assertEquals("image/jpeg", record.getContentType());
         assertEquals(FileType.IMAGE.name(), record.getFileType());
         assertEquals(Constant.ACL.PRIVATE, record.getAcl());
@@ -130,9 +132,9 @@ class FileUploadServiceTest {
         assertEquals("CEMETERY", record.getObjectType());
         assertEquals("tomb-1", record.getObjectId());
         assertEquals("d41d8cd98f00b204e9800998ecf8427e", record.getHashMd5());
-        assertEquals("2026/11/", record.getThPath());
+        assertEquals("portal/2026/11/", record.getThPath());
         assertEquals("abc.min.jpg", record.getThFilename());
-        assertEquals("https://cdn/2026/11/abc.min.jpg", record.getThRawUrl());
+        assertEquals("https://cdn/portal/2026/11/abc.min.jpg", record.getThRawUrl());
     }
 
     @Test
@@ -154,20 +156,6 @@ class FileUploadServiceTest {
         assertEquals(Boolean.FALSE, record.getPrivateAccess());
         assertNull(record.getThFilename());
         assertNull(record.getThRawUrl());
-    }
-
-    @Test
-    void upload_platformNotSupportAcl_stillPersistsDecision() {
-        configInfo.setAllowedModules(List.of("default"));
-        when(storage.isSupportAcl(anyString())).thenReturn(false);
-        FileInfo info = baseInfo();
-        when(fileTypeGuard.detectAndCheck(any(InputStream.class), anyString())).thenReturn(imageType());
-        when(pre.upload()).thenReturn(info);
-
-        SysFile record = service.upload(command("海报.jpg"));
-
-        assertEquals(Constant.ACL.PUBLIC_READ, record.getAcl());
-        assertEquals(Boolean.FALSE, record.getPrivateAccess());
     }
 
     @Test

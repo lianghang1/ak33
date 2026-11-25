@@ -91,6 +91,14 @@ class SupportEndToEndTest {
         return root.path("data");
     }
 
+    /** 全局异常恒返回 HTTP 200，失败语义在响应体 code；同时校验 traceId 透出。 */
+    private int failCode(MvcResult result, String hint) throws Exception {
+        assertEquals(200, result.getResponse().getStatus(), hint + "：HTTP 应恒 200");
+        JsonNode root = objectMapper.readTree(result.getResponse().getContentAsString(StandardCharsets.UTF_8));
+        assertTrue(root.path("traceId").asText().length() > 0, hint + "：响应应带 traceId");
+        return root.path("code").asInt();
+    }
+
     private MvcResult postJson(String url, Object body, String token) throws Exception {
         MockHttpServletRequestBuilder b = post(url).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body));
@@ -289,8 +297,8 @@ class SupportEndToEndTest {
         Map<String, Object> badUpdate = new HashMap<>();
         badUpdate.put("id", Long.valueOf(id));
         badUpdate.put("configValue", "hacked-value");
-        assertEquals(400, postJson("/api/config/update", badUpdate, adminToken)
-                .getResponse().getStatus(), "/update 不得改敏感值");
+        assertTrue(failCode(postJson("/api/config/update", badUpdate, adminToken),
+                "/update 不得改敏感值") != 0, "敏感值拒绝应返回非零业务码");
 
         // 7) POST /secret 改值（明文提交），DB 落明文，出口仍密文
         Map<String, Object> secretReq = new HashMap<>();
@@ -306,8 +314,8 @@ class SupportEndToEndTest {
         Map<String, Object> saveReq = new HashMap<>();
         saveReq.put("configKey", "whatever");
         saveReq.put("configValue", "x");
-        assertEquals(400, postJson("/api/config/save", saveReq, adminToken)
-                .getResponse().getStatus(), "/save 应停用");
+        assertTrue(failCode(postJson("/api/config/save", saveReq, adminToken),
+                "/save 应停用") != 0, "停用接口应返回非零业务码");
     }
 
     /** conflux 配置源必须由 matrix 的 Db provider 覆盖 starter 默认 yml 实现。 */

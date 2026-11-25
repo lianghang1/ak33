@@ -74,6 +74,16 @@ public class FileTypeGuard {
         }
     }
 
+    /**
+     * 按文件名粗判类型：无文件内容时用（如分片 initiate 阶段），只归类不校验白名单。
+     * 真实门禁延迟到首片上传时用文件头检测。
+     */
+    public FileTypeInfo detectByName(String filename) {
+        String mime = TIKA.detect(filename);
+        mime = mime == null ? "" : mime.toLowerCase(Locale.ROOT);
+        return new FileTypeInfo(mime, extension(filename), FileType.fromMime(mime));
+    }
+
     /** 读 + 校验一次完成，返回检测结果供 MIME/归类/落库复用 */
     public FileTypeInfo detectAndCheck(InputStream in, String filename) {
         FileTypeInfo info = detect(in, filename);

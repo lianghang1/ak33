@@ -16,7 +16,10 @@ public enum FileErrorCode implements ErrorCode {
     FILE_TYPE_CONFIG_MISSING(6002, "文件类型白名单配置缺失", 500),
 
     /** 读取上传文件字节失败 */
-    FILE_READ_FAILED(6003, "读取上传文件失败", 400);
+    FILE_READ_FAILED(6003, "读取上传文件失败", 400),
+
+    /** 存储平台不支持分片上传 */
+    FILE_MULTIPART_NOT_SUPPORTED(6004, "存储平台不支持分片上传", 400);
 
     private final int code;
     private final String message;
