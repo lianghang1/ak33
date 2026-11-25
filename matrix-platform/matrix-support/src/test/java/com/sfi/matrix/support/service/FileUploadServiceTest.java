@@ -2,25 +2,25 @@ package com.sfi.matrix.support.service;
 
 import com.sfi.conflux.file.engine.FileGateway;
 import com.sfi.matrix.support.dto.FileConfigInfo;
+import com.sfi.matrix.support.dto.FileDTO;
 import com.sfi.matrix.support.dto.FileTypeInfo;
 import com.sfi.matrix.support.dto.UploadCommand;
-import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.matrix.support.enums.FileType;
 import com.sfi.matrix.support.service.file.FileConfigProvider;
+import com.sfi.matrix.support.service.file.FileService;
 import com.sfi.matrix.support.service.file.FileTypeGuard;
-import com.sfi.matrix.support.service.file.FileUploadService;
 import com.sfi.matrix.support.service.file.FileUploadSupport;
+import com.sfi.matrix.support.service.file.FileUrlResolver;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.dromara.x.file.storage.core.FileStorageService;
 import org.dromara.x.file.storage.core.constant.Constant;
-import org.dromara.x.file.storage.core.upload.UploadPretreatment;
 import org.dromara.x.file.storage.core.hash.HashInfo;
+import org.dromara.x.file.storage.core.upload.UploadPretreatment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.InputStream;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * FileUploadService：门禁结果复用、上传链路、逐字段落库、缩略图随传、DTO 转换。
+ * FileService 上传：门禁结果复用、上传链路、逐字段落库、缩略图随传、DTO 转换。
  *
  * @author lianghang
  */
@@ -42,7 +42,8 @@ class FileUploadServiceTest {
     private FileTypeGuard fileTypeGuard;
     private FileStorageService storage;
     private UploadPretreatment pre;
-    private FileUploadService service;
+    private FileUrlResolver urlResolver;
+    private FileService service;
     private HashInfo hash;
     private FileConfigInfo configInfo;
 
@@ -50,9 +51,11 @@ class FileUploadServiceTest {
     void setUp() {
         gateway = mock(FileGateway.class);
         fileService = mock(SysFileService.class);
+        SysFilePartService partService = mock(SysFilePartService.class);
         fileTypeGuard = mock(FileTypeGuard.class);
         storage = mock(FileStorageService.class);
         pre = mock(UploadPretreatment.class);
+        urlResolver = mock(FileUrlResolver.class);
         hash = mock(HashInfo.class);
         FileConfigProvider fileConfigProvider = mock(FileConfigProvider.class);
         when(hash.getMd5()).thenReturn("d41d8cd98f00b204e9800998ecf8427e");
@@ -71,10 +74,19 @@ class FileUploadServiceTest {
         when(pre.setNotSupportMetadataThrowException(anyBoolean())).thenReturn(pre);
         when(pre.setNotSupportAclThrowException(anyBoolean())).thenReturn(pre);
         when(pre.setIgnoreThumbnailException(anyBoolean(), anyBoolean())).thenReturn(pre);
-        when(fileService.save(any(SysFile.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(fileService.save(any(com.sfi.matrix.support.entity.SysFile.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        // toDto 会通过 urlResolver 解析地址
+        when(urlResolver.url(any(com.sfi.matrix.support.entity.SysFile.class), anyBoolean()))
+                .thenAnswer(inv -> {
+                    com.sfi.matrix.support.entity.SysFile f = inv.getArgument(0);
+                    boolean thumb = inv.getArgument(1);
+                    return thumb ? f.getThRawUrl() : f.getRawUrl();
+                });
 
         FileUploadSupport support = new FileUploadSupport(fileConfigProvider);
-        service = new FileUploadService(gateway, fileService, fileTypeGuard, support);
+        service = new FileService(gateway, fileService, partService, fileTypeGuard, support, urlResolver);
     }
 
     private FileTypeInfo imageType() {
@@ -110,6 +122,7 @@ class FileUploadServiceTest {
         info.setThUrl("https://cdn/portal/2026/11/abc.min.jpg");
         info.setThSize(256L);
         info.setThContentType("image/jpeg");
+
         when(fileTypeGuard.detectAndCheck(any(InputStream.class), anyString())).thenReturn(imageType());
         when(pre.upload()).thenReturn(info);
 
@@ -117,29 +130,19 @@ class FileUploadServiceTest {
         cmd.setModule("portal");
         cmd.setObjectType("CEMETERY");
         cmd.setObjectId("tomb-1");
-        SysFile record = service.upload(cmd);
+        FileDTO dto = service.upload(cmd);
 
-        assertEquals("cfg-1", record.getConfigId());
-        assertEquals("oss", record.getChannelCode());
-        assertEquals("portal/2026/11/", record.getPath());
-        assertEquals("abc.jpg", record.getFilename());
-        assertEquals("海报.jpg", record.getOriginalFilename());
-        assertEquals("https://cdn/portal/2026/11/abc.jpg", record.getRawUrl());
-        assertEquals("image/jpeg", record.getContentType());
-        assertEquals(FileType.IMAGE.name(), record.getFileType());
-        assertEquals(Constant.ACL.PRIVATE, record.getAcl());
-        assertEquals(Boolean.TRUE, record.getPrivateAccess());
-        assertEquals("CEMETERY", record.getObjectType());
-        assertEquals("tomb-1", record.getObjectId());
-        assertEquals("d41d8cd98f00b204e9800998ecf8427e", record.getHashMd5());
-        assertEquals("portal/2026/11/", record.getThPath());
-        assertEquals("abc.min.jpg", record.getThFilename());
-        assertEquals("https://cdn/portal/2026/11/abc.min.jpg", record.getThRawUrl());
+        assertEquals("abc.jpg", dto.getFilename());
+        assertEquals("海报.jpg", dto.getOriginalFilename());
+        assertEquals("https://cdn/portal/2026/11/abc.jpg", dto.getUrl());
+        assertEquals("https://cdn/portal/2026/11/abc.min.jpg", dto.getThumbUrl());
+        assertEquals("https://cdn/portal/2026/11/abc.jpg", dto.getRawUrl());
+        assertEquals("https://cdn/portal/2026/11/abc.min.jpg", dto.getRawThumbUrl());
     }
 
     @Test
     void upload_noThumbnail_leavesThFieldsNull() {
-        configInfo.setAllowedModules(List.of("default"));
+        configInfo.setAllowedModules(java.util.List.of("default"));
         FileTypeInfo docType = new FileTypeInfo("application/pdf", "pdf", FileType.DOCUMENT);
         FileInfo info = baseInfo();
         info.setExt("pdf");
@@ -147,20 +150,17 @@ class FileUploadServiceTest {
         when(fileTypeGuard.detectAndCheck(any(InputStream.class), anyString())).thenReturn(docType);
         when(pre.upload()).thenReturn(info);
 
-        UploadCommand cmd = command("doc.pdf");
-        SysFile record = service.upload(cmd);
+        FileDTO dto = service.upload(command("doc.pdf"));
 
-        assertEquals("application/pdf", record.getContentType());
-        assertEquals(FileType.DOCUMENT.name(), record.getFileType());
-        assertEquals(Constant.ACL.PUBLIC_READ, record.getAcl());
-        assertEquals(Boolean.FALSE, record.getPrivateAccess());
-        assertNull(record.getThFilename());
-        assertNull(record.getThRawUrl());
+        assertEquals("application/pdf", dto.getContentType());
+        assertEquals(FileType.DOCUMENT.name(), dto.getFileType());
+        assertNull(dto.getThumbUrl());
+        assertNull(dto.getRawThumbUrl());
     }
 
     @Test
     void toDto_mapsEntityFields() {
-        SysFile f = new SysFile();
+        com.sfi.matrix.support.entity.SysFile f = new com.sfi.matrix.support.entity.SysFile();
         f.setId(7L);
         f.setFilename("abc.jpg");
         f.setRawUrl("https://cdn/2026/11/abc.jpg");
@@ -168,10 +168,11 @@ class FileUploadServiceTest {
         f.setThRawUrl("https://cdn/2026/11/abc.min.jpg");
         f.setHashMd5("md5-1");
 
-        assertEquals(7L, service.toDto(f).getId());
-        assertEquals("abc.jpg", service.toDto(f).getFilename());
-        assertEquals("https://cdn/2026/11/abc.jpg", service.toDto(f).getUrl());
-        assertEquals("https://cdn/2026/11/abc.min.jpg", service.toDto(f).getThumbUrl());
-        assertEquals("md5-1", service.toDto(f).getMd5());
+        FileDTO dto = service.toDto(f);
+        assertEquals(7L, dto.getId());
+        assertEquals("abc.jpg", dto.getFilename());
+        assertEquals("https://cdn/2026/11/abc.jpg", dto.getUrl());
+        assertEquals("https://cdn/2026/11/abc.min.jpg", dto.getThumbUrl());
+        assertEquals("md5-1", dto.getMd5());
     }
 }

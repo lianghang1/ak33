@@ -10,7 +10,8 @@ import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.matrix.support.entity.SysFilePart;
 import com.sfi.matrix.support.enums.FileType;
 import com.sfi.matrix.support.service.file.FileConfigProvider;
-import com.sfi.matrix.support.service.file.FileMultipartService;
+import com.sfi.matrix.support.service.file.FileService;
+import com.sfi.matrix.support.service.file.FileUrlResolver;
 import com.sfi.matrix.support.service.file.FileTypeGuard;
 import com.sfi.matrix.support.service.file.FileUploadSupport;
 import org.dromara.x.file.storage.core.FileInfo;
@@ -42,7 +43,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * FileMultipartService：初始化、分片上传（首片门禁/断点续传）、完成、取消、列举。
+ * FileService 分片：初始化、分片上传（首片门禁/断点续传）、完成、取消、列举。
  *
  * @author lianghang
  */
@@ -53,7 +54,7 @@ class FileMultipartServiceTest {
     private SysFilePartService partService;
     private FileTypeGuard fileTypeGuard;
     private FileStorageService storage;
-    private FileMultipartService service;
+    private FileService service;
 
     @BeforeEach
     void setUp() {
@@ -75,7 +76,8 @@ class FileMultipartServiceTest {
         when(fileService.save(any(SysFile.class))).thenAnswer(inv -> inv.getArgument(0));
 
         FileUploadSupport support = new FileUploadSupport(provider);
-        service = new FileMultipartService(gateway, fileService, partService, fileTypeGuard, support);
+        FileUrlResolver urlResolver = mock(FileUrlResolver.class);
+        service = new FileService(gateway, fileService, partService, fileTypeGuard, support, urlResolver);
     }
 
     @Test
@@ -83,7 +85,7 @@ class FileMultipartServiceTest {
         MultipartUploadSupportInfo info = MultipartUploadSupportInfo.supportAll();
         when(storage.isSupportMultipartUpload("oss")).thenReturn(info);
 
-        assertEquals(info, service.support("cfg-1", "oss"));
+        assertEquals(info, service.multipartSupport("cfg-1", "oss"));
     }
 
     @Test

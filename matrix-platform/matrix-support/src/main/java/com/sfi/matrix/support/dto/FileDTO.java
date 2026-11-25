@@ -13,8 +13,14 @@ public class FileDTO {
     private Long size;
     private String contentType;
     private String fileType;
+    /** 可访问地址（公开为原始地址，私有为限时签名地址） */
     private String url;
+    /** 缩略图可访问地址 */
     private String thumbUrl;
+    /** 入库原始地址（未签名） */
+    private String rawUrl;
+    /** 缩略图入库原始地址（未签名） */
+    private String rawThumbUrl;
     private String md5;
 
     public Long getId() {
@@ -79,6 +85,22 @@ public class FileDTO {
 
     public void setThumbUrl(String thumbUrl) {
         this.thumbUrl = thumbUrl;
+    }
+
+    public String getRawUrl() {
+        return rawUrl;
+    }
+
+    public void setRawUrl(String rawUrl) {
+        this.rawUrl = rawUrl;
+    }
+
+    public String getRawThumbUrl() {
+        return rawThumbUrl;
+    }
+
+    public void setRawThumbUrl(String rawThumbUrl) {
+        this.rawThumbUrl = rawThumbUrl;
     }
 
     public String getMd5() {

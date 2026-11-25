@@ -1,22 +1,26 @@
 package com.sfi.matrix.support.service.file;
 
 import com.sfi.conflux.file.engine.FileGateway;
+import com.sfi.matrix.support.dto.FileDTO;
 import com.sfi.matrix.support.dto.FileTypeInfo;
 import com.sfi.matrix.support.dto.MultipartInitCommand;
 import com.sfi.matrix.support.dto.MultipartInitResult;
 import com.sfi.matrix.support.dto.MultipartPartCommand;
+import com.sfi.matrix.support.dto.UploadCommand;
 import com.sfi.matrix.support.dto.UploadContext;
 import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.matrix.support.entity.SysFilePart;
 import com.sfi.matrix.support.service.SysFilePartService;
 import com.sfi.matrix.support.service.SysFileService;
 import com.sfi.scaffold.common.exception.BizException;
+import com.sfi.scaffold.common.exception.GlobalErrorCode;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.dromara.x.file.storage.core.FileStorageService;
 import org.dromara.x.file.storage.core.constant.Constant;
 import org.dromara.x.file.storage.core.upload.FilePartInfo;
 import org.dromara.x.file.storage.core.upload.InitiateMultipartUploadPretreatment;
 import org.dromara.x.file.storage.core.upload.MultipartUploadSupportInfo;
+import org.dromara.x.file.storage.core.upload.UploadPretreatment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,12 +35,16 @@ import static com.sfi.matrix.support.exception.FileErrorCode.FILE_READ_FAILED;
 import static com.sfi.matrix.support.exception.FileErrorCode.FILE_TYPE_NOT_ALLOWED;
 
 /**
- * 手动分片上传：初始化、逐片上传、完成、取消。
+ * 文件业务门面：上传、分片、地址解析、查询统一入口。
+ *
+ * <p>平台差异交给 {@link FileGateway}，上传决策交给 {@link FileUploadSupport}，
+ * 类型门禁交给 {@link FileTypeGuard}，地址解析交给 {@link FileUrlResolver}；
+ * 本类只做流程编排与结果组装。</p>
  *
  * @author lianghang
  */
 @Service
-public class FileMultipartService {
+public class FileService {
 
     private static final String STATE_INITIATED = "INITIATED";
     private static final String STATE_UPLOADING = "UPLOADING";
@@ -48,19 +56,68 @@ public class FileMultipartService {
     private final SysFilePartService partService;
     private final FileTypeGuard fileTypeGuard;
     private final FileUploadSupport support;
+    private final FileUrlResolver urlResolver;
 
-    public FileMultipartService(FileGateway fileGateway, SysFileService fileService,
-                                SysFilePartService partService, FileTypeGuard fileTypeGuard,
-                                FileUploadSupport support) {
+    public FileService(FileGateway fileGateway, SysFileService fileService, SysFilePartService partService,
+                       FileTypeGuard fileTypeGuard, FileUploadSupport support, FileUrlResolver urlResolver) {
         this.fileGateway = fileGateway;
         this.fileService = fileService;
         this.partService = partService;
         this.fileTypeGuard = fileTypeGuard;
         this.support = support;
+        this.urlResolver = urlResolver;
     }
 
+    // ---- 上传 ----
+
+    /** 上传文件并落库，返回带可访问地址的 DTO */
+    @Transactional(rollbackFor = Exception.class)
+    public FileDTO upload(UploadCommand cmd) {
+        FileTypeInfo type;
+        try (InputStream in = openStream(cmd.getSource())) {
+            type = fileTypeGuard.detectAndCheck(in, cmd.getOriginalFilename());
+        } catch (IOException e) {
+            throw new BizException(FILE_READ_FAILED, "读取上传文件失败", e);
+        }
+
+        UploadContext ctx = support.resolve(cmd.getConfigId(), cmd.getChannelCode(), cmd.getOriginalFilename(),
+                cmd.getObjectType(), cmd.getObjectId(), cmd.getModule(), cmd.getMetadata());
+        support.applyType(ctx, type);
+
+        FileInfo info = uploadWithThumbnail(ctx, cmd);
+        SysFile record = fileService.save(support.persist(ctx, info));
+        return toDto(record);
+    }
+
+    /** 上传文件并按需生成缩略图 */
+    private FileInfo uploadWithThumbnail(UploadContext ctx, UploadCommand cmd) {
+        FileStorageService storage = fileGateway.nativeService(ctx.getConfigId(), ctx.getChannelCode());
+        boolean supportAcl = storage.isSupportAcl(ctx.getChannelCode());
+
+        UploadPretreatment pre = storage
+                .of(cmd.getSource(), cmd.getOriginalFilename(), ctx.getMime())
+                .setPlatform(ctx.getChannelCode())
+                .setAcl(supportAcl, ctx.getAcl())
+                .setPath(ctx.getPath())
+                .setNotSupportMetadataThrowException(false)
+                .setNotSupportAclThrowException(false)
+                .setIgnoreThumbnailException(true, true);
+
+        if (!ctx.getMetadata().isEmpty()) {
+            pre.putMetadataAll(ctx.getMetadata());
+        }
+        if (cmd.getThumbnailSource() != null) {
+            pre.thumbnailOf(cmd.getThumbnailSource());
+        } else if (cmd.getThumbWidth() != null && cmd.getThumbHeight() != null) {
+            pre.thumbnail(cmd.getThumbWidth(), cmd.getThumbHeight());
+        }
+        return pre.upload();
+    }
+
+    // ---- 分片上传 ----
+
     /** 查询平台是否支持手动分片上传 */
-    public MultipartUploadSupportInfo support(String configId, String channelCode) {
+    public MultipartUploadSupportInfo multipartSupport(String configId, String channelCode) {
         UploadContext ctx = support.resolve(configId, channelCode, null, null, null, null, null);
         return fileGateway.nativeService(ctx.getConfigId(), ctx.getChannelCode())
                 .isSupportMultipartUpload(ctx.getChannelCode());
@@ -78,7 +135,6 @@ public class FileMultipartService {
             throw new BizException(FILE_MULTIPART_NOT_SUPPORTED, "存储平台不支持分片上传");
         }
 
-        // 按文件名粗判类型
         FileTypeInfo naive = fileTypeGuard.detectByName(cmd.getOriginalFilename());
         support.applyType(ctx, naive);
 
@@ -116,7 +172,6 @@ public class FileMultipartService {
             throw new BizException(FILE_READ_FAILED, "分片序号错误");
         }
 
-        // 首片用文件头做真实门禁，并把真实类型回填记录
         if (cmd.getPartNumber() == 1) {
             checkFirstPart(record, cmd.getSource());
         }
@@ -192,6 +247,55 @@ public class FileMultipartService {
         return partService.listByUploadId(record.getMultipartUploadId());
     }
 
+    // ---- 地址与查询 ----
+
+    /** 取访问地址：公开直出原始地址，私有生成限时地址 */
+    public String url(Long fileId, boolean thumbnail) {
+        return urlResolver.url(fileId, thumbnail);
+    }
+
+    /** 按 id 查询成功文件并返回 DTO */
+    public FileDTO get(Long fileId) {
+        SysFile file = fileService.get(fileId);
+        if (file == null || !isSuccessful(file)) {
+            throw new BizException(GlobalErrorCode.NOT_FOUND, "文件记录不存在：{}", fileId);
+        }
+        return toDto(file);
+    }
+
+    /** 按业务对象查询成功文件（按 id 升序）并返回 DTO */
+    public List<FileDTO> listByObject(String objectType, String objectId) {
+        return fileService.listByObject(objectType, objectId).stream()
+                .filter(FileService::isSuccessful)
+                .map(this::toDto)
+                .toList();
+    }
+
+    /** 实体转 DTO，附带可访问地址与原始地址 */
+    public FileDTO toDto(SysFile f) {
+        FileDTO dto = new FileDTO();
+        dto.setId(f.getId());
+        dto.setFilename(f.getFilename());
+        dto.setOriginalFilename(f.getOriginalFilename());
+        dto.setSize(f.getSize());
+        dto.setContentType(f.getContentType());
+        dto.setFileType(f.getFileType());
+        dto.setRawUrl(f.getRawUrl());
+        dto.setRawThumbUrl(f.getThRawUrl());
+        dto.setUrl(urlResolver.url(f, false));
+        dto.setThumbUrl(urlResolver.url(f, true));
+        dto.setMd5(f.getHashMd5());
+        return dto;
+    }
+
+    /** 成功文件：非分片（state 为空）或分片已完成 */
+    private static boolean isSuccessful(SysFile f) {
+        String state = f.getMultipartState();
+        return state == null || STATE_COMPLETED.equals(state);
+    }
+
+    // ---- 内部工具 ----
+
     /** 取处于 INITIATED/UPLOADING 的会话记录 */
     private SysFile requireActive(Long fileId) {
         SysFile record = fileService.get(fileId);
@@ -225,5 +329,9 @@ public class FileMultipartService {
             return new ByteArrayInputStream((byte[]) source);
         }
         throw new BizException(FILE_TYPE_NOT_ALLOWED, "不支持的上传来源");
+    }
+
+    private static InputStream openStream(Object source) throws IOException {
+        return toStream(source);
     }
 }

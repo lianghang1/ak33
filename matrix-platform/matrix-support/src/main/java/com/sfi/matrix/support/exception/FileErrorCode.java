@@ -19,7 +19,10 @@ public enum FileErrorCode implements ErrorCode {
     FILE_READ_FAILED(6003, "读取上传文件失败", 400),
 
     /** 存储平台不支持分片上传 */
-    FILE_MULTIPART_NOT_SUPPORTED(6004, "存储平台不支持分片上传", 400);
+    FILE_MULTIPART_NOT_SUPPORTED(6004, "存储平台不支持分片上传", 400),
+
+    /** 本地文件访问签名无效或已过期 */
+    FILE_ACCESS_SIGN_INVALID(6005, "文件访问签名无效", 403);
 
     private final int code;
     private final String message;
