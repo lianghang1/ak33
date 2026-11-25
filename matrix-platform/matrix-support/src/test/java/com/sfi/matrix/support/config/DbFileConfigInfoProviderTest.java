@@ -3,12 +3,10 @@ package com.sfi.matrix.support.config;
 import com.sfi.conflux.common.exception.GatewayException;
 import com.sfi.conflux.file.config.FileChannelConfig;
 import com.sfi.matrix.support.service.ConfigService;
-import org.dromara.x.file.storage.core.FileStorageProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -17,9 +15,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * DbFileConfigProvider：从 config 中心取 FileStorageProperties JSON，
- * 统一走 conflux 框架共享的 JsonUtils 反序列化，
- * 平台配置字段正确落位，配置缺失/坏 JSON 抛 CONFIG_MISSING。
+ * DbFileConfigProvider：从 config 中心读取扁平文件渠道配置，
+ * 统一走 conflux 框架共享的 JsonUtils 反序列化为 attr，
+ * 公共维度与平台个性凭证正确落位，配置缺失/坏 JSON 抛 CONFIG_MISSING。
  *
  * @author lianghang
  */
@@ -35,14 +33,12 @@ class DbFileConfigInfoProviderTest {
     }
 
     @Test
-    void getConfig_bindsConcretePlatformConfig() {
-        // 这是一条 conflux.file.default / aliyun-oss-1 的配置，含 RSA 级别长密钥场景的字段
+    void getConfig_bindsFlatAttr() {
         String json = "{\"defaultPlatform\":\"aliyun-oss-1\","
-                + "\"aliyunOss\":[{\"platform\":\"aliyun-oss-1\","
                 + "\"accessKey\":\"AK\",\"secretKey\":\"SK\","
                 + "\"endPoint\":\"https://oss.example.com\","
                 + "\"bucketName\":\"bucket-1\",\"domain\":\"https://cdn.example.com/\","
-                + "\"basePath\":\"root/\",\"multipartThreshold\":134217728}]}";
+                + "\"basePath\":\"root/\",\"multipartThreshold\":\"134217728\"}";
         when(configService.get(eq("conflux.file.default"), eq("aliyun-oss-1"), isNull()))
                 .thenReturn(json);
 
@@ -50,16 +46,11 @@ class DbFileConfigInfoProviderTest {
 
         assertEquals("default", cfg.getConfigId());
         assertEquals("aliyun-oss-1", cfg.getChannelCode());
-        FileStorageProperties props = cfg.getProperties();
-        assertEquals("aliyun-oss-1", props.getDefaultPlatform());
-        assertEquals(1, props.getAliyunOss().size());
-        FileStorageProperties.AliyunOssConfig oss = assertInstanceOf(
-                FileStorageProperties.AliyunOssConfig.class, props.getAliyunOss().get(0),
-                "JsonUtils 必须把通配符泛型解析成具体 AliyunOssConfig，而非 LinkedHashMap");
-        assertEquals("AK", oss.getAccessKey());
-        assertEquals("SK", oss.getSecretKey());
-        assertEquals("bucket-1", oss.getBucketName());
-        assertEquals(134217728, oss.getMultipartThreshold());
+        assertEquals("AK", cfg.getAttr().get("accessKey"));
+        assertEquals("SK", cfg.getAttr().get("secretKey"));
+        assertEquals("bucket-1", cfg.getAttr().get("bucketName"));
+        assertEquals("root/", cfg.getAttr().get("basePath"));
+        assertEquals("134217728", cfg.getAttr().get("multipartThreshold"));
         verify(configService).get(eq("conflux.file.default"), eq("aliyun-oss-1"), isNull());
     }
 

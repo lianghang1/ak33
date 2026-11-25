@@ -1,6 +1,6 @@
 package com.sfi.matrix.support.service;
 
-import com.sfi.matrix.iam.service.IamService;
+import com.sfi.matrix.support.dto.FileConfigInfo;
 import com.sfi.matrix.support.dto.FileTypeInfo;
 import com.sfi.matrix.support.enums.FileType;
 import com.sfi.matrix.support.exception.FileErrorCode;
@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,8 +29,6 @@ import static org.mockito.Mockito.when;
  */
 class FileTypeGuardTest {
 
-    private static final String PLATFORM = "platform";
-
     /** 1x1 透明 PNG 的最小字节，Tika 能检出 image/png */
     private static final byte[] PNG = new byte[]{
             (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n',
@@ -37,24 +37,31 @@ class FileTypeGuardTest {
             0x08, 0x06, 0x00, 0x00, 0x00
     };
 
-    private ConfigService configService;
     private FileConfigProvider fileConfigProvider;
     private FileTypeGuard guard;
 
     @BeforeEach
     void setUp() {
-        configService = mock(ConfigService.class);
         fileConfigProvider = mock(FileConfigProvider.class);
         guard = new FileTypeGuard(fileConfigProvider);
     }
 
-    private void stubConfig(String json) {
-        when(configService.get("matrix.file", "config", PLATFORM)).thenReturn(json);
+    private static FileConfigInfo.MimeRule rule(String mime, String... exts) {
+        FileConfigInfo.MimeRule r = new FileConfigInfo.MimeRule();
+        r.setMime(mime);
+        r.setExts(Arrays.asList(exts));
+        return r;
+    }
+
+    private void stubAllowed(FileConfigInfo.MimeRule... rules) {
+        FileConfigInfo config = new FileConfigInfo();
+        config.setAllowed(Arrays.asList(rules));
+        when(fileConfigProvider.getConfig()).thenReturn(config);
     }
 
     @Test
     void detectAndCheck_allowsWhenMimeAndExtMatch() {
-        stubConfig("{\"allowed\":[{\"mime\":\"image/png\",\"exts\":[\"png\"]}]}");
+        stubAllowed(rule("image/png", "png"));
         assertDoesNotThrow(() -> guard.detectAndCheck(new ByteArrayInputStream(PNG), "photo.png"));
     }
 
@@ -70,22 +77,21 @@ class FileTypeGuardTest {
     @Test
     void detect_worksWithoutConfig() {
         // 白名单未配置时 detect 仍能读出类型——读取与门禁分离的意义
-        when(configService.get("matrix.file", "config", PLATFORM)).thenReturn(null);
+        when(fileConfigProvider.getConfig()).thenReturn(null);
         FileTypeInfo info = guard.detect(new ByteArrayInputStream(PNG), "photo.png");
         assertEquals("image/png", info.getMime());
     }
 
     @Test
     void detectAndCheck_allowsExtCaseInsensitive() {
-        stubConfig("{\"allowed\":[{\"mime\":\"image/png\",\"exts\":[\"png\"]}]}");
+        stubAllowed(rule("image/png", "png"));
         assertDoesNotThrow(() -> guard.detectAndCheck(new ByteArrayInputStream(PNG), "photo.PNG"));
     }
 
     @Test
     void detectAndCheck_rejectsWhenExtNotInAllowedSet() {
         // png 字节冒充 .jpg：mime=image/png 命中，但 jpg 不在该 mime 的后缀集合里
-        stubConfig("{\"allowed\":[{\"mime\":\"image/png\",\"exts\":[\"png\"]},"
-                + "{\"mime\":\"image/jpeg\",\"exts\":[\"jpg\",\"jpeg\"]}]}");
+        stubAllowed(rule("image/png", "png"), rule("image/jpeg", "jpg", "jpeg"));
         BizException ex = assertThrows(BizException.class,
                 () -> guard.detectAndCheck(new ByteArrayInputStream(PNG), "fake.jpg"));
         assertEquals(FileErrorCode.FILE_TYPE_NOT_ALLOWED, ex.getErrorCode());
@@ -93,7 +99,7 @@ class FileTypeGuardTest {
 
     @Test
     void detectAndCheck_rejectsWhenMimeNotInWhitelist() {
-        stubConfig("{\"allowed\":[{\"mime\":\"image/png\",\"exts\":[\"png\"]}]}");
+        stubAllowed(rule("image/png", "png"));
         byte[] text = "hello".getBytes(StandardCharsets.UTF_8);
         BizException ex = assertThrows(BizException.class,
                 () -> guard.detectAndCheck(new ByteArrayInputStream(text), "note.txt"));
@@ -102,8 +108,8 @@ class FileTypeGuardTest {
 
     @Test
     void check_rejectsWhenConfigMissing() {
-        // config 无该记录 → get 返回 null → fail-closed
-        when(configService.get("matrix.file", "config", PLATFORM)).thenReturn(null);
+        // 配置缺失 → fail-closed
+        when(fileConfigProvider.getConfig()).thenReturn(null);
         FileTypeInfo info = guard.detect(new ByteArrayInputStream(PNG), "photo.png");
         BizException ex = assertThrows(BizException.class, () -> guard.check(info));
         assertEquals(FileErrorCode.FILE_TYPE_CONFIG_MISSING, ex.getErrorCode());
@@ -111,7 +117,9 @@ class FileTypeGuardTest {
 
     @Test
     void check_rejectsWhenAllowedEmpty() {
-        stubConfig("{\"allowed\":[]}");
+        FileConfigInfo config = new FileConfigInfo();
+        config.setAllowed(Collections.emptyList());
+        when(fileConfigProvider.getConfig()).thenReturn(config);
         FileTypeInfo info = guard.detect(new ByteArrayInputStream(PNG), "photo.png");
         BizException ex = assertThrows(BizException.class, () -> guard.check(info));
         assertEquals(FileErrorCode.FILE_TYPE_CONFIG_MISSING, ex.getErrorCode());

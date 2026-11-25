@@ -1,6 +1,7 @@
 package com.sfi.matrix.support.service;
 
 import com.sfi.conflux.file.engine.FileGateway;
+import com.sfi.matrix.support.dto.FileConfigInfo;
 import com.sfi.matrix.support.dto.FileTypeInfo;
 import com.sfi.matrix.support.dto.UploadCommand;
 import com.sfi.matrix.support.entity.SysFile;
@@ -10,6 +11,7 @@ import com.sfi.matrix.support.service.file.FileTypeGuard;
 import com.sfi.matrix.support.service.file.FileUploadService;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.dromara.x.file.storage.core.FileStorageService;
+import org.dromara.x.file.storage.core.constant.Constant;
 import org.dromara.x.file.storage.core.upload.UploadPretreatment;
 import org.dromara.x.file.storage.core.hash.HashInfo;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.InputStream;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -41,6 +44,7 @@ class FileUploadServiceTest {
     private FileUploadService service;
     private HashInfo hash;
     private FileConfigProvider fileConfigProvider;
+    private FileConfigInfo configInfo;
 
     @BeforeEach
     void setUp() {
@@ -53,9 +57,17 @@ class FileUploadServiceTest {
         fileConfigProvider = mock(FileConfigProvider.class);
         when(hash.getMd5()).thenReturn("d41d8cd98f00b204e9800998ecf8427e");
 
+        configInfo = new FileConfigInfo();
+        configInfo.setDefaultConfigId("cfg-1");
+        configInfo.setDefaultChannelCode("oss");
+        when(fileConfigProvider.getConfig()).thenReturn(configInfo);
+
         when(gateway.nativeService("cfg-1", "oss")).thenReturn(storage);
+        when(storage.isSupportAcl(anyString())).thenReturn(true);
         when(storage.of(any(), anyString(), anyString())).thenReturn(pre);
         when(pre.setPlatform(anyString())).thenReturn(pre);
+        when(pre.setAcl(anyBoolean(), any())).thenReturn(pre);
+        when(pre.setPath(anyString())).thenReturn(pre);
         when(pre.setNotSupportMetadataThrowException(anyBoolean())).thenReturn(pre);
         when(pre.setNotSupportAclThrowException(anyBoolean())).thenReturn(pre);
         when(pre.setIgnoreThumbnailException(anyBoolean(), anyBoolean())).thenReturn(pre);
@@ -101,7 +113,6 @@ class FileUploadServiceTest {
         when(pre.upload()).thenReturn(info);
 
         UploadCommand cmd = command("海报.jpg");
-        cmd.setPrivateAccess(true);
         cmd.setObjectType("CEMETERY");
         cmd.setObjectId("tomb-1");
         SysFile record = service.upload(cmd);
@@ -114,6 +125,7 @@ class FileUploadServiceTest {
         assertEquals("https://cdn/2026/11/abc.jpg", record.getRawUrl());
         assertEquals("image/jpeg", record.getContentType());
         assertEquals(FileType.IMAGE.name(), record.getFileType());
+        assertEquals(Constant.ACL.PRIVATE, record.getAcl());
         assertEquals(Boolean.TRUE, record.getPrivateAccess());
         assertEquals("CEMETERY", record.getObjectType());
         assertEquals("tomb-1", record.getObjectId());
@@ -125,6 +137,7 @@ class FileUploadServiceTest {
 
     @Test
     void upload_noThumbnail_leavesThFieldsNull() {
+        configInfo.setAllowedModules(List.of("default"));
         FileTypeInfo docType = new FileTypeInfo("application/pdf", "pdf", FileType.DOCUMENT);
         FileInfo info = baseInfo();
         info.setExt("pdf");
@@ -137,9 +150,24 @@ class FileUploadServiceTest {
 
         assertEquals("application/pdf", record.getContentType());
         assertEquals(FileType.DOCUMENT.name(), record.getFileType());
+        assertEquals(Constant.ACL.PUBLIC_READ, record.getAcl());
         assertEquals(Boolean.FALSE, record.getPrivateAccess());
         assertNull(record.getThFilename());
         assertNull(record.getThRawUrl());
+    }
+
+    @Test
+    void upload_platformNotSupportAcl_stillPersistsDecision() {
+        configInfo.setAllowedModules(List.of("default"));
+        when(storage.isSupportAcl(anyString())).thenReturn(false);
+        FileInfo info = baseInfo();
+        when(fileTypeGuard.detectAndCheck(any(InputStream.class), anyString())).thenReturn(imageType());
+        when(pre.upload()).thenReturn(info);
+
+        SysFile record = service.upload(command("海报.jpg"));
+
+        assertEquals(Constant.ACL.PUBLIC_READ, record.getAcl());
+        assertEquals(Boolean.FALSE, record.getPrivateAccess());
     }
 
     @Test

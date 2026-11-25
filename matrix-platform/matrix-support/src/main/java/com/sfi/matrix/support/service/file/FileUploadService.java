@@ -10,7 +10,6 @@ import com.sfi.matrix.support.enums.FileType;
 import com.sfi.matrix.support.service.SysFileService;
 import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.util.CollUtils;
-import com.sfi.scaffold.common.util.DateUtils;
 import com.sfi.scaffold.common.util.StringUtils;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.dromara.x.file.storage.core.FileStorageService;
@@ -27,7 +26,6 @@ import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 
 import static com.sfi.matrix.support.exception.FileErrorCode.FILE_READ_FAILED;
@@ -82,20 +80,21 @@ public class FileUploadService {
             cmd.setMetadata(new HashMap<>());
         }
 
-        // 非图片类型默认 attachment
+        // 非图片类型默认 attachment，不覆盖调用方显式设置
         if (!FileType.IMAGE.name().equals(type.getFileType().name())) {
-            cmd.getMetadata().put(Constant.Metadata.CONTENT_DISPOSITION, "attachment");
+            cmd.getMetadata().putIfAbsent(Constant.Metadata.CONTENT_DISPOSITION, "attachment");
         }
 
-        FileInfo info = uploadWithThumbnail(fileConfigInfo, cmd, type.getMime());
+        String module = resolveAndValidateModule(cmd.getModule());
+        String acl = resolveFileAcl(fileConfigInfo, module);
+        FileInfo info = uploadWithThumbnail(cmd, module, acl, type.getMime());
 
-        return persist(cmd, type, info);
+        return persist(cmd, type, info, acl);
     }
 
     /** 上传 + 缩略图二选一，异常能力固定 fail-soft */
-    private FileInfo uploadWithThumbnail(FileConfigInfo fileConfigInfo, UploadCommand cmd, String mime) {
+    private FileInfo uploadWithThumbnail(UploadCommand cmd, String module, String acl, String mime) {
 
-        String module = resolveAndValidateModule(fileConfigInfo, cmd.getModule());
         String filePath = module + "/" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM")) + "/";
 
         FileStorageService fileStorageService = fileGateway.nativeService(cmd.getConfigId(), cmd.getChannelCode());
@@ -104,8 +103,8 @@ public class FileUploadService {
         UploadPretreatment pre = fileStorageService
                 .of(cmd.getSource(), cmd.getOriginalFilename(), mime)
                 .setPlatform(cmd.getChannelCode())
-                .setAcl(supportAcl, resolveFileAcl(fileConfigInfo, fileStorageService, module))
-                .setPath(StringUtils.isNotBlank(filePath), filePath)
+                .setAcl(supportAcl, acl)
+                .setPath(filePath)
                 .setNotSupportMetadataThrowException(false)
                 .setNotSupportAclThrowException(false)
                 .setIgnoreThumbnailException(true, true);
@@ -134,8 +133,8 @@ public class FileUploadService {
         throw new BizException(FILE_TYPE_NOT_ALLOWED, "不支持的上传来源");
     }
 
-    /** FileInfo → SysFile 落库，MIME/归类用门禁检测结果 */
-    private SysFile persist(UploadCommand cmd, FileTypeInfo type, FileInfo info) {
+    /** FileInfo → SysFile 落库，MIME/归类用门禁检测结果，权限用上传时的决策值 */
+    private SysFile persist(UploadCommand cmd, FileTypeInfo type, FileInfo info, String acl) {
 
         SysFile record = new SysFile();
         record.setConfigId(cmd.getConfigId());
@@ -151,13 +150,8 @@ public class FileUploadService {
         record.setObjectType(cmd.getObjectType());
         record.setObjectId(cmd.getObjectId());
 
-        if (info.getFileAcl() instanceof String) {
-            record.setAcl((String) info.getFileAcl());
-        } else {
-            record.setAcl(DEFAULT_FILE_ACL);
-        }
-
-        record.setPrivateAccess(Constant.ACL.PRIVATE.equals(record.getAcl()));
+        record.setAcl(acl);
+        record.setPrivateAccess(Constant.ACL.PRIVATE.equals(acl));
 
         HashInfo hash = info.getHashInfo();
         if (hash != null) {
@@ -175,30 +169,24 @@ public class FileUploadService {
     }
 
     /**
-     * 解析文件访问权限
-     * @param fileConfigInfo 文件配置信息
-     * @param fileStorageService 文件存储服务
-     * @param module 模块
-     * @return 文件访问权限
+     * 解析文件访问权限：模块在允许公开列表内返回 public-read，否则用配置的默认权限
      */
-    private String resolveFileAcl(FileConfigInfo fileConfigInfo, FileStorageService fileStorageService, String module) {
-        // TODO fileAct需要读取仓库的真实配置
-        String fileAct = DEFAULT_FILE_ACL;
-        if (Constant.ACL.PRIVATE.equals(fileAct)) {
-            if (CollUtils.isNotEmpty(fileConfigInfo.getAllowedModules())) {
-                return fileConfigInfo.getAllowedModules().contains(module) ? Constant.ACL.PUBLIC_READ : fileAct;
-            }
+    private String resolveFileAcl(FileConfigInfo fileConfigInfo, String module) {
+        if (CollUtils.isNotEmpty(fileConfigInfo.getAllowedModules())
+                && fileConfigInfo.getAllowedModules().contains(module)) {
+            return Constant.ACL.PUBLIC_READ;
         }
-        return fileAct;
+        String defaultAcl = fileConfigInfo.getDefaultAcl();
+        return StringUtils.isBlank(defaultAcl) ? DEFAULT_FILE_ACL : defaultAcl;
     }
 
     /**
-     * 解析、清洗、双重校验上传模块名称
+     * 解析、清洗并校验上传模块名称
      * @param rawModule 前端传入的原始模块名
      * @return 合法且标准化的模块名（全小写）
      * @throws BizException 校验不通过时抛出业务异常
      */
-    private String resolveAndValidateModule(FileConfigInfo fileConfigInfo, String rawModule) {
+    private String resolveAndValidateModule(String rawModule) {
         String module = (rawModule != null) ? rawModule.trim().toLowerCase(Locale.ENGLISH) : null;
         if (StringUtils.isEmpty(module)) {
             return DEFAULT_MODULE;
@@ -211,12 +199,6 @@ public class FileUploadService {
 
         // 2. 底层白名单校验 (长度 + 纯ASCII安全字符)
         if (!isSafeAndValidModule(module)) {
-            throw new BizException(FILE_READ_FAILED, "上传模块格式错误");
-        }
-
-        // 3. 业务白名单校验
-        List<String> allowedModules = fileConfigInfo.getAllowedModules();
-        if (allowedModules != null && !allowedModules.isEmpty() && !allowedModules.contains(module)) {
             throw new BizException(FILE_READ_FAILED, "上传模块格式错误");
         }
 

@@ -34,10 +34,13 @@ public class FileConfigInfo {
     private String defaultChannelCode;
 
     /**
-     * 允许访问的模块码列表，文件可以设置为 acl public
+     * 允许公开访问的模块码列表，未列入的模块按默认权限处理
      * eg: ['portal']
      */
     private List<String> allowedModules;
+
+    /** 默认文件访问权限，未配置时为 private */
+    private String defaultAcl = "private";
 
     /** MIME 白名单：一个 MIME 允许一组后缀 */
     private List<MimeRule> allowed;
