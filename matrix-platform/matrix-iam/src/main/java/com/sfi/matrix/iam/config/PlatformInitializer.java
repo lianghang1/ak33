@@ -97,9 +97,9 @@ public class PlatformInitializer implements ApplicationRunner {
         seed(IamConstants.PERM_CONFIG_SECRET, "敏感参数", "C", 82,
                 "GET:/api/config/secret,POST:/api/config/secret");
         seed(IamConstants.PERM_FILE, "文件管理", "C", 90,
-                "GET:/api/file/url");
+                "GET:/api/file/**");
         seed(IamConstants.PERM_FILE_SAVE, "文件维护", "C", 91,
-                "POST:/api/file/upload");
+                "POST:/api/file/**");
     }
 
     private void seed(String permission, String name, String type, int sortNo, String apiPattern) {
