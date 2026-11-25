@@ -48,14 +48,13 @@ class FileControllerTest {
         when(service.upload(any())).thenReturn(dto);
 
         MockMultipartFile file = new MockMultipartFile("file", "海报.jpg", "image/jpeg", new byte[16]);
-        mvc.perform(multipart("/api/file/upload").file(file)
+        MockMultipartFile thumb = new MockMultipartFile("thumbnail", "thumb.jpg", "image/jpeg", new byte[8]);
+        mvc.perform(multipart("/api/file/upload").file(file).file(thumb)
                         .param("configId", "cfg-1")
                         .param("channelCode", "oss")
                         .param("module", "portal")
                         .param("objectType", "CEMETERY")
-                        .param("objectId", "tomb-1")
-                        .param("thumbWidth", "200")
-                        .param("thumbHeight", "200"))
+                        .param("objectId", "tomb-1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.id").value(1));
@@ -66,7 +65,7 @@ class FileControllerTest {
         org.junit.jupiter.api.Assertions.assertEquals("海报.jpg", cap.getValue().getOriginalFilename());
         org.junit.jupiter.api.Assertions.assertEquals("cfg-1", cap.getValue().getConfigId());
         org.junit.jupiter.api.Assertions.assertEquals("portal", cap.getValue().getModule());
-        org.junit.jupiter.api.Assertions.assertEquals(200, cap.getValue().getThumbWidth());
+        org.junit.jupiter.api.Assertions.assertNotNull(cap.getValue().getThumbnailSource());
     }
 
     @Test
@@ -78,15 +77,6 @@ class FileControllerTest {
     }
 
     @Test
-    void url_returnsString() throws Exception {
-        when(service.url(1L, false)).thenReturn("https://signed/abc");
-        mvc.perform(get("/api/file/url").param("fileId", "1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").value("https://signed/abc"));
-        verify(service).url(1L, false);
-    }
-
-    @Test
     void get_returnsDto() throws Exception {
         FileDTO dto = new FileDTO();
         dto.setId(7L);
@@ -94,6 +84,17 @@ class FileControllerTest {
         mvc.perform(get("/api/file/get").param("id", "7"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value(7));
+    }
+
+    @Test
+    void objects_returnsList() throws Exception {
+        FileDTO dto = new FileDTO();
+        dto.setId(8L);
+        when(service.listByObject("CEMETERY", "tomb-1")).thenReturn(java.util.List.of(dto));
+        mvc.perform(get("/api/file/objects").param("objectType", "CEMETERY").param("objectId", "tomb-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].id").value(8));
+        verify(service).listByObject("CEMETERY", "tomb-1");
     }
 
     @Test

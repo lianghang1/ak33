@@ -3,12 +3,12 @@ package com.sfi.matrix.support.service;
 import com.sfi.conflux.file.config.FileChannelConfig;
 import com.sfi.conflux.file.config.FileConfigProvider;
 import com.sfi.conflux.file.engine.FileGateway;
+import com.sfi.matrix.support.dto.FileConfigInfo;
 import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.matrix.support.service.file.FileUrlResolver;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -35,6 +35,7 @@ class FileUrlResolverTest {
 
     private FileGateway gateway;
     private FileConfigProvider configProvider;
+    private com.sfi.matrix.support.service.file.FileConfigProvider matrixConfigProvider;
     private SysFileService fileService;
     private FileUrlResolver resolver;
 
@@ -42,10 +43,12 @@ class FileUrlResolverTest {
     void setUp() {
         gateway = mock(FileGateway.class);
         configProvider = mock(FileConfigProvider.class);
+        matrixConfigProvider = mock(com.sfi.matrix.support.service.file.FileConfigProvider.class);
         fileService = mock(SysFileService.class);
-        resolver = new FileUrlResolver(gateway, configProvider, fileService);
-        ReflectionTestUtils.setField(resolver, "presignSeconds", 300);
-        ReflectionTestUtils.setField(resolver, "mode", "nginx");
+        resolver = new FileUrlResolver(gateway, configProvider, matrixConfigProvider, fileService);
+        FileConfigInfo cfg = new FileConfigInfo();
+        cfg.setPresignSeconds(300);
+        when(matrixConfigProvider.getConfig()).thenReturn(cfg);
     }
 
     private SysFile file(boolean privateAccess, String channelCode) {
@@ -61,6 +64,13 @@ class FileUrlResolverTest {
         f.setThRawUrl("https://cdn/2026/11/abc.min.jpg");
         f.setPrivateAccess(privateAccess);
         return f;
+    }
+
+    private FileConfigInfo fileConfig(String mode) {
+        FileConfigInfo cfg = new FileConfigInfo();
+        cfg.setLocalAccessMode(mode);
+        cfg.setPresignSeconds(300);
+        return cfg;
     }
 
     private void stubDomain(String domain) {
@@ -85,7 +95,7 @@ class FileUrlResolverTest {
 
     @Test
     void fillLocalUrls_streamMode_usesAccessPath() {
-        ReflectionTestUtils.setField(resolver, "mode", "stream");
+        when(matrixConfigProvider.getConfig()).thenReturn(fileConfig("stream"));
         stubDomain("http://localhost");
         SysFile f = file(false, "local-plus");
 
@@ -216,11 +226,5 @@ class FileUrlResolverTest {
         assertFalse(resolver.checkAccess(1L, 0L, false, null), "非本地文件不走本地准入");
         when(fileService.get(2L)).thenReturn(null);
         assertFalse(resolver.checkAccess(2L, 0L, false, null), "不存在的文件拒绝");
-    }
-
-    @Test
-    void missingFile_throws() {
-        when(fileService.get(99L)).thenReturn(null);
-        assertThrows(com.sfi.scaffold.common.exception.BizException.class, () -> resolver.url(99L, false));
     }
 }

@@ -8,7 +8,6 @@ import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.starter.security.anonymous.Anonymous;
 import com.sfi.scaffold.common.util.StreamPipeUtils;
 import org.dromara.x.file.storage.core.FileInfo;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,20 +22,15 @@ import static com.sfi.matrix.support.exception.FileErrorCode.FILE_ACCESS_SIGN_IN
  * 本地文件访问端点（匿名放行，靠限时签名守护私有文件）。
  *
  * <p>两个端点共用 {@link FileUrlResolver#checkAccess} 验签：公开文件直接放行，私有文件校验
- * fileId+t+thumb 签名。文件路径一律由 fileId 查库得出，不接受客户端传 path。
- * nginx 模式（/self/file）验签通过后下发 X-Accel-Redirect 交 nginx 读盘；stream 模式
- * （/self/access）由 Java 读流写回。部署配置见 {@link FileUrlResolver#fillLocalUrls}。</p>
+ * fileId+t+thumb 签名。文件路径一律由 fileId 查库得出，不接受客户端传 path。nginx 部署配置见
+ * {@link FileUrlResolver#fillLocalUrls}。</p>
  *
  * @author lianghang
  */
 @RestController
 public class LocalFileAccessController {
 
-    private static final String MODE_NGINX = "nginx";
     private static final String INTERNAL_PREFIX = "/__self_internal__/";
-
-    @Value("${matrix.file.local-access.mode:nginx}")
-    private String mode = MODE_NGINX;
 
     private final FileUrlResolver urlResolver;
     private final SysFileService fileService;

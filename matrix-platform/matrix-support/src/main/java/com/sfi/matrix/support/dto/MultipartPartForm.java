@@ -8,7 +8,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 /**
- * 分片上传单片表单参数（multipart 豁免，分片文件以 @RequestPart 单独提交）。
+ * 分片上传单片表单参数，分片文件以 @RequestPart 单独提交。
  *
  * @author lianghang
  */

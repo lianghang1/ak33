@@ -6,7 +6,7 @@ import lombok.Setter;
 import javax.validation.constraints.Min;
 
 /**
- * 文件上传表单参数（multipart 豁免，随文件一起以表单字段提交）。
+ * 文件上传表单参数，随文件以表单字段提交。
  *
  * @author lianghang
  */

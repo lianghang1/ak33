@@ -42,6 +42,15 @@ public class FileConfigInfo {
     /** 默认文件访问权限，未配置时为 private */
     private String defaultAcl = "private";
 
+    /** 本地文件访问模式：nginx / stream */
+    private String localAccessMode = "nginx";
+
+    /** 本地文件签名密钥 */
+    private String localAccessSecret = "matrix-self-file-2026-default-secret";
+
+    /** 临时访问 URL 有效期（秒），预签名与本地签名共用 */
+    private Integer presignSeconds = 1800;
+
     /** MIME 白名单：一个 MIME 允许一组后缀 */
     private List<MimeRule> allowed;
 

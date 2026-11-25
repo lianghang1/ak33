@@ -4,12 +4,10 @@ import com.sfi.conflux.file.engine.FileGateway;
 import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.matrix.support.service.SysFileService;
 import com.sfi.matrix.support.service.file.FileUrlResolver;
-import com.sfi.scaffold.common.util.StreamPipeUtils;
 import com.sfi.scaffold.starter.web.exception.GlobalExceptionHandler;
 import org.dromara.x.file.storage.core.Downloader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -49,7 +47,6 @@ class LocalFileAccessControllerTest {
         fileService = mock(SysFileService.class);
         fileGateway = mock(FileGateway.class);
         controller = new LocalFileAccessController(urlResolver, fileService, fileGateway);
-        ReflectionTestUtils.setField(controller, "mode", "nginx");
         mvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();

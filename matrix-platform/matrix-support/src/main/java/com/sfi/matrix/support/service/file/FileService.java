@@ -35,11 +35,7 @@ import static com.sfi.matrix.support.exception.FileErrorCode.FILE_READ_FAILED;
 import static com.sfi.matrix.support.exception.FileErrorCode.FILE_TYPE_NOT_ALLOWED;
 
 /**
- * 文件业务门面：上传、分片、地址解析、查询统一入口。
- *
- * <p>平台差异交给 {@link FileGateway}，上传决策交给 {@link FileUploadSupport}，
- * 类型门禁交给 {@link FileTypeGuard}，地址解析交给 {@link FileUrlResolver}；
- * 本类只做流程编排与结果组装。</p>
+ * 文件业务门面：上传、分片、查询统一入口。
  *
  * @author lianghang
  */
@@ -250,11 +246,6 @@ public class FileService {
     }
 
     // ---- 地址与查询 ----
-
-    /** 取访问地址：公开直出原始地址，私有生成限时地址 */
-    public String url(Long fileId, boolean thumbnail) {
-        return urlResolver.url(fileId, thumbnail);
-    }
 
     /** 按 id 查询成功文件并返回 DTO */
     public FileDTO get(Long fileId) {

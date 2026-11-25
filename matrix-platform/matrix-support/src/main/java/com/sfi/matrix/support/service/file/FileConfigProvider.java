@@ -8,9 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * <p>
- * TODO: 在此说明该类的核心业务逻辑或注意事项
- * </p>
+ * 文件系统配置读取：从 config 中心读取 matrix.file/config。
  *
  * @author lianghang
  */
