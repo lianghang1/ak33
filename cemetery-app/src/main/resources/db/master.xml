@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  公墓 app 主 changelog：聚合所有依赖模块的 changelog。
-  新增能力模块时，在此追加一行 include 即可（被引入模块的 changelog 自包含）。
+  公墓 app 主 changelog：扫描统一目录，聚合所有依赖模块自带的建表脚本。
+  各模块脚本放在各自 resources 的 db/changelog/ 下，打包后 classpath 合并为同一目录，
+  本文件用 includeAll 一次扫全；新增模块只需把脚本放进该目录，本文件永不改动。
+  脚本间须保持无跨模块依赖；同模块内靠 001/002 序号保证有序。
 -->
 <databaseChangeLog
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
@@ -9,11 +11,6 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
 
-    <!-- 平台能力 -->
-    <include file="db/iam/changelog.xml"/>
-    <include file="db/support/changelog.xml"/>
-
-    <!-- 公墓业务 -->
-    <include file="db/cemetery/changelog.xml"/>
+    <includeAll path="db/changelog/" errorIfMissingOrEmpty="true"/>
 
 </databaseChangeLog>

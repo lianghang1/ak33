@@ -74,5 +74,10 @@ query 通路的租户 / 部门过滤由 starter 的 `ParamFilter` / `QueryInterc
 - 能力下沉：可复用的通用能力放 `boot-scaffold`，matrix 只写业务实现与 SPI 实现。
 - 模块不过度拆分；数据权限等纯契约 / 算法留 `scaffold-common`，不额外建 core 模块。
 - 建表统一 Liquibase，JPA 实体只保留 `@Column(name=...)`，不写 `nullable` / `length`。
+- changelog 组织规范（includeAll 统一目录）：
+  - 各模块把建表脚本放自己 `src/main/resources/db/changelog/`，打包后 classpath 合并为同一目录；宿主 `master.xml` 仅一行 `<includeAll path="db/changelog/"/>`，新增模块只丢脚本、master 永不改。
+  - 文件名按「模块内序号递增、跨模块独立」：`001-iam-schema.xml`、`002-iam-schema.xml`、`001-support-schema.xml`；同模块靠序号保证有序，跨模块禁止外键依赖（各自为政，互不写对方表）。includeAll 按完整文件名字典序加载，序号务必补零对齐。
+  - 该目录只放建表脚本，保持平铺（4.9.1 的 includeAll 不递归子目录，子目录会被静默忽略）；不要放 master 或中转 include 文件，避免自引用/重复加载。
+  - 开发阶段改表结构：直接改建表脚本 + drop 库重建，不写 addColumn 增量脚本；投入生产后库不可删，才用新增 changeSet 做增量迁移。
 - starter 之间允许单向无环依赖；需要共享的无 Spring 依赖契约放 common。
 - starter 只承载「必须依赖 Spring 容器」的能力（自动装配 / AOP / 监听器 / Bean 替换）；纯 Java 可 `new` 的能力降级为与 common 平级的顶层模块（如 `scaffold-http`）。
