@@ -4,6 +4,7 @@ import com.sfi.matrix.iam.audit.annotation.OperateLog;
 import com.sfi.matrix.support.dto.DictOptionRequest;
 import com.sfi.matrix.support.dto.DictOptionValue;
 import com.sfi.matrix.support.entity.SysDictOption;
+import com.sfi.matrix.support.service.DictOptionQueryService;
 import com.sfi.matrix.support.service.DictOptionService;
 import com.sfi.scaffold.common.request.IdRequest;
 import com.sfi.scaffold.common.result.R;
@@ -29,8 +30,11 @@ import java.util.Map;
 @RequestMapping("/api/dict/option")
 public class DictOptionController extends BaseCrudController<SysDictOption, DictOptionRequest, DictOptionService> {
 
-    public DictOptionController(DictOptionService service) {
+    private final DictOptionQueryService queryService;
+
+    public DictOptionController(DictOptionService service, DictOptionQueryService queryService) {
         super(service, SysDictOption.class);
+        this.queryService = queryService;
     }
 
     @Override
@@ -50,7 +54,7 @@ public class DictOptionController extends BaseCrudController<SysDictOption, Dict
     /** 按字典编码取选项（带平台兜底，精简 VO）。 */
     @GetMapping("/values")
     public R<List<DictOptionValue>> values(@RequestParam String dictCode) {
-        return R.ok(service.values(dictCode, LoginContext.currentTenantIdOrNull()));
+        return R.ok(queryService.values(dictCode, LoginContext.currentTenantIdOrNull()));
     }
 
     /** 批量取选项：dictCodes 为逗号分隔的字典编码。 */

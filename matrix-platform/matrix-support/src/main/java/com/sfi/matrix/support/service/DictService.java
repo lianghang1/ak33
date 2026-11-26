@@ -6,6 +6,8 @@ import com.sfi.matrix.support.entity.SysDict;
 import com.sfi.matrix.support.entity.SysDictOption;
 import com.sfi.matrix.support.repository.SysDictOptionRepository;
 import com.sfi.matrix.support.repository.SysDictRepository;
+import com.sfi.scaffold.common.exception.BizException;
+import com.sfi.scaffold.common.exception.GlobalErrorCode;
 import com.sfi.scaffold.starter.data.jpa.logicdelete.DeletedFieldAccessor;
 import com.sfi.scaffold.starter.data.jpa.service.BaseService;
 import com.sfi.scaffold.starter.security.identity.LoginContext;
@@ -24,7 +26,8 @@ import java.util.stream.Collectors;
 /**
  * 字典服务：CRUD + 平台兜底 + 缓存 + 级联删除。
  *
- * <p>字典编码可修改；删除字典时级联逻辑删除其下所有选项。</p>
+ * <p>字典编码可修改；删除字典时级联逻辑删除其下所有选项。
+ * 字典编码或选项变化会影响选项取值缓存，写入时字典与选项两份缓存一并失效。</p>
  *
  * @author lianghang
  */
@@ -46,11 +49,20 @@ public class DictService extends BaseService<SysDict> {
     /** 覆盖基类 save：id 为空按 dictCode 幂等，非空按 id 修改；编码允许修改。 */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @CacheEvict(value = SupportConstants.CACHE_DICT, allEntries = true)
+    @CacheEvict(value = {SupportConstants.CACHE_DICT, SupportConstants.CACHE_DICT_OPTION}, allEntries = true)
     public SysDict save(SysDict incoming) {
         SysDict entity;
         if (incoming.getId() != null) {
             entity = require(incoming.getId());
+            if (incoming.getDictCode() != null && !incoming.getDictCode().equals(entity.getDictCode())) {
+                String tid = entity.getTenantId();
+                boolean exists = dictRepository.findByDictCodeAndTenantIdAndDeletedFalse(incoming.getDictCode(), tid)
+                        .filter(d -> !d.getId().equals(entity.getId()))
+                        .isPresent();
+                if (exists) {
+                    throw BizException.of(GlobalErrorCode.CONFLICT, "字典编码已存在：{}", incoming.getDictCode());
+                }
+            }
         } else {
             String tid = resolveTenantId(incoming.getTenantId());
             entity = dictRepository.findByDictCodeAndTenantIdAndDeletedFalse(incoming.getDictCode(), tid)
@@ -70,7 +82,7 @@ public class DictService extends BaseService<SysDict> {
     /** 删除字典：级联逻辑删除其下所有选项，再删主表。 */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @CacheEvict(value = SupportConstants.CACHE_DICT, allEntries = true)
+    @CacheEvict(value = {SupportConstants.CACHE_DICT, SupportConstants.CACHE_DICT_OPTION}, allEntries = true)
     public void delete(Long id) {
         List<SysDictOption> options = optionRepository.findByDictIdAndDeletedFalseOrderBySortNoAsc(id);
         for (SysDictOption option : options) {

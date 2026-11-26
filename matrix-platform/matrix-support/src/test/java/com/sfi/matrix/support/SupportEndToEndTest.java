@@ -141,6 +141,20 @@ class SupportEndToEndTest {
         long before = dictRepository.count();
         ok(postJson("/api/dict/save", dict, adminToken));
         assertEquals(before, dictRepository.count());
+
+        // 改名冲突：把另一字典的编码改成已存在的编码应被拒绝，不产生重复数据
+        Map<String, Object> other = new HashMap<>();
+        other.put("dictCode", "sys_user_type");
+        other.put("dictName", "用户类型");
+        long otherId = ok(postJson("/api/dict/save", other, adminToken)).path("id").asLong();
+        Map<String, Object> rename = new HashMap<>();
+        rename.put("id", Long.valueOf(otherId));
+        rename.put("dictCode", "sys_normal_disable");
+        rename.put("dictName", "用户类型");
+        assertTrue(failCode(postJson("/api/dict/save", rename, adminToken),
+                "改成已存在的字典编码应冲突") != 0);
+        assertEquals("sys_user_type", dictRepository.findById(otherId).orElseThrow().getDictCode(),
+                "冲突后原编码不变，不产生脏数据");
     }
 
     @Test
