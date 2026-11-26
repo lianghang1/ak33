@@ -1,9 +1,9 @@
-package com.sfi.matrix.support.controller;
+package com.sfi.matrix.support.controller.dict;
 
 import com.sfi.matrix.iam.audit.annotation.OperateLog;
 import com.sfi.matrix.support.dto.DictRequest;
 import com.sfi.matrix.support.entity.SysDict;
-import com.sfi.matrix.support.service.DictService;
+import com.sfi.matrix.support.service.dict.DictService;
 import com.sfi.scaffold.common.request.IdRequest;
 import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.starter.web.crud.BaseCrudController;

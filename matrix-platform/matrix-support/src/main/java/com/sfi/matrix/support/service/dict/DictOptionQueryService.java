@@ -1,4 +1,4 @@
-package com.sfi.matrix.support.service;
+package com.sfi.matrix.support.service.dict;
 
 import com.sfi.matrix.iam.service.IamService;
 import com.sfi.matrix.support.constant.SupportConstants;

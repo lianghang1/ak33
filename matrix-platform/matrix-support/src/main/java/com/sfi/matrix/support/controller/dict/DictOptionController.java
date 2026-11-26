@@ -1,11 +1,11 @@
-package com.sfi.matrix.support.controller;
+package com.sfi.matrix.support.controller.dict;
 
 import com.sfi.matrix.iam.audit.annotation.OperateLog;
 import com.sfi.matrix.support.dto.DictOptionRequest;
 import com.sfi.matrix.support.dto.DictOptionValue;
 import com.sfi.matrix.support.entity.SysDictOption;
-import com.sfi.matrix.support.service.DictOptionQueryService;
-import com.sfi.matrix.support.service.DictOptionService;
+import com.sfi.matrix.support.service.dict.DictOptionQueryService;
+import com.sfi.matrix.support.service.dict.DictOptionService;
 import com.sfi.scaffold.common.request.IdRequest;
 import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.starter.security.identity.LoginContext;

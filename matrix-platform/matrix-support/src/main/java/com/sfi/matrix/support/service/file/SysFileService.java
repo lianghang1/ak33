@@ -1,4 +1,4 @@
-package com.sfi.matrix.support.service;
+package com.sfi.matrix.support.service.file;
 
 import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.matrix.support.repository.SysFileRepository;
