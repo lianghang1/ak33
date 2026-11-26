@@ -110,6 +110,7 @@ class SupportEndToEndTest {
     @Order(1)
     void login() throws Exception {
         Map<String, String> req = new HashMap<>();
+        req.put("authType", "PASSWORD");
         req.put("username", "admin");
         req.put("password", "admin123");
         req.put("tenantCode", "PLATFORM");

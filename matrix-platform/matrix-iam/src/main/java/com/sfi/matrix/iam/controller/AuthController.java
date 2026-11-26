@@ -6,8 +6,6 @@ import com.sfi.matrix.iam.auth.AuthType;
 import com.sfi.matrix.iam.dto.ChangePasswordRequest;
 import com.sfi.matrix.iam.dto.KickOutRequest;
 import com.sfi.matrix.iam.dto.LoginRequest;
-import com.sfi.matrix.iam.dto.LoginTenantsRequest;
-import com.sfi.matrix.iam.dto.SocialLoginRequest;
 import com.sfi.matrix.iam.dto.TenantCodeRequest;
 import com.sfi.matrix.iam.entity.SysTenant;
 import com.sfi.matrix.iam.entity.SysUser;
@@ -41,12 +39,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 登录入口（多方式归一 + 一人多租户）：
+ * 登录入口（单接口 + 认证方式参数）：
  * <ol>
- *   <li>登录方式经 {@link AuthService} 分发到认证策略（账密 / 社交 / 短信），
- *       统一产出账号后走公用装配 {@code IamService.assembleForAuth}；</li>
- *   <li>login-tenants 校验凭证后返回可登录租户列表；login 选定租户签发 token；</li>
- *   <li>switch-tenant / enter-tenant 已登录态换租户；logout 走框架 TokenService 撤销会话。</li>
+ *   <li>仅一个 login 接口，authType 决定认证方式（账密 / 社交），由 {@link AuthService} 分发到策略；</li>
+ *   <li>tenantCode 为空时按凭证列出可登录租户，非空时选定租户签发 token；</li>
+ *   <li>switch-tenant / enter-tenant 为已登录态换租户，logout 走框架 TokenService 撤销会话。</li>
  * </ol>
  * 所有写操作 POST 一律 {@link RequestBody} JSON + {@link Valid} DTO。
  *
@@ -81,7 +78,7 @@ public class AuthController {
 
     /**
      * 登录防刷前置校验（全部走 scaffold 组件）：账号锁定 → IP 封锁 → 按需验证码。
-     * 账密方式才做账号维度锁定；社交/短信以 IP 维度为准。
+     * 账密方式才做账号维度锁定；社交方式以 IP 维度为准。
      */
     private void guardBeforeLogin(String username, String ip, String captchaId, String captchaCode) {
         if (username != null && loginFailureGuard.isLocked(username)) {
@@ -105,57 +102,35 @@ public class AuthController {
         return R.ok(captchaService.generate());
     }
 
-    /** 第一步：账密校验通过，返回该账号可登录的租户列表（匿名放行） */
-    @Anonymous
-    @RateLimit(limit = 20, windowSeconds = 60, dimension = "ip")
-    @PostMapping("/login-tenants")
-    public R<List<Map<String, Object>>> loginTenants(@Valid @RequestBody LoginTenantsRequest req,
-                                                     HttpServletRequest request) {
-        String ip = IpUtils.clientIp(request);
-        guardBeforeLogin(req.getUsername(), ip, req.getCaptchaId(), req.getCaptchaCode());
-        SysUser user = authService.authenticate(AuthType.PASSWORD, credentialsOf(req.getUsername(), req.getPassword(), ip, null, null));
-        List<SysTenant> tenants = iamService.listLoginTenantsByUser(user);
-        if (tenants.isEmpty()) {
-            throw BizException.of(GlobalErrorCode.UNAUTHORIZED, "账号未开通任何有效租户");
-        }
-        return R.ok(tenants.stream().map(this::tenantBrief).collect(Collectors.toList()));
-    }
-
-    /** 第二步：账密 + 租户编码登录，签发 token（匿名放行） */
+    /** 统一登录（匿名放行）：authType 区分方式；tenantCode 空则列租户，非空则签发 token */
     @Anonymous
     @RateLimit(limit = 10, windowSeconds = 60, dimension = "ip")
     @PostMapping("/login")
     public R<Map<String, Object>> login(@Valid @RequestBody LoginRequest req, HttpServletRequest request) {
+        String ip = IpUtils.clientIp(request);
+        String authType = req.getAuthType();
+        boolean password = AuthType.PASSWORD.equals(authType);
+        String principal = password ? req.getUsername() : req.getProvider();
         try {
-            String ip = IpUtils.clientIp(request);
-            guardBeforeLogin(req.getUsername(), ip, req.getCaptchaId(), req.getCaptchaCode());
-            LoginUser loginUser = authService.authenticateAndAssemble(AuthType.PASSWORD,
-                    credentialsOf(req.getUsername(), req.getPassword(), ip, null, null), req.getTenantCode());
-            auditService.recordLogin(req.getUsername(), AuthType.PASSWORD, req.getTenantCode(),
-                    request, true, null);
+            guardBeforeLogin(password ? req.getUsername() : null, ip,
+                    req.getCaptchaId(), req.getCaptchaCode());
+            Map<String, String> credentials = credentialsOf(authType, req, ip);
+            if (req.getTenantCode() == null || req.getTenantCode().trim().isEmpty()) {
+                SysUser user = authService.authenticate(authType, credentials);
+                List<SysTenant> tenants = iamService.listLoginTenantsByUser(user);
+                if (tenants.isEmpty()) {
+                    throw BizException.of(GlobalErrorCode.UNAUTHORIZED, "账号未开通任何有效租户");
+                }
+                Map<String, Object> result = new LinkedHashMap<>();
+                result.put("needSelectTenant", true);
+                result.put("tenants", tenants.stream().map(this::tenantBrief).collect(Collectors.toList()));
+                return R.ok(result);
+            }
+            LoginUser loginUser = authService.authenticateAndAssemble(authType, credentials, req.getTenantCode());
+            auditService.recordLogin(principal, authType, req.getTenantCode(), request, true, null);
             return R.ok(buildTokenResponse(loginUser));
         } catch (RuntimeException e) {
-            auditService.recordLogin(req.getUsername(), AuthType.PASSWORD, req.getTenantCode(),
-                    request, false, e.getMessage());
-            throw e;
-        }
-    }
-
-    /** 社交登录（匿名放行）：provider + code → 外部身份 → 统一装配 */
-    @Anonymous
-    @RateLimit(limit = 10, windowSeconds = 60, dimension = "ip")
-    @PostMapping("/social-login")
-    public R<Map<String, Object>> socialLogin(@Valid @RequestBody SocialLoginRequest req,
-                                              HttpServletRequest request) {
-        try {
-            LoginUser loginUser = authService.authenticateAndAssemble(AuthType.SOCIAL,
-                    credentialsOf(null, null, null, req.getProvider(), req.getCode()), req.getTenantCode());
-            auditService.recordLogin(req.getProvider(), AuthType.SOCIAL, req.getTenantCode(),
-                    request, true, null);
-            return R.ok(buildTokenResponse(loginUser));
-        } catch (RuntimeException e) {
-            auditService.recordLogin(req.getProvider(), AuthType.SOCIAL, req.getTenantCode(),
-                    request, false, e.getMessage());
+            auditService.recordLogin(principal, authType, req.getTenantCode(), request, false, e.getMessage());
             throw e;
         }
     }
@@ -238,6 +213,7 @@ public class AuthController {
         SessionInfo session = iamService.sessionOf(loginUser);
         String token = tokenService.create(session, false);
         Map<String, Object> m = new LinkedHashMap<>();
+        m.put("needSelectTenant", false);
         m.put("token", token);
         m.put("accountId", loginUser.getAccountId());
         m.put("tenantId", loginUser.getTenantId());
@@ -255,14 +231,17 @@ public class AuthController {
         return m;
     }
 
-    private static Map<String, String> credentialsOf(String username, String password, String ip,
-                                                     String provider, String code) {
+    /** 按认证方式组装凭证：账密取 username/password，社交取 provider/code */
+    private static Map<String, String> credentialsOf(String authType, LoginRequest req, String ip) {
         Map<String, String> map = new LinkedHashMap<>();
-        if (username != null) map.put("username", username);
-        if (password != null) map.put("password", password);
-        if (ip != null) map.put("ip", ip);
-        if (provider != null) map.put("provider", provider);
-        if (code != null) map.put("code", code);
+        if (AuthType.PASSWORD.equals(authType)) {
+            map.put("username", req.getUsername());
+            map.put("password", req.getPassword());
+            map.put("ip", ip);
+        } else {
+            map.put("provider", req.getProvider());
+            map.put("code", req.getCode());
+        }
         return map;
     }
 

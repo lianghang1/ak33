@@ -117,6 +117,7 @@ class CemeteryEndToEndTest {
     @Order(1)
     void login() throws Exception {
         Map<String, Object> body = new HashMap<>();
+        body.put("authType", "PASSWORD");
         body.put("username", "admin");
         body.put("password", "admin123");
         body.put("tenantCode", "PLATFORM");

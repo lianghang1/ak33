@@ -109,11 +109,14 @@ class IamEndToEndTest {
     @Test
     @Order(1)
     void platformInitAndListTenants() throws Exception {
-        // 平台超管列租户（账密校验第一步）
+        // 平台超管列租户：统一 login 接口不传 tenantCode
         Map<String, String> req = new HashMap<>();
+        req.put("authType", "PASSWORD");
         req.put("username", "admin");
         req.put("password", "admin123");
-        JsonNode tenants = ok(postJson("/api/auth/login-tenants", req, null));
+        JsonNode result = ok(postJson("/api/auth/login", req, null));
+        assertTrue(result.path("needSelectTenant").asBoolean());
+        JsonNode tenants = result.path("tenants");
         assertTrue(tenants.isArray());
         assertTrue(tenants.size() >= 1, "至少有平台租户");
         boolean hasPlatform = false;
@@ -127,6 +130,7 @@ class IamEndToEndTest {
     @Order(2)
     void loginAsPlatformAdmin() throws Exception {
         Map<String, String> req = new HashMap<>();
+        req.put("authType", "PASSWORD");
         req.put("username", "admin");
         req.put("password", "admin123");
         req.put("tenantCode", "PLATFORM");
