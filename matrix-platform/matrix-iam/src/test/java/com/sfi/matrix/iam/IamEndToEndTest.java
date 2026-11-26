@@ -154,6 +154,8 @@ class IamEndToEndTest {
         assertNotNull(log.getCostMs(), "应记录耗时");
         assertNotNull(log.getParams(), "应记录入参摘要");
         assertFalse(log.getParams().contains("admin123"), "入参摘要不得包含密码");
+        assertEquals("internal", log.getSource(), "账密登录来源应为 internal");
+        assertNotNull(log.getDeviceId(), "服务端应生成物理设备标识");
     }
 
     @Test
@@ -175,6 +177,34 @@ class IamEndToEndTest {
         assertNotNull(failed.getReasonCode(), "失败应记录原因码");
         assertFalse("SUCCESS".equals(failed.getReasonCode()), "失败原因码不应为 SUCCESS");
         assertFalse(failed.getParams().contains("wrong-password"), "入参摘要不得包含密码");
+    }
+
+    @Test
+    @Order(21)
+    void sameDeviceReLoginRevokesOldSession() throws Exception {
+        Map<String, String> req = new HashMap<>();
+        req.put("authType", "PASSWORD");
+        req.put("username", "admin");
+        req.put("password", "admin123");
+        req.put("tenantCode", "PLATFORM");
+        String body = objectMapper.writeValueAsString(req);
+
+        // 同一设备连续登录两次
+        MvcResult first = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON).content(body)
+                .header("X-Device-Id", "test-device-same")).andReturn();
+        String token1 = ok(first).path("token").asText();
+        MvcResult second = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON).content(body)
+                .header("X-Device-Id", "test-device-same")).andReturn();
+        String token2 = ok(second).path("token").asText();
+        assertFalse(token1.equals(token2), "两次登录应签发不同 token");
+
+        // 旧 token 已被顶掉，解析失效
+        assertNull(tokenService.resolve(token1), "同设备重登后旧会话应失效");
+        assertNotNull(tokenService.resolve(token2), "新会话应有效");
+        // 响应头回写设备标识
+        assertEquals("test-device-same", first.getResponse().getHeader("X-Device-Id"));
     }
 
     @Test

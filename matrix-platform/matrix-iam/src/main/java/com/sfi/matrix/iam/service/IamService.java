@@ -195,6 +195,7 @@ public class IamService {
         loginUser.setDisplayName(displayNameOf(user));
         // 账号类型决定权限加载分流（OPERATOR 走 RBAC；APP/MEMBER 本阶段同为凭据换 token）
         loginUser.setAccountType(accountTypeOf(user));
+        loginUser.setSource(sourceOf(loginUser.getAccountType(), user.getUsername()));
         loginUser.setTenantId(tenant.getId().toString());
         String tenantId = tenant.getId().toString();
         loginUser.setRoles(new HashSet<>(userRoleCodes(user.getId(), tenantId)));
@@ -227,6 +228,17 @@ public class IamService {
             return com.sfi.scaffold.starter.security.identity.AccountType.MEMBER;
         }
         return com.sfi.scaffold.starter.security.identity.AccountType.OPERATOR;
+    }
+
+    /** 登录来源：OPERATOR→internal，MEMBER→online，APP→app:{账号}。 */
+    private static String sourceOf(com.sfi.scaffold.starter.security.identity.AccountType accountType, String accountNo) {
+        if (accountType == com.sfi.scaffold.starter.security.identity.AccountType.MEMBER) {
+            return "online";
+        }
+        if (accountType == com.sfi.scaffold.starter.security.identity.AccountType.APP) {
+            return "app:" + accountNo;
+        }
+        return "internal";
     }
 
     /**
@@ -863,6 +875,7 @@ public class IamService {
         loginUser.setAccountNo(admin.getUsername());
         loginUser.setDisplayName(displayNameOf(admin));
         loginUser.setAccountType(accountTypeOf(admin));
+        loginUser.setSource(sourceOf(loginUser.getAccountType(), admin.getUsername()));
         loginUser.setTenantId(tenantId);
         loginUser.setRoles(new HashSet<>(Collections.singletonList(TENANT_ADMIN_ROLE_CODE)));
         loginUser.setPermissions(userPermissionsOfSuper(IamConstants.ROLE_TYPE_TENANT_ADMIN, tenantId));
@@ -961,12 +974,13 @@ public class IamService {
 
     @Transactional(rollbackFor = Exception.class)
     public SysUser updateUser(Long id, String nickname, String mobile, String email,
-                              String accountType, Integer status) {
+                              String accountType, Integer status, Integer maxSessions) {
         SysUser u = getUser(id);
         if (mobile != null) u.setMobile(mobile);
         if (email != null) u.setEmail(email);
         if (accountType != null && !accountType.trim().isEmpty()) u.setAccountType(accountType);
         if (status != null) u.setStatus(status);
+        if (maxSessions != null) u.setMaxSessions(maxSessions);
         u = userRepository.save(u);
         if (nickname != null) saveProfile(id, nickname);
         return u;

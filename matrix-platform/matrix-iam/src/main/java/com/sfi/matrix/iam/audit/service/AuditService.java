@@ -58,6 +58,7 @@ public class AuditService {
             log.setReasonCode(reasonCodeOf(info));
             log.setReason(reasonOf(info));
             log.setTraceId(MDC.get(TraceConstants.TRACE_ID_KEY));
+            log.setSource(truncate(info.getSource(), 64));
             if (request != null) {
                 String ip = IpUtils.clientIp(request);
                 log.setIp(ip);
@@ -66,8 +67,9 @@ public class AuditService {
                 log.setUserAgent(truncate(ua, 500));
                 log.setBrowser(truncate(UserAgentUtils.browser(ua), 64));
                 log.setOs(truncate(UserAgentUtils.os(ua), 64));
-                log.setDevice(truncate(request.getHeader("X-Device-Id"), 128));
             }
+            String deviceId = info.getDeviceId() != null ? info.getDeviceId() : (request == null ? null : request.getHeader("X-Device-Id"));
+            log.setDeviceId(truncate(deviceId, 128));
             loginLogRepository.save(log);
         } catch (Exception ignored) {
             // 审计失败不影响业务

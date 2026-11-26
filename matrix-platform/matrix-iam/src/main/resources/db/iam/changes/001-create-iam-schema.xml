@@ -238,4 +238,10 @@
         </createIndex>
     </changeSet>
 
+    <changeSet id="20261121-11" author="matrix">
+        <addColumn tableName="sys_user">
+            <column name="max_sessions" type="INT" remarks="该账号最大在线会话数；null 跟随全局默认"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

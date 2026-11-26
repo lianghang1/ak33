@@ -18,7 +18,8 @@
             <column name="user_agent" type="VARCHAR(512)"/>
             <column name="browser" type="VARCHAR(64)" remarks="User-Agent 解析出的浏览器"/>
             <column name="os" type="VARCHAR(64)" remarks="User-Agent 解析出的操作系统"/>
-            <column name="device" type="VARCHAR(128)" remarks="客户端设备标识，来自 X-Device-Id 头"/>
+            <column name="source" type="VARCHAR(64)" remarks="登录来源/接入端类型：internal/online/app:{accountNo}"/>
+            <column name="device_id" type="VARCHAR(128)" remarks="物理设备标识，来自 X-Device-Id 头"/>
             <column name="success" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
             <column name="reason_code" type="VARCHAR(64)" remarks="失败原因码：全局业务码枚举名或具体码；成功为 SUCCESS"/>
             <column name="reason" type="VARCHAR(255)"/>

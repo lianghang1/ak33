@@ -153,7 +153,7 @@ public class IamController {
                     req.getNickname()));
         }
         return R.ok(iamService.updateUser(req.getId(), req.getNickname(), req.getMobile(), req.getEmail(),
-                req.getAccountType(), req.getStatus()));
+                req.getAccountType(), req.getStatus(), req.getMaxSessions()));
     }
 
     @GetMapping("/user")

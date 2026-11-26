@@ -15,6 +15,10 @@ public class LoginAuditInfo {
     private String params;
     private long costMs;
     private Throwable error;
+    /** 登录来源/接入端类型：internal / online / app:{accountNo} */
+    private String source;
+    /** 物理设备标识：客户端 X-Device-Id */
+    private String deviceId;
 
     public String getUsername() { return username; }
     public LoginAuditInfo setUsername(String username) { this.username = username; return this; }
@@ -32,4 +36,8 @@ public class LoginAuditInfo {
     public LoginAuditInfo setCostMs(long costMs) { this.costMs = costMs; return this; }
     public Throwable getError() { return error; }
     public LoginAuditInfo setError(Throwable error) { this.error = error; return this; }
+    public String getSource() { return source; }
+    public LoginAuditInfo setSource(String source) { this.source = source; return this; }
+    public String getDeviceId() { return deviceId; }
+    public LoginAuditInfo setDeviceId(String deviceId) { this.deviceId = deviceId; return this; }
 }

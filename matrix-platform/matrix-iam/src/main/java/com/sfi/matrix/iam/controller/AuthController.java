@@ -11,6 +11,7 @@ import com.sfi.matrix.iam.dto.TenantCodeRequest;
 import com.sfi.matrix.iam.entity.SysTenant;
 import com.sfi.matrix.iam.entity.SysUser;
 import com.sfi.matrix.iam.service.IamService;
+import com.sfi.matrix.iam.service.SessionLimitService;
 import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.exception.GlobalErrorCode;
 import com.sfi.scaffold.common.result.R;
@@ -33,10 +34,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -62,11 +65,12 @@ public class AuthController {
     private final CaptchaService captchaService;
     private final PasswordPolicyValidator passwordPolicyValidator;
     private final AuditService auditService;
+    private final SessionLimitService sessionLimitService;
 
     public AuthController(AuthService authService, IamService iamService, TokenService tokenService,
                           PasswordEncoder passwordEncoder, LoginFailureGuard loginFailureGuard,
                           CaptchaService captchaService, PasswordPolicyValidator passwordPolicyValidator,
-                          AuditService auditService) {
+                          AuditService auditService, SessionLimitService sessionLimitService) {
         this.authService = authService;
         this.iamService = iamService;
         this.tokenService = tokenService;
@@ -75,6 +79,7 @@ public class AuthController {
         this.captchaService = captchaService;
         this.passwordPolicyValidator = passwordPolicyValidator;
         this.auditService = auditService;
+        this.sessionLimitService = sessionLimitService;
     }
 
     /**
@@ -107,17 +112,20 @@ public class AuthController {
     @Anonymous
     @RateLimit(limit = 10, windowSeconds = 60, dimension = "ip")
     @PostMapping("/login")
-    public R<Map<String, Object>> login(@Valid @RequestBody LoginRequest req, HttpServletRequest request) {
+    public R<Map<String, Object>> login(@Valid @RequestBody LoginRequest req, HttpServletRequest request,
+                                        HttpServletResponse response) {
         long start = System.nanoTime();
         String ip = IpUtils.clientIp(request);
         String authType = req.getAuthType();
         boolean password = AuthType.PASSWORD.equals(authType);
         String principal = password ? req.getUsername() : req.getProvider();
+        String deviceId = resolveDeviceId(request, response);
         LoginAuditInfo audit = new LoginAuditInfo()
                 .setUsername(principal)
                 .setAuthType(authType)
                 .setTenantCode(req.getTenantCode())
-                .setParams(paramsOf(authType, req));
+                .setParams(paramsOf(authType, req))
+                .setDeviceId(deviceId);
         try {
             guardBeforeLogin(password ? req.getUsername() : null, ip,
                     req.getCaptchaId(), req.getCaptchaCode());
@@ -134,7 +142,10 @@ public class AuthController {
                 return R.ok(result);
             }
             LoginUser loginUser = authService.authenticateAndAssemble(authType, credentials, req.getTenantCode());
-            audit.setSuccess(true).setUserId(loginUser.getAccountId()).setCostMs(costMs(start));
+            loginUser.setDeviceId(deviceId);
+            audit.setSuccess(true).setUserId(loginUser.getAccountId())
+                    .setSource(loginUser.getSource()).setCostMs(costMs(start));
+            sessionLimitService.enforceBeforeCreate(loginUser.getAccountId(), deviceId);
             auditService.recordLogin(audit, request);
             return R.ok(buildTokenResponse(loginUser));
         } catch (RuntimeException e) {
@@ -142,6 +153,17 @@ public class AuthController {
             auditService.recordLogin(audit, request);
             throw e;
         }
+    }
+
+    /** 取客户端 X-Device-Id；缺失或格式非法时服务端生成并回写，客户端下次复用 */
+    private static String resolveDeviceId(HttpServletRequest request, HttpServletResponse response) {
+        String deviceId = request.getHeader("X-Device-Id");
+        if (deviceId == null || deviceId.trim().isEmpty()
+                || deviceId.length() > 128 || !deviceId.matches("[A-Za-z0-9_.:-]+")) {
+            deviceId = UUID.randomUUID().toString().replace("-", "");
+        }
+        response.setHeader("X-Device-Id", deviceId);
+        return deviceId;
     }
 
     /** 登录入参摘要：仅保留非敏感字段，密码/授权码/验证码一律不记录。 */
@@ -235,9 +257,8 @@ public class AuthController {
         return R.ok();
     }
 
-    /** 签发 token 的统一出口：accountType 由认证策略装配决定，禁止在此写死覆盖 */
+    /** 签发 token 的统一出口：accountType/source 由认证装配决定，禁止在此写死覆盖 */
     private Map<String, Object> buildTokenResponse(LoginUser loginUser) {
-        loginUser.setDevice("internal");
         SessionInfo session = iamService.sessionOf(loginUser);
         String token = tokenService.create(session, false);
         Map<String, Object> m = new LinkedHashMap<>();

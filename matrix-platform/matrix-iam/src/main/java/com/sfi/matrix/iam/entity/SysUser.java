@@ -52,6 +52,10 @@ public class SysUser extends BaseEntity {
     @Column(name = "status")
     private Integer status = 1;
 
+    /** 该账号最大在线会话数；null 表示跟随全局默认 */
+    @Column(name = "max_sessions")
+    private Integer maxSessions;
+
     public String getAccountType() {
         return accountType;
     }
@@ -98,6 +102,14 @@ public class SysUser extends BaseEntity {
 
     public void setStatus(Integer status) {
         this.status = status;
+    }
+
+    public Integer getMaxSessions() {
+        return maxSessions;
+    }
+
+    public void setMaxSessions(Integer maxSessions) {
+        this.maxSessions = maxSessions;
     }
 
     public Boolean getDeleted() {

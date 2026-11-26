@@ -56,9 +56,13 @@ public class SysLoginLog extends BaseEntity {
     @Column(name = "os")
     private String os;
 
-    /** 客户端设备标识，来自 X-Device-Id 头 */
-    @Column(name = "device")
-    private String device;
+    /** 登录来源/接入端类型：internal / online / app:{accountNo} */
+    @Column(name = "source")
+    private String source;
+
+    /** 物理设备标识，来自 X-Device-Id 头 */
+    @Column(name = "device_id")
+    private String deviceId;
 
     /** 1成功 0失败 */
     @Column(name = "success")
@@ -104,8 +108,10 @@ public class SysLoginLog extends BaseEntity {
     public void setBrowser(String browser) { this.browser = browser; }
     public String getOs() { return os; }
     public void setOs(String os) { this.os = os; }
-    public String getDevice() { return device; }
-    public void setDevice(String device) { this.device = device; }
+    public String getSource() { return source; }
+    public void setSource(String source) { this.source = source; }
+    public String getDeviceId() { return deviceId; }
+    public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
     public Boolean getSuccess() { return success; }
     public void setSuccess(Boolean success) { this.success = success; }
     public String getReasonCode() { return reasonCode; }

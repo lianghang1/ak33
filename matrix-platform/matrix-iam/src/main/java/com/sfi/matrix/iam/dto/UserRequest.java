@@ -19,6 +19,9 @@ public class UserRequest {
     private String accountType;
     private Integer status;
 
+    /** 最大在线会话数；留空表示跟随全局默认 */
+    private Integer maxSessions;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getUsername() { return username; }
@@ -35,4 +38,6 @@ public class UserRequest {
     public void setAccountType(String accountType) { this.accountType = accountType; }
     public Integer getStatus() { return status; }
     public void setStatus(Integer status) { this.status = status; }
+    public Integer getMaxSessions() { return maxSessions; }
+    public void setMaxSessions(Integer maxSessions) { this.maxSessions = maxSessions; }
 }
