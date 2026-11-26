@@ -96,4 +96,77 @@
         </createIndex>
     </changeSet>
 
+    <!-- 文件记录：原图与缩略图各占一组对称字段，同存一行 -->
+    <changeSet id="support-001-sys-file" author="matrix">
+        <createTable tableName="sys_file" remarks="文件记录">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_file"/>
+            </column>
+            <column name="tenant_id" type="VARCHAR(64)" remarks="租户ID"/>
+            <column name="config_id" type="VARCHAR(64)" remarks="存储配置标识"/>
+            <column name="channel_code" type="VARCHAR(64)" remarks="存储平台实例标识"/>
+
+            <!-- 原图 -->
+            <column name="path" type="VARCHAR(512)" remarks="原图对象路径"/>
+            <column name="filename" type="VARCHAR(255)" remarks="原图存储文件名"/>
+            <column name="original_filename" type="VARCHAR(255)" remarks="用户上传原始文件名"/>
+            <column name="raw_url" type="VARCHAR(1024)" remarks="原图原始地址（未签名）"/>
+            <column name="size" type="BIGINT" remarks="原图字节数"/>
+            <column name="extension" type="VARCHAR(32)" remarks="原图扩展名"/>
+            <column name="content_type" type="VARCHAR(128)" remarks="原图MIME"/>
+            <column name="file_type" type="VARCHAR(32)"
+                    remarks="媒体大类：IMAGE/VIDEO/AUDIO/DOCUMENT/ARCHIVE/OTHER"/>
+            <column name="acl" type="VARCHAR(64)" remarks="原图ACL原始值（不用于过滤）"/>
+            <column name="hash_md5" type="VARCHAR(32)" remarks="文件md5，秒传/去重"/>
+
+            <!-- 缩略图（独立对象，字段与原图对称） -->
+            <column name="th_path" type="VARCHAR(512)" remarks="缩略图对象路径"/>
+            <column name="th_filename" type="VARCHAR(255)" remarks="缩略图存储文件名"/>
+            <column name="th_raw_url" type="VARCHAR(1024)" remarks="缩略图原始地址（未签名）"/>
+            <column name="th_size" type="BIGINT" remarks="缩略图字节数"/>
+            <column name="th_content_type" type="VARCHAR(128)" remarks="缩略图MIME"/>
+
+            <!-- 访问与业务关联 -->
+            <column name="private_access" type="BOOLEAN" defaultValueBoolean="false"
+                    remarks="是否需要签名访问（唯一签名判断标志）">
+                <constraints nullable="false"/>
+            </column>
+            <column name="object_id" type="VARCHAR(64)" remarks="关联业务对象标识"/>
+            <column name="object_type" type="VARCHAR(64)" remarks="关联业务对象类型"/>
+
+            <!-- 分片上传会话 -->
+            <column name="multipart_upload_id" type="VARCHAR(128)" remarks="分片上传会话ID，非分片为空"/>
+            <column name="multipart_state" type="VARCHAR(32)"
+                    remarks="分片会话阶段：INITIATED/UPLOADING/COMPLETED/ABORTED，非分片为空"/>
+
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- 分片明细：临时数据，complete/abort 后物理删除，无 deleted 列 -->
+    <changeSet id="support-001-sys-file-part" author="matrix">
+        <createTable tableName="sys_file_part" remarks="分片上传明细（临时数据）">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_file_part"/>
+            </column>
+            <column name="multipart_upload_id" type="VARCHAR(128)" remarks="关联sys_file.multipart_upload_id">
+                <constraints nullable="false"/>
+            </column>
+            <column name="part_number" type="INT" remarks="分片序号">
+                <constraints nullable="false"/>
+            </column>
+            <column name="e_tag" type="VARCHAR(255)" remarks="平台返回分片eTag，合并必需"/>
+            <column name="part_size" type="BIGINT" remarks="分片字节数"/>
+            <column name="create_time" type="DATETIME" remarks="创建时间，兜底清理判断过期用">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
 </databaseChangeLog>

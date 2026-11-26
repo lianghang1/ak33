@@ -66,6 +66,7 @@
             <column name="component" type="VARCHAR(128)"/>
             <column name="icon" type="VARCHAR(64)"/>
             <column name="permission" type="VARCHAR(128)" remarks="权限标识"/>
+            <column name="api_pattern" type="VARCHAR(512)" remarks="URL权限模式，Ant风格，多个逗号分隔，如 /api/iam/user/**,/api/iam/tenant/**"/>
             <column name="sort_no" type="INT"/>
             <column name="visible" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
             <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
@@ -87,6 +88,7 @@
             <column name="mobile" type="VARCHAR(32)"/>
             <column name="email" type="VARCHAR(128)"/>
             <column name="status" type="INT" defaultValueNumeric="1" remarks="1启用 0禁用"><constraints nullable="false"/></column>
+            <column name="max_sessions" type="INT" remarks="该账号最大在线会话数；null 跟随全局默认"/>
             <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
             <column name="update_time" type="DATETIME"/>
             <column name="create_by" type="VARCHAR(64)"/>
@@ -98,7 +100,7 @@
 
     <!-- ============ 用户资料（1:1）与社交绑定（1:N） ============ -->
 
-    <changeSet id="20261121-05b" author="matrix">
+    <changeSet id="20261121-06" author="matrix">
         <createTable tableName="sys_user_profile" remarks="用户资料（1:1，展示/业务用，不参与登录）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="user_id" type="BIGINT" remarks="对应 sys_user.id"><constraints nullable="false"/></column>
@@ -139,7 +141,7 @@
 
     <!-- ============ 租户隔离表（有 tenant_id + @Filter） ============ -->
 
-    <changeSet id="20261121-06" author="matrix">
+    <changeSet id="20261121-07" author="matrix">
         <createTable tableName="sys_user_tenant" remarks="用户-租户归属（不标租户过滤，登录跨租户查）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="user_id" type="BIGINT"><constraints nullable="false"/></column>
@@ -158,7 +160,7 @@
         </createIndex>
     </changeSet>
 
-    <changeSet id="20261121-07" author="matrix">
+    <changeSet id="20261121-08" author="matrix">
         <createTable tableName="sys_dept" remarks="部门（租户内组织结构）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="tenant_id" type="VARCHAR(64)"/>
@@ -178,7 +180,7 @@
         </createIndex>
     </changeSet>
 
-    <changeSet id="20261121-08" author="matrix">
+    <changeSet id="20261121-09" author="matrix">
         <createTable tableName="sys_role" remarks="系统角色（租户内）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="tenant_id" type="VARCHAR(64)"/>
@@ -202,7 +204,7 @@
         </createIndex>
     </changeSet>
 
-    <changeSet id="20261121-09" author="matrix">
+    <changeSet id="20261121-10" author="matrix">
         <createTable tableName="sys_user_role" remarks="用户-角色关联（租户内）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="tenant_id" type="VARCHAR(64)"/>
@@ -220,7 +222,7 @@
         </createIndex>
     </changeSet>
 
-    <changeSet id="20261121-10" author="matrix">
+    <changeSet id="20261121-11" author="matrix">
         <createTable tableName="sys_role_menu" remarks="角色-菜单关联（租户内，菜单为全局定义）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="tenant_id" type="VARCHAR(64)"/>
@@ -238,10 +240,71 @@
         </createIndex>
     </changeSet>
 
-    <changeSet id="20261121-11" author="matrix">
-        <addColumn tableName="sys_user">
-            <column name="max_sessions" type="INT" remarks="该账号最大在线会话数；null 跟随全局默认"/>
-        </addColumn>
+    <!-- ============ 审计日志 ============ -->
+
+    <changeSet id="20261121-12" author="matrix">
+        <createTable tableName="sys_login_log" remarks="登录审计日志">
+            <column name="id" type="BIGINT"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="username" type="VARCHAR(64)"/>
+            <column name="user_id" type="BIGINT" remarks="登录成功的账号ID，失败时为空"/>
+            <column name="auth_type" type="VARCHAR(32)"/>
+            <column name="tenant_code" type="VARCHAR(64)"/>
+            <column name="ip" type="VARCHAR(64)"/>
+            <column name="login_location" type="VARCHAR(128)" remarks="IP属地：国家|区域|省|市|ISP"/>
+            <column name="user_agent" type="VARCHAR(512)"/>
+            <column name="browser" type="VARCHAR(64)" remarks="User-Agent 解析出的浏览器"/>
+            <column name="os" type="VARCHAR(64)" remarks="User-Agent 解析出的操作系统"/>
+            <column name="source" type="VARCHAR(64)" remarks="登录来源/接入端类型：internal/online/app:{accountNo}"/>
+            <column name="device_id" type="VARCHAR(128)" remarks="物理设备标识，来自 X-Device-Id 头"/>
+            <column name="success" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="reason_code" type="VARCHAR(64)" remarks="失败原因码：全局业务码枚举名或具体码；成功为 SUCCESS"/>
+            <column name="reason" type="VARCHAR(255)"/>
+            <column name="params" type="VARCHAR(1000)" remarks="登录入参摘要，密码/授权码等敏感值已剔除"/>
+            <column name="trace_id" type="VARCHAR(64)" remarks="链路追踪ID，串联同一次请求的所有日志"/>
+            <column name="cost_ms" type="BIGINT" remarks="登录校验耗时（毫秒）"/>
+            <column name="login_time" type="DATETIME"/>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="sys_login_log" indexName="idx_login_log_user">
+            <column name="username"/>
+        </createIndex>
+        <createIndex tableName="sys_login_log" indexName="idx_login_log_time">
+            <column name="login_time"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="20261121-13" author="matrix">
+        <createTable tableName="sys_operate_log" remarks="操作审计日志">
+            <column name="id" type="BIGINT"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="tenant_id" type="VARCHAR(64)"/>
+            <column name="module" type="VARCHAR(64)"/>
+            <column name="operation" type="VARCHAR(128)"/>
+            <column name="method" type="VARCHAR(255)"/>
+            <column name="uri" type="VARCHAR(512)"/>
+            <column name="ip" type="VARCHAR(64)"/>
+            <column name="oper_user_id" type="BIGINT"/>
+            <column name="oper_user_name" type="VARCHAR(64)"/>
+            <column name="params" type="VARCHAR(2000)"/>
+            <column name="success" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="error_msg" type="VARCHAR(500)"/>
+            <column name="cost_ms" type="BIGINT"/>
+            <column name="oper_time" type="DATETIME"/>
+            <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
+            <column name="update_time" type="DATETIME"/>
+            <column name="create_by" type="VARCHAR(64)"/>
+            <column name="update_by" type="VARCHAR(64)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="sys_operate_log" indexName="idx_operate_log_tenant">
+            <column name="tenant_id"/>
+        </createIndex>
+        <createIndex tableName="sys_operate_log" indexName="idx_operate_log_time">
+            <column name="oper_time"/>
+        </createIndex>
     </changeSet>
 
 </databaseChangeLog>

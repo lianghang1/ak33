@@ -7,6 +7,4 @@
             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
 
     <include file="db/iam/changes/001-create-iam-schema.xml"/>
-    <include file="db/iam/changes/002-create-audit-log.xml"/>
-    <include file="db/iam/changes/003-add-menu-api-pattern.xml"/>
 </databaseChangeLog>
