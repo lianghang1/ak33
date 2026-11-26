@@ -140,8 +140,41 @@ class IamEndToEndTest {
         assertFalse(adminToken.isEmpty());
         assertFalse(data.path("tenantId").asText().isEmpty(), "tenantId 应为平台租户 ID");
         assertEquals("OPERATOR", data.path("accountType").asText());
-        // 登录日志落库
+        // 登录日志落库，且关键审计字段齐全
         assertTrue(loginLogRepository.count() >= 1, "登录日志应落库");
+        com.sfi.matrix.iam.audit.entity.SysLoginLog log = loginLogRepository.findAll().stream()
+                .filter(l -> Boolean.TRUE.equals(l.getSuccess()))
+                .findFirst().orElse(null);
+        assertNotNull(log, "成功登录日志应落库");
+        assertEquals(Boolean.TRUE, log.getSuccess(), "登录成功标志");
+        assertEquals("SUCCESS", log.getReasonCode(), "成功原因码");
+        assertNotNull(log.getUserId(), "成功登录应记录账号ID");
+        assertNotNull(log.getTraceId(), "应记录 traceId");
+        assertNotNull(log.getLoginTime(), "应记录登录时间");
+        assertNotNull(log.getCostMs(), "应记录耗时");
+        assertNotNull(log.getParams(), "应记录入参摘要");
+        assertFalse(log.getParams().contains("admin123"), "入参摘要不得包含密码");
+    }
+
+    @Test
+    @Order(20)
+    void failedLoginRecordsReasonCode() throws Exception {
+        Map<String, String> req = new HashMap<>();
+        req.put("authType", "PASSWORD");
+        req.put("username", "admin");
+        req.put("password", "wrong-password");
+        req.put("tenantCode", "PLATFORM");
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)));
+        com.sfi.matrix.iam.audit.entity.SysLoginLog failed = loginLogRepository.findAll().stream()
+                .filter(l -> Boolean.FALSE.equals(l.getSuccess()))
+                .findFirst().orElse(null);
+        assertNotNull(failed, "失败登录应落库");
+        assertEquals(Boolean.FALSE, failed.getSuccess());
+        assertNotNull(failed.getReasonCode(), "失败应记录原因码");
+        assertFalse("SUCCESS".equals(failed.getReasonCode()), "失败原因码不应为 SUCCESS");
+        assertFalse(failed.getParams().contains("wrong-password"), "入参摘要不得包含密码");
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.sfi.matrix.iam.controller;
 
+import com.sfi.matrix.iam.audit.dto.LoginAuditInfo;
 import com.sfi.matrix.iam.audit.service.AuditService;
 import com.sfi.matrix.iam.auth.AuthService;
 import com.sfi.matrix.iam.auth.AuthType;
@@ -107,10 +108,16 @@ public class AuthController {
     @RateLimit(limit = 10, windowSeconds = 60, dimension = "ip")
     @PostMapping("/login")
     public R<Map<String, Object>> login(@Valid @RequestBody LoginRequest req, HttpServletRequest request) {
+        long start = System.nanoTime();
         String ip = IpUtils.clientIp(request);
         String authType = req.getAuthType();
         boolean password = AuthType.PASSWORD.equals(authType);
         String principal = password ? req.getUsername() : req.getProvider();
+        LoginAuditInfo audit = new LoginAuditInfo()
+                .setUsername(principal)
+                .setAuthType(authType)
+                .setTenantCode(req.getTenantCode())
+                .setParams(paramsOf(authType, req));
         try {
             guardBeforeLogin(password ? req.getUsername() : null, ip,
                     req.getCaptchaId(), req.getCaptchaCode());
@@ -127,12 +134,33 @@ public class AuthController {
                 return R.ok(result);
             }
             LoginUser loginUser = authService.authenticateAndAssemble(authType, credentials, req.getTenantCode());
-            auditService.recordLogin(principal, authType, req.getTenantCode(), request, true, null);
+            audit.setSuccess(true).setUserId(loginUser.getAccountId()).setCostMs(costMs(start));
+            auditService.recordLogin(audit, request);
             return R.ok(buildTokenResponse(loginUser));
         } catch (RuntimeException e) {
-            auditService.recordLogin(principal, authType, req.getTenantCode(), request, false, e.getMessage());
+            audit.setSuccess(false).setError(e).setCostMs(costMs(start));
+            auditService.recordLogin(audit, request);
             throw e;
         }
+    }
+
+    /** 登录入参摘要：仅保留非敏感字段，密码/授权码/验证码一律不记录。 */
+    private static String paramsOf(String authType, LoginRequest req) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("authType=").append(authType);
+        if (AuthType.PASSWORD.equals(authType)) {
+            sb.append(",username=").append(req.getUsername());
+        } else {
+            sb.append(",provider=").append(req.getProvider());
+        }
+        if (req.getTenantCode() != null) {
+            sb.append(",tenantCode=").append(req.getTenantCode());
+        }
+        return sb.length() > 1000 ? sb.substring(0, 1000) : sb.toString();
+    }
+
+    private static long costMs(long startNano) {
+        return (System.nanoTime() - startNano) / 1_000_000L;
     }
 
     /** 切换租户：已登录用户切到该账号的另一个租户，返回新 token */

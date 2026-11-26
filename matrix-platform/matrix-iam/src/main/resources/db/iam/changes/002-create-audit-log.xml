@@ -10,12 +10,21 @@
         <createTable tableName="sys_login_log" remarks="登录审计日志">
             <column name="id" type="BIGINT"><constraints primaryKey="true" nullable="false"/></column>
             <column name="username" type="VARCHAR(64)"/>
+            <column name="user_id" type="BIGINT" remarks="登录成功的账号ID，失败时为空"/>
             <column name="auth_type" type="VARCHAR(32)"/>
             <column name="tenant_code" type="VARCHAR(64)"/>
             <column name="ip" type="VARCHAR(64)"/>
+            <column name="login_location" type="VARCHAR(128)" remarks="IP属地：国家|区域|省|市|ISP"/>
             <column name="user_agent" type="VARCHAR(512)"/>
+            <column name="browser" type="VARCHAR(64)" remarks="User-Agent 解析出的浏览器"/>
+            <column name="os" type="VARCHAR(64)" remarks="User-Agent 解析出的操作系统"/>
+            <column name="device" type="VARCHAR(128)" remarks="客户端设备标识，来自 X-Device-Id 头"/>
             <column name="success" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+            <column name="reason_code" type="VARCHAR(64)" remarks="失败原因码：全局业务码枚举名或具体码；成功为 SUCCESS"/>
             <column name="reason" type="VARCHAR(255)"/>
+            <column name="params" type="VARCHAR(1000)" remarks="登录入参摘要，密码/授权码等敏感值已剔除"/>
+            <column name="trace_id" type="VARCHAR(64)" remarks="链路追踪ID，串联同一次请求的所有日志"/>
+            <column name="cost_ms" type="BIGINT" remarks="登录校验耗时（毫秒）"/>
             <column name="login_time" type="DATETIME"/>
             <column name="create_time" type="DATETIME"><constraints nullable="false"/></column>
             <column name="update_time" type="DATETIME"/>
