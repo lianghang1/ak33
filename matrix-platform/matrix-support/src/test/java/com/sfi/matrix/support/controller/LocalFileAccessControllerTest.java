@@ -67,7 +67,7 @@ class LocalFileAccessControllerTest {
 
     @Test
     void file_signInvalid_rejected_noHeader() throws Exception {
-        when(urlResolver.checkAccess(anyLong(), anyLong(), org.mockito.ArgumentMatchers.anyBoolean(), anyString()))
+        when(urlResolver.checkAccess(any(SysFile.class), anyLong(), org.mockito.ArgumentMatchers.anyBoolean(), anyString()))
                 .thenReturn(false);
 
         mvc.perform(get("/self/file").param("fileId", "1").param("s", "bad"))
@@ -78,7 +78,7 @@ class LocalFileAccessControllerTest {
 
     @Test
     void file_validSign_setsXAccelRedirectFromDb() throws Exception {
-        when(urlResolver.checkAccess(anyLong(), anyLong(), org.mockito.ArgumentMatchers.anyBoolean(), anyString()))
+        when(urlResolver.checkAccess(any(SysFile.class), anyLong(), org.mockito.ArgumentMatchers.anyBoolean(), anyString()))
                 .thenReturn(true);
         when(fileService.get(1L)).thenReturn(file());
 
@@ -89,7 +89,7 @@ class LocalFileAccessControllerTest {
 
     @Test
     void file_validSign_thumbnailUsesThFilename() throws Exception {
-        when(urlResolver.checkAccess(anyLong(), anyLong(), org.mockito.ArgumentMatchers.anyBoolean(), anyString()))
+        when(urlResolver.checkAccess(any(SysFile.class), anyLong(), org.mockito.ArgumentMatchers.anyBoolean(), anyString()))
                 .thenReturn(true);
         when(fileService.get(1L)).thenReturn(file());
 
@@ -100,7 +100,7 @@ class LocalFileAccessControllerTest {
 
     @Test
     void file_missingRecord_rejected_noHeader() throws Exception {
-        when(urlResolver.checkAccess(anyLong(), anyLong(), org.mockito.ArgumentMatchers.anyBoolean(), anyString()))
+        when(urlResolver.checkAccess(any(SysFile.class), anyLong(), org.mockito.ArgumentMatchers.anyBoolean(), anyString()))
                 .thenReturn(true);
         when(fileService.get(1L)).thenReturn(null);
 
@@ -112,7 +112,7 @@ class LocalFileAccessControllerTest {
     @Test
     @SuppressWarnings("unchecked")
     void access_validSign_streamsDownloadedBytes() throws Exception {
-        when(urlResolver.checkAccess(anyLong(), anyLong(), org.mockito.ArgumentMatchers.anyBoolean(), anyString()))
+        when(urlResolver.checkAccess(any(SysFile.class), anyLong(), org.mockito.ArgumentMatchers.anyBoolean(), anyString()))
                 .thenReturn(true);
         when(fileService.get(1L)).thenReturn(file());
 

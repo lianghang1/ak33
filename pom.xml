@@ -28,4 +28,17 @@
         <module>matrix-platform</module>
         <module>cemetery-app</module>
     </modules>
+
+    <build>
+        <plugins>
+            <!-- 按 JDK8 目标编译 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>8</release>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

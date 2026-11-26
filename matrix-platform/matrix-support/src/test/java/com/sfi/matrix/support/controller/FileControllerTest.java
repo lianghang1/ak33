@@ -90,7 +90,7 @@ class FileControllerTest {
     void objects_returnsList() throws Exception {
         FileDTO dto = new FileDTO();
         dto.setId(8L);
-        when(service.listByObject("CEMETERY", "tomb-1")).thenReturn(java.util.List.of(dto));
+        when(service.listByObject("CEMETERY", "tomb-1")).thenReturn(java.util.Collections.singletonList(dto));
         mvc.perform(get("/api/file/objects").param("objectType", "CEMETERY").param("objectId", "tomb-1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].id").value(8));
@@ -153,7 +153,7 @@ class FileControllerTest {
 
     @Test
     void parts_returnsList() throws Exception {
-        when(service.listParts(1L)).thenReturn(java.util.List.of());
+        when(service.listParts(1L)).thenReturn(java.util.Collections.emptyList());
         mvc.perform(get("/api/file/parts").param("fileId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));

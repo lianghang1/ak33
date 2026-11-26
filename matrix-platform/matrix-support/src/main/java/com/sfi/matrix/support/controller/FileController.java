@@ -32,7 +32,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 文件业务接口：上传、查询与分片上传。
@@ -43,7 +45,7 @@ import java.util.List;
 @RequestMapping("/api/file")
 public class FileController {
 
-    private static final List<QueryFilterX> SUCCESS_OR_FILTERS = List.of(
+    private static final List<QueryFilterX> SUCCESS_OR_FILTERS = Arrays.asList(
             new QueryFilterX("multipartState", OperatorX.NU),
             new QueryFilterX("multipartState", OperatorX.EQ, "COMPLETED"));
 
@@ -94,7 +96,7 @@ public class FileController {
                 SUCCESS_OR_FILTERS,
                 PageRequest.of(pageNum(request) - 1, pageSize(request)),
                 SysFile.class);
-        List<FileDTO> list = page.getContent().stream().map(service::toDto).toList();
+        List<FileDTO> list = page.getContent().stream().map(service::toDto).collect(Collectors.toList());
         return R.ok(PageResult.of(list, page.getTotalElements(), pageNum(request), pageSize(request)));
     }
 

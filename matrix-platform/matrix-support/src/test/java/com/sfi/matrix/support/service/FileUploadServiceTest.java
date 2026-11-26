@@ -6,7 +6,7 @@ import com.sfi.matrix.support.dto.FileDTO;
 import com.sfi.matrix.support.dto.FileTypeInfo;
 import com.sfi.matrix.support.dto.UploadCommand;
 import com.sfi.matrix.support.enums.FileType;
-import com.sfi.matrix.support.service.file.FileConfigProvider;
+import com.sfi.matrix.support.service.file.FileConfigInfoProvider;
 import com.sfi.matrix.support.service.file.FileService;
 import com.sfi.matrix.support.service.file.FileTypeGuard;
 import com.sfi.matrix.support.service.file.FileUploadSupport;
@@ -57,7 +57,7 @@ class FileUploadServiceTest {
         pre = mock(UploadPretreatment.class);
         urlResolver = mock(FileUrlResolver.class);
         hash = mock(HashInfo.class);
-        FileConfigProvider fileConfigProvider = mock(FileConfigProvider.class);
+        FileConfigInfoProvider fileConfigProvider = mock(FileConfigInfoProvider.class);
         when(hash.getMd5()).thenReturn("d41d8cd98f00b204e9800998ecf8427e");
 
         configInfo = new FileConfigInfo();
@@ -143,7 +143,7 @@ class FileUploadServiceTest {
 
     @Test
     void upload_noThumbnail_leavesThFieldsNull() {
-        configInfo.setAllowedModules(java.util.List.of("default"));
+        configInfo.setAllowedModules(java.util.Collections.singletonList("default"));
         FileTypeInfo docType = new FileTypeInfo("application/pdf", "pdf", FileType.DOCUMENT);
         FileInfo info = baseInfo();
         info.setExt("pdf");

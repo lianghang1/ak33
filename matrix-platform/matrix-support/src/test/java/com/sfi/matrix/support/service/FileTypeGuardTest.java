@@ -4,7 +4,7 @@ import com.sfi.matrix.support.dto.FileConfigInfo;
 import com.sfi.matrix.support.dto.FileTypeInfo;
 import com.sfi.matrix.support.enums.FileType;
 import com.sfi.matrix.support.exception.FileErrorCode;
-import com.sfi.matrix.support.service.file.FileConfigProvider;
+import com.sfi.matrix.support.service.file.FileConfigInfoProvider;
 import com.sfi.matrix.support.service.file.FileTypeGuard;
 import com.sfi.scaffold.common.exception.BizException;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,12 +37,12 @@ class FileTypeGuardTest {
             0x08, 0x06, 0x00, 0x00, 0x00
     };
 
-    private FileConfigProvider fileConfigProvider;
+    private FileConfigInfoProvider fileConfigProvider;
     private FileTypeGuard guard;
 
     @BeforeEach
     void setUp() {
-        fileConfigProvider = mock(FileConfigProvider.class);
+        fileConfigProvider = mock(FileConfigInfoProvider.class);
         guard = new FileTypeGuard(fileConfigProvider);
     }
 

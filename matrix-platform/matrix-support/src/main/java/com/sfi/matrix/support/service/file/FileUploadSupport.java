@@ -29,9 +29,9 @@ import static com.sfi.matrix.support.exception.FileErrorCode.FILE_READ_FAILED;
 @Component
 public class FileUploadSupport {
 
-    private final FileConfigProvider fileConfigProvider;
+    private final FileConfigInfoProvider fileConfigProvider;
 
-    public FileUploadSupport(FileConfigProvider fileConfigProvider) {
+    public FileUploadSupport(FileConfigInfoProvider fileConfigProvider) {
         this.fileConfigProvider = fileConfigProvider;
     }
 
@@ -103,15 +103,7 @@ public class FileUploadSupport {
 
     /** 从记录重建带 uploadId 的 FileInfo */
     public FileInfo rebuild(SysFile file) {
-        FileInfo info = new FileInfo();
-        info.setPlatform(file.getChannelCode());
-        info.setPath(file.getPath());
-        info.setFilename(file.getFilename());
-        info.setOriginalFilename(file.getOriginalFilename());
-        info.setContentType(file.getContentType());
-        info.setSize(file.getSize());
-        info.setUploadId(file.getMultipartUploadId());
-        return info;
+        return file.toFileInfo(false);
     }
 
     /** 解析文件访问权限 */

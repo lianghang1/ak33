@@ -5,6 +5,7 @@ import com.sfi.conflux.file.config.FileConfigProvider;
 import com.sfi.conflux.file.engine.FileGateway;
 import com.sfi.matrix.support.dto.FileConfigInfo;
 import com.sfi.matrix.support.entity.SysFile;
+import com.sfi.matrix.support.service.file.FileConfigInfoProvider;
 import com.sfi.matrix.support.service.file.FileUrlResolver;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,20 +36,18 @@ class FileUrlResolverTest {
 
     private FileGateway gateway;
     private FileConfigProvider configProvider;
-    private com.sfi.matrix.support.service.file.FileConfigProvider matrixConfigProvider;
-    private SysFileService fileService;
+    private FileConfigInfoProvider configInfoProvider;
     private FileUrlResolver resolver;
 
     @BeforeEach
     void setUp() {
         gateway = mock(FileGateway.class);
         configProvider = mock(FileConfigProvider.class);
-        matrixConfigProvider = mock(com.sfi.matrix.support.service.file.FileConfigProvider.class);
-        fileService = mock(SysFileService.class);
-        resolver = new FileUrlResolver(gateway, configProvider, matrixConfigProvider, fileService);
+        configInfoProvider = mock(FileConfigInfoProvider.class);
+        resolver = new FileUrlResolver(gateway, configProvider, configInfoProvider);
         FileConfigInfo cfg = new FileConfigInfo();
         cfg.setPresignSeconds(300);
-        when(matrixConfigProvider.getConfig()).thenReturn(cfg);
+        when(configInfoProvider.getConfig()).thenReturn(cfg);
     }
 
     private SysFile file(boolean privateAccess, String channelCode) {
@@ -95,7 +94,7 @@ class FileUrlResolverTest {
 
     @Test
     void fillLocalUrls_streamMode_usesAccessPath() {
-        when(matrixConfigProvider.getConfig()).thenReturn(fileConfig("stream"));
+        when(configInfoProvider.getConfig()).thenReturn(fileConfig("stream"));
         stubDomain("http://localhost");
         SysFile f = file(false, "local-plus");
 
@@ -197,34 +196,32 @@ class FileUrlResolverTest {
 
     @Test
     void checkAccess_publicLocal_allowsWithoutSign() {
-        when(fileService.get(1L)).thenReturn(file(false, "local-plus"));
-        assertTrue(resolver.checkAccess(1L, 0L, false, null), "公开本地文件无需签名即放行");
+        assertTrue(resolver.checkAccess(file(false, "local-plus"), 0L, false, null), "公开本地文件无需签名即放行");
     }
 
     @Test
     void checkAccess_privateLocal_validSign_allows() {
-        when(fileService.get(1L)).thenReturn(file(true, "local-plus"));
+        SysFile f = file(true, "local-plus");
         long t = System.currentTimeMillis() / 1000L + 300;
-        assertTrue(resolver.checkAccess(1L, t, false, resolver.sign(1L, t, false)));
+        assertTrue(resolver.checkAccess(f, t, false, resolver.sign(1L, t, false)));
     }
 
     @Test
     void checkAccess_privateLocal_tamperOrExpired_rejects() {
-        when(fileService.get(1L)).thenReturn(file(true, "local-plus"));
+        SysFile f = file(true, "local-plus");
         long t = System.currentTimeMillis() / 1000L + 300;
         String sign = resolver.sign(1L, t, false);
-        assertFalse(resolver.checkAccess(1L, t, true, sign), "thumb 篡改应拒绝");
-        assertFalse(resolver.checkAccess(2L, t, false, sign), "fileId 篡改应拒绝");
-        assertFalse(resolver.checkAccess(1L, t, false, ""), "空签名应拒绝");
-        assertFalse(resolver.checkAccess(1L, System.currentTimeMillis() / 1000L - 1, false,
+        assertFalse(resolver.checkAccess(f, t, true, sign), "thumb 篡改应拒绝");
+        assertFalse(resolver.checkAccess(f, t, false, resolver.sign(2L, t, false)), "签名属于其他文件应拒绝");
+        assertFalse(resolver.checkAccess(null, t, false, sign), "文件不存在应拒绝");
+        assertFalse(resolver.checkAccess(f, t, false, ""), "空签名应拒绝");
+        assertFalse(resolver.checkAccess(f, System.currentTimeMillis() / 1000L - 1, false,
                 resolver.sign(1L, System.currentTimeMillis() / 1000L - 1, false)), "过期应拒绝");
     }
 
     @Test
     void checkAccess_objectStorageOrMissing_rejects() {
-        when(fileService.get(1L)).thenReturn(file(false, "oss"));
-        assertFalse(resolver.checkAccess(1L, 0L, false, null), "非本地文件不走本地准入");
-        when(fileService.get(2L)).thenReturn(null);
-        assertFalse(resolver.checkAccess(2L, 0L, false, null), "不存在的文件拒绝");
+        assertFalse(resolver.checkAccess(file(false, "oss"), 0L, false, null), "非本地文件不走本地准入");
+        assertFalse(resolver.checkAccess(null, 0L, false, null), "不存在的文件拒绝");
     }
 }

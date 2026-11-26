@@ -5,8 +5,8 @@ import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.matrix.support.service.SysFileService;
 import com.sfi.matrix.support.service.file.FileUrlResolver;
 import com.sfi.scaffold.common.exception.BizException;
-import com.sfi.scaffold.starter.security.anonymous.Anonymous;
 import com.sfi.scaffold.common.util.StreamPipeUtils;
+import com.sfi.scaffold.starter.security.anonymous.Anonymous;
 import org.dromara.x.file.storage.core.FileInfo;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,10 +52,8 @@ public class LocalFileAccessController {
                      @RequestParam(value = "s", defaultValue = "") String sign,
                      HttpServletResponse response) {
         SysFile file = authorize(fileId, t, thumb, sign);
-        String path = thumb ? file.getThPath() : file.getPath();
-        String filename = thumb ? file.getThFilename() : file.getFilename();
         response.setHeader(HttpHeaders.CONTENT_TYPE, file.getContentType());
-        response.setHeader("X-Accel-Redirect", INTERNAL_PREFIX + concat(path, filename));
+        response.setHeader("X-Accel-Redirect", INTERNAL_PREFIX + objectKey(file, thumb));
     }
 
     /** stream 模式：验签通过后由 Java 读 SDK 下载流写回响应，不设 X-Accel-Redirect */
@@ -68,7 +66,7 @@ public class LocalFileAccessController {
                        HttpServletResponse response) throws IOException {
         SysFile file = authorize(fileId, t, thumb, sign);
         response.setContentType(file.getContentType());
-        FileInfo info = rebuild(file, thumb);
+        FileInfo info = file.toFileInfo(thumb);
         fileGateway.download(file.getConfigId(), file.getChannelCode(), info)
                 .inputStream(in -> {
                     try {
@@ -79,30 +77,19 @@ public class LocalFileAccessController {
                 });
     }
 
-    /** 统一验签：不通过直接抛业务异常，路径后续一律由 fileId 查库得出 */
+    /** 按 fileId 查库并验签 */
     private SysFile authorize(Long fileId, long t, boolean thumb, String sign) {
-        if (!urlResolver.checkAccess(fileId, t, thumb, sign)) {
-            throw new BizException(FILE_ACCESS_SIGN_INVALID);
-        }
         SysFile file = fileService.get(fileId);
-        if (file == null) {
+        if (!urlResolver.checkAccess(file, t, thumb, sign)) {
             throw new BizException(FILE_ACCESS_SIGN_INVALID);
         }
         return file;
     }
 
-    private static FileInfo rebuild(SysFile file, boolean thumb) {
-        FileInfo info = new FileInfo();
-        info.setPlatform(file.getChannelCode());
-        info.setPath(thumb ? file.getThPath() : file.getPath());
-        info.setFilename(thumb ? file.getThFilename() : file.getFilename());
-        info.setOriginalFilename(file.getOriginalFilename());
-        info.setContentType(file.getContentType());
-        info.setSize(file.getSize());
-        return info;
-    }
-
-    private static String concat(String path, String filename) {
+    /** 对象键：path 与 filename 拼接，补斜杠 */
+    private static String objectKey(SysFile file, boolean thumb) {
+        String path = thumb ? file.getThPath() : file.getPath();
+        String filename = thumb ? file.getThFilename() : file.getFilename();
         if (path == null || path.isEmpty()) {
             return filename;
         }

@@ -29,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.sfi.matrix.support.exception.FileErrorCode.FILE_MULTIPART_NOT_SUPPORTED;
 import static com.sfi.matrix.support.exception.FileErrorCode.FILE_READ_FAILED;
@@ -211,7 +212,7 @@ public class FileService {
             fp.setETag(p.getETag());
             fp.setPartSize(p.getPartSize());
             return fp;
-        }).toList();
+        }).collect(Collectors.toList());
 
         FileStorageService storage = fileGateway.nativeService(record.getConfigId(), record.getChannelCode());
         FileInfo merged = storage.completeMultipartUpload(info).setPartInfoList(partInfos).complete();
@@ -261,7 +262,7 @@ public class FileService {
         return fileService.listByObject(objectType, objectId).stream()
                 .filter(FileService::isSuccessful)
                 .map(this::toDto)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     /** 实体转 DTO，附带可访问地址与原始地址 */

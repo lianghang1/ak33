@@ -9,7 +9,7 @@ import com.sfi.matrix.support.dto.MultipartPartCommand;
 import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.matrix.support.entity.SysFilePart;
 import com.sfi.matrix.support.enums.FileType;
-import com.sfi.matrix.support.service.file.FileConfigProvider;
+import com.sfi.matrix.support.service.file.FileConfigInfoProvider;
 import com.sfi.matrix.support.service.file.FileService;
 import com.sfi.matrix.support.service.file.FileUrlResolver;
 import com.sfi.matrix.support.service.file.FileTypeGuard;
@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -64,7 +65,7 @@ class FileMultipartServiceTest {
         partService = mock(SysFilePartService.class);
         fileTypeGuard = mock(FileTypeGuard.class);
         storage = mock(FileStorageService.class);
-        FileConfigProvider provider = mock(FileConfigProvider.class);
+        FileConfigInfoProvider provider = mock(FileConfigInfoProvider.class);
         FileConfigInfo config = new FileConfigInfo();
         config.setDefaultConfigId("cfg-1");
         config.setDefaultChannelCode("oss");
@@ -162,7 +163,7 @@ class FileMultipartServiceTest {
         SysFile record = activeRecord();
         record.setMultipartState("UPLOADING");
         when(fileService.get(1L)).thenReturn(record);
-        when(partService.findPart("upload-1", 2)).thenReturn(List.of());
+        when(partService.findPart("upload-1", 2)).thenReturn(Collections.emptyList());
         when(storage.uploadPart(any(FileInfo.class), eq(2), any()))
                 .thenThrow(new com.sfi.scaffold.common.exception.BizException("平台上传失败"));
 
@@ -183,7 +184,7 @@ class FileMultipartServiceTest {
         part.setPartNumber(1);
         part.setETag("etag-1");
         part.setPartSize(512L);
-        when(partService.listByUploadId("upload-1")).thenReturn(List.of(part));
+        when(partService.listByUploadId("upload-1")).thenReturn(Collections.singletonList(part));
         when(storage.completeMultipartUpload(any(FileInfo.class)))
                 .thenThrow(new com.sfi.scaffold.common.exception.BizException("合并失败"));
 
@@ -197,7 +198,7 @@ class FileMultipartServiceTest {
         when(fileService.get(1L)).thenReturn(record);
         when(fileTypeGuard.detectAndCheck(any(InputStream.class), anyString()))
                 .thenReturn(new FileTypeInfo("video/mp4", "mp4", FileType.VIDEO));
-        when(partService.findPart("upload-1", 1)).thenReturn(List.of());
+        when(partService.findPart("upload-1", 1)).thenReturn(Collections.emptyList());
 
         UploadPartPretreatment partPre = mock(UploadPartPretreatment.class);
         when(storage.uploadPart(any(FileInfo.class), eq(1), any())).thenReturn(partPre);
@@ -227,7 +228,7 @@ class FileMultipartServiceTest {
         SysFilePart existing = new SysFilePart();
         existing.setPartNumber(2);
         existing.setETag("etag-2");
-        when(partService.findPart("upload-1", 2)).thenReturn(List.of(existing));
+        when(partService.findPart("upload-1", 2)).thenReturn(Collections.singletonList(existing));
 
         MultipartPartCommand cmd = new MultipartPartCommand();
         cmd.setFileId(1L);
@@ -248,7 +249,7 @@ class FileMultipartServiceTest {
         part.setPartNumber(1);
         part.setETag("etag-1");
         part.setPartSize(512L);
-        when(partService.listByUploadId("upload-1")).thenReturn(List.of(part));
+        when(partService.listByUploadId("upload-1")).thenReturn(Collections.singletonList(part));
 
         CompleteMultipartUploadPretreatment completePre = mock(CompleteMultipartUploadPretreatment.class);
         when(storage.completeMultipartUpload(any(FileInfo.class))).thenReturn(completePre);
@@ -289,7 +290,7 @@ class FileMultipartServiceTest {
         when(fileService.get(1L)).thenReturn(record);
         SysFilePart part = new SysFilePart();
         part.setPartNumber(1);
-        when(partService.listByUploadId("upload-1")).thenReturn(List.of(part));
+        when(partService.listByUploadId("upload-1")).thenReturn(Collections.singletonList(part));
 
         List<SysFilePart> parts = service.listParts(1L);
 

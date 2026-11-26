@@ -14,14 +14,14 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-public class FileConfigProvider {
+public class FileConfigInfoProvider {
 
     private static final String CONFIG_GROUP = "matrix.file";
     private static final String CONFIG_KEY = "config";
 
     private final ConfigService configService;
 
-    public FileConfigProvider(ConfigService configService) {
+    public FileConfigInfoProvider(ConfigService configService) {
         this.configService = configService;
     }
 

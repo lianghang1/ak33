@@ -20,29 +20,25 @@ import static com.sfi.matrix.support.exception.FileErrorCode.FILE_READ_FAILED;
 import static com.sfi.matrix.support.exception.FileErrorCode.FILE_TYPE_NOT_ALLOWED;
 
 /**
- * 文件类型统一门禁：所有上传入口（multipart / base64 / 分片初始化）在写入前过这一关。
+ * 文件类型统一门禁：所有上传入口在写入前检测真实 MIME 并校验后缀白名单。
  *
- * <p>读取（{@link #detect}）与校验（{@link #check}）分离：读取只做 Tika 检测、不依赖配置，
- * 无论白名单是否配置都得拿到真实类型；校验依赖 config 表 group=matrix.file / key=config
- * （平台租户），白名单是安全策略不允许租户覆盖，配置缺失或任何不匹配一律拒绝（fail-closed）。</p>
- *
- * <p>检测结果封装为 {@link FileTypeInfo}，门禁、MIME、归类、落库共用这一份，避免多处检测不一致。</p>
+ * <p>白名单读取 config 表 group=matrix.file / key=config（平台租户），配置缺失或不匹配一律拒绝。
+ * 检测结果封装为 {@link FileTypeInfo}，供门禁、MIME、归类、落库共用。</p>
  *
  * @author lianghang
  */
 @Component
 public class FileTypeGuard {
 
-    /** MIME 检测只读文件头：64KB 兼顾容错与开销（比 8KB 每次多约 0.03ms，可忽略），
-     *  避免整文件读入内存导致大文件 OOM */
+    /** MIME 检测读取的文件头字节数 */
     private static final int HEADER_BYTES = 65536;
 
-    /** 复用 x-file-storage 传递进来的 Tika，懒加载单例、线程安全 */
+    /** Tika 实例，线程安全 */
     private static final Tika TIKA = new DefaultTikaFactory().getTika();
 
-    private final FileConfigProvider fileConfigProvider;
+    private final FileConfigInfoProvider fileConfigProvider;
 
-    public FileTypeGuard(FileConfigProvider fileConfigProvider) {
+    public FileTypeGuard(FileConfigInfoProvider fileConfigProvider) {
         this.fileConfigProvider = fileConfigProvider;
     }
 

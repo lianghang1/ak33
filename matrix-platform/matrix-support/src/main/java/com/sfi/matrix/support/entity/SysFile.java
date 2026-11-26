@@ -3,6 +3,7 @@ package com.sfi.matrix.support.entity;
 import com.sfi.scaffold.starter.data.jpa.entity.BaseEntity;
 import com.sfi.scaffold.starter.data.jpa.logicdelete.JpaDeletedFilterAspect;
 import com.sfi.scaffold.starter.tenant.aspect.JpaTenantFilterAspect;
+import org.dromara.x.file.storage.core.FileInfo;
 import org.hibernate.annotations.Filter;
 
 import javax.persistence.Column;
@@ -11,9 +12,6 @@ import javax.persistence.Table;
 
 /**
  * 文件记录：原图与缩略图各占一组对称字段，同存一行。
- *
- * <p>只存原始信息（对象键组成部分、未签名地址、媒体大类等），不存签名 URL、
- * 不存 JSON、不存 basePath。签名与访问语义由上层服务统一处理。</p>
  *
  * <p>分片上传时用 {@code multipartUploadId/multipartState} 标识会话；分片明细
  * 存 {@link SysFilePart}，完成后物理删除。非分片上传这两列为空。</p>
@@ -322,5 +320,18 @@ public class SysFile extends BaseEntity {
 
     public void setDeleted(Boolean deleted) {
         this.deleted = deleted;
+    }
+
+    /** 从记录重建对象存储 FileInfo，thumbnail=true 时取缩略图坐标与元信息 */
+    public FileInfo toFileInfo(boolean thumbnail) {
+        FileInfo info = new FileInfo();
+        info.setPlatform(channelCode);
+        info.setPath(thumbnail ? thPath : path);
+        info.setFilename(thumbnail ? thFilename : filename);
+        info.setOriginalFilename(originalFilename);
+        info.setContentType(thumbnail ? thContentType : contentType);
+        info.setSize(thumbnail ? thSize : size);
+        info.setUploadId(multipartUploadId);
+        return info;
     }
 }

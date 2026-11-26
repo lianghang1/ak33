@@ -6,7 +6,6 @@ import com.sfi.conflux.file.config.FileConfigProvider;
 import com.sfi.conflux.file.engine.FileGateway;
 import com.sfi.matrix.support.dto.FileConfigInfo;
 import com.sfi.matrix.support.entity.SysFile;
-import com.sfi.matrix.support.service.SysFileService;
 import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.util.StringUtils;
 import org.dromara.x.file.storage.core.FileInfo;
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 
-import static com.sfi.scaffold.common.exception.GlobalErrorCode.NOT_FOUND;
 import static com.sfi.scaffold.common.exception.GlobalErrorCode.SYSTEM_ERROR;
 
 /**
@@ -37,16 +35,13 @@ public class FileUrlResolver {
 
     private final FileGateway fileGateway;
     private final FileConfigProvider configProvider;
-    private final com.sfi.matrix.support.service.file.FileConfigProvider matrixConfigProvider;
-    private final SysFileService fileService;
+    private final FileConfigInfoProvider configInfoProvider;
 
     public FileUrlResolver(FileGateway fileGateway, FileConfigProvider configProvider,
-                           com.sfi.matrix.support.service.file.FileConfigProvider matrixConfigProvider,
-                           SysFileService fileService) {
+                           FileConfigInfoProvider configInfoProvider) {
         this.fileGateway = fileGateway;
         this.configProvider = configProvider;
-        this.matrixConfigProvider = matrixConfigProvider;
-        this.fileService = fileService;
+        this.configInfoProvider = configInfoProvider;
     }
 
     /** 基于记录解析可访问地址 */
@@ -56,10 +51,9 @@ public class FileUrlResolver {
             return raw;
         }
         if (isLocal(file.getChannelCode())) {
-            long t = System.currentTimeMillis() / 1000L + presignSeconds();
-            return raw + "&t=" + t + "&s=" + sign(file.getId(), t, thumbnail);
+            return signedLocalUrl(file, raw, thumbnail);
         }
-        FileInfo info = toFileInfo(file, thumbnail);
+        FileInfo info = file.toFileInfo(thumbnail);
         Date expiration = new Date(System.currentTimeMillis() + presignSeconds() * 1000L);
         String signed = fileGateway.generatePresignedUrl(file.getConfigId(), file.getChannelCode(), info, expiration);
         if (signed == null) {
@@ -101,9 +95,9 @@ public class FileUrlResolver {
             return;
         }
         String base = concat(domainOf(file), SELF_PREFIX + action());
-        file.setRawUrl(base + "?fileId=" + file.getId() + "&thumb=0");
+        file.setRawUrl(localBase(base, file.getId(), false));
         if (file.getThFilename() != null) {
-            file.setThRawUrl(base + "?fileId=" + file.getId() + "&thumb=1");
+            file.setThRawUrl(localBase(base, file.getId(), true));
         }
     }
 
@@ -113,25 +107,36 @@ public class FileUrlResolver {
     }
 
     /**
-     * 本地文件访问准入：查库确认是本地文件后，公开文件直接放行，私有文件校验限时签名。
+     * 本地文件访问准入：公开文件直接放行，私有文件校验限时签名。
      *
-     * <p>供 /self/file（nginx）与 /self/access（stream）两个端点共用。目标路径必须由 fileId
+     * <p>供 /self/file（nginx）与 /self/access（stream）两个端点共用。文件路径一律由 fileId
      * 查库得出，不接受客户端传 path。nginx 配置见 {@link #fillLocalUrls}。</p>
      *
+     * @param file 按 fileId 查出的文件记录
      * @return 本地文件且（公开，或签名有效且未过期）返回 true，否则 false
      */
-    public boolean checkAccess(Long fileId, long t, boolean thumbnail, String sign) {
-        SysFile file = fileService.get(fileId);
+    public boolean checkAccess(SysFile file, long t, boolean thumbnail, String sign) {
         if (file == null || !isLocal(file.getChannelCode())) {
             return false;
         }
         if (!Boolean.TRUE.equals(file.getPrivateAccess())) {
             return true;
         }
-        return verify(fileId, t, thumbnail, sign);
+        return verify(file.getId(), t, thumbnail, sign);
     }
 
-    /** 校验签名：先判是否过期，再常量时间比较 */
+    /** 拼本地限时签名地址：基础地址 + t/s；有效期与 OSS 预签名共用 presignSeconds */
+    private String signedLocalUrl(SysFile file, String raw, boolean thumbnail) {
+        long t = System.currentTimeMillis() / 1000L + presignSeconds();
+        return raw + "&t=" + t + "&s=" + sign(file.getId(), t, thumbnail);
+    }
+
+    /** 拼本地基础地址：{@code {base}?fileId={id}&thumb={0|1}} */
+    private static String localBase(String base, Long fileId, boolean thumbnail) {
+        return base + "?fileId=" + fileId + "&thumb=" + (thumbnail ? 1 : 0);
+    }
+
+    /** 校验本地签名有效性 */
     private boolean verify(Long fileId, long t, boolean thumbnail, String sign) {
         if (t < System.currentTimeMillis() / 1000L) {
             return false;
@@ -143,7 +148,7 @@ public class FileUrlResolver {
     }
 
     private FileConfigInfo fileConfig() {
-        FileConfigInfo cfg = matrixConfigProvider.getConfig();
+        FileConfigInfo cfg = configInfoProvider.getConfig();
         return cfg == null ? new FileConfigInfo() : cfg;
     }
 
@@ -174,14 +179,6 @@ public class FileUrlResolver {
 
     private static boolean isLocal(String channelCode) {
         return "local".equalsIgnoreCase(channelCode) || "local-plus".equalsIgnoreCase(channelCode);
-    }
-
-    private static FileInfo toFileInfo(SysFile file, boolean thumbnail) {
-        FileInfo info = new FileInfo();
-        info.setPlatform(file.getChannelCode());
-        info.setPath(thumbnail ? file.getThPath() : file.getPath());
-        info.setFilename(thumbnail ? file.getThFilename() : file.getFilename());
-        return info;
     }
 
     private static String concat(String domain, String path) {
