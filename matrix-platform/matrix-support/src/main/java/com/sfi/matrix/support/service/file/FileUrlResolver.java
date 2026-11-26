@@ -27,7 +27,6 @@ import static com.sfi.scaffold.common.exception.GlobalErrorCode.SYSTEM_ERROR;
 @Service
 public class FileUrlResolver {
 
-    private static final String MODE_NGINX = "nginx";
     private static final String MODE_LOCAL = "local";
     private static final String MODE_LOCAL_PLUS = "local-plus";
     private static final String SELF_PREFIX = "/self/";
@@ -171,7 +170,7 @@ public class FileUrlResolver {
 
     private String action() {
         String m = fileConfig().getLocalAccessMode();
-        return MODE_NGINX.equalsIgnoreCase(m) ? ACTION_NGINX : ACTION_STREAM;
+        return FileConfigInfo.MODE_NGINX.equalsIgnoreCase(m) ? ACTION_NGINX : ACTION_STREAM;
     }
 
     /** 取平台基础配置里的 domain */

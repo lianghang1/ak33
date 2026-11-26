@@ -22,6 +22,9 @@ import java.util.Set;
 @Setter
 public class FileConfigInfo {
 
+    /** 本地文件访问模式取值：nginx */
+    public static final String MODE_NGINX = "nginx";
+
     /**
      * 默认配置 ID
      */
@@ -43,7 +46,7 @@ public class FileConfigInfo {
     private String defaultAcl = "private";
 
     /** 本地文件访问模式：nginx / stream */
-    private String localAccessMode = "nginx";
+    private String localAccessMode = MODE_NGINX;
 
     /** nginx 内部访问前缀，X-Accel-Redirect 的目标路径前缀 */
     private String nginxInternalPrefix = "/__self_internal__/";
