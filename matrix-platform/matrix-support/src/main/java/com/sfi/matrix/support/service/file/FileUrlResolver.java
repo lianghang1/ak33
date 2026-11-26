@@ -68,8 +68,12 @@ public class FileUrlResolver {
      *
      * <p><b>nginx 部署注意事项</b>：本地文件无论公开还是私有，都先到 Java 验签（公开放行、私有校验签名）。
      * nginx 模式验签通过后 Java 下发 X-Accel-Redirect 由 nginx 读盘，全程不经 Java 读文件；
-     * stream 模式（/self/access）由 Java 读流写回。alias 必须等于平台 local-plus 的 storagePath
-     * （物理硬盘根目录），internal 保证外部无法直连绕过验签：</p>
+     * stream 模式（/self/access）由 Java 读流写回。internal 保证外部无法直连绕过验签。</p>
+     *
+     * <p><b>配置注意事项</b>：平台 local-plus 的 storagePath 是物理硬盘根目录，必须以 {@code /} 结尾
+     * （如 {@code /data/file-storage/}），否则对象键会拼到目录名后（如 {@code /data/file-storageportal/}）。
+     * nginx internal location 的 alias 必须与 storagePath 完全一致（含尾斜杠），location 前缀须与
+     * fileConfig.nginxInternalPrefix 一致：</p>
      * <pre>{@code
      * upstream app-server { server 127.0.0.1:8080; }
      *

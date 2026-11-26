@@ -41,7 +41,11 @@ public class LocalFileAccessController {
         this.fileGateway = fileGateway;
     }
 
-    /** nginx 模式：验签通过后仅下发 X-Accel-Redirect，由 nginx 内部 location 读盘返回 */
+    /**
+     * nginx 模式：验签通过后仅下发 X-Accel-Redirect，由 nginx 内部 location 读盘返回。
+     * 配置注意事项：internal location 的 alias 须与 local-plus 的 storagePath 完全一致（含尾斜杠），
+     * location 前缀须与 fileConfig.nginxInternalPrefix 一致，详见 FileUrlResolver.fillLocalUrls。
+     */
     @Anonymous
     @GetMapping("/self/file")
     public void file(@RequestParam("fileId") Long fileId,
