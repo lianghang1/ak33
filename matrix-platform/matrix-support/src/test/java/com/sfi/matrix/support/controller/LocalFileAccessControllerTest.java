@@ -45,6 +45,7 @@ class LocalFileAccessControllerTest {
     @BeforeEach
     void setUp() {
         urlResolver = mock(FileUrlResolver.class);
+        when(urlResolver.getNginxInternalPrefix()).thenReturn("/__self_internal__/");
         fileService = mock(SysFileService.class);
         fileGateway = mock(FileGateway.class);
         controller = new LocalFileAccessController(urlResolver, fileService, fileGateway);

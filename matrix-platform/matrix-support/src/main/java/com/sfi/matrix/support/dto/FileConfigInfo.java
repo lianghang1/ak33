@@ -45,7 +45,7 @@ public class FileConfigInfo {
     /** 本地文件访问模式：nginx / stream */
     private String localAccessMode = "nginx";
 
-    /** 本地NGINX 内部访问前缀 */
+    /** nginx 内部访问前缀，X-Accel-Redirect 的目标路径前缀 */
     private String nginxInternalPrefix = "/__self_internal__/";
 
     /** 本地文件签名密钥 */
