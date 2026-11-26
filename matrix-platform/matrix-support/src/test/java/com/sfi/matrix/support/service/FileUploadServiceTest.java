@@ -18,16 +18,19 @@ import org.dromara.x.file.storage.core.hash.HashInfo;
 import org.dromara.x.file.storage.core.upload.UploadPretreatment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -157,6 +160,24 @@ class FileUploadServiceTest {
         assertEquals(FileType.DOCUMENT.name(), dto.getFileType());
         assertNull(dto.getThumbUrl());
         assertNull(dto.getRawThumbUrl());
+    }
+
+    @Test
+    void upload_normalizesMultipartSourceToInputStream() {
+        when(fileTypeGuard.detectAndCheck(any(InputStream.class), anyString())).thenReturn(imageType());
+        when(pre.upload()).thenReturn(baseInfo());
+
+        UploadCommand cmd = command("海报.jpg");
+        cmd.setThumbnailSource(new MockMultipartFile("thumbnail", "t.jpg", "image/jpeg", new byte[8]));
+        service.upload(cmd);
+
+        ArgumentCaptor<Object> mainSource = ArgumentCaptor.forClass(Object.class);
+        verify(storage).of(mainSource.capture(), anyString(), anyString());
+        assertTrue(mainSource.getValue() instanceof InputStream, "主文件须归一化为 InputStream");
+
+        ArgumentCaptor<Object> thumbSource = ArgumentCaptor.forClass(Object.class);
+        verify(pre).thumbnailOf(thumbSource.capture());
+        assertTrue(thumbSource.getValue() instanceof InputStream, "缩略图须归一化为 InputStream");
     }
 
     @Test

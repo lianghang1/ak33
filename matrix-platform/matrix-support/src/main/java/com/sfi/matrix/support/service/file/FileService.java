@@ -71,7 +71,7 @@ public class FileService {
     @Transactional(rollbackFor = Exception.class)
     public FileDTO upload(UploadCommand cmd) {
         FileTypeInfo type;
-        try (InputStream in = openStream(cmd.getSource())) {
+        try (InputStream in = toStream(cmd.getSource())) {
             type = fileTypeGuard.detectAndCheck(in, cmd.getOriginalFilename());
         } catch (IOException e) {
             throw new BizException(FILE_READ_FAILED, "读取上传文件失败", e);
@@ -93,7 +93,7 @@ public class FileService {
         boolean supportAcl = storage.isSupportAcl(ctx.getChannelCode());
 
         UploadPretreatment pre = storage
-                .of(cmd.getSource(), cmd.getOriginalFilename(), ctx.getMime())
+                .of(normalize(cmd.getSource()), cmd.getOriginalFilename(), ctx.getMime())
                 .setPlatform(ctx.getChannelCode())
                 .setAcl(supportAcl, ctx.getAcl())
                 .setPath(ctx.getPath())
@@ -105,7 +105,7 @@ public class FileService {
             pre.putMetadataAll(ctx.getMetadata());
         }
         if (cmd.getThumbnailSource() != null) {
-            pre.thumbnailOf(cmd.getThumbnailSource());
+            pre.thumbnailOf(normalize(cmd.getThumbnailSource()));
         } else if (cmd.getThumbWidth() != null && cmd.getThumbHeight() != null) {
             pre.thumbnail(cmd.getThumbWidth(), cmd.getThumbHeight());
         }
@@ -181,7 +181,7 @@ public class FileService {
 
         FileInfo info = support.rebuild(record);
         FileStorageService storage = fileGateway.nativeService(record.getConfigId(), record.getChannelCode());
-        FilePartInfo partInfo = storage.uploadPart(info, cmd.getPartNumber(), cmd.getSource()).upload();
+        FilePartInfo partInfo = storage.uploadPart(info, cmd.getPartNumber(), normalize(cmd.getSource())).upload();
 
         SysFilePart part = new SysFilePart();
         part.setMultipartUploadId(record.getMultipartUploadId());
@@ -325,7 +325,12 @@ public class FileService {
         throw new BizException(FILE_TYPE_NOT_ALLOWED, "不支持的上传来源");
     }
 
-    private static InputStream openStream(Object source) throws IOException {
-        return toStream(source);
+    /** 归一化上传来源为 InputStream，读取失败转业务异常 */
+    private static InputStream normalize(Object source) {
+        try {
+            return toStream(source);
+        } catch (IOException e) {
+            throw new BizException(FILE_READ_FAILED, "读取上传文件失败", e);
+        }
     }
 }
