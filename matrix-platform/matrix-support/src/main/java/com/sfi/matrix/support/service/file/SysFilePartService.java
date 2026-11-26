@@ -1,7 +1,7 @@
 package com.sfi.matrix.support.service.file;
 
 import com.sfi.matrix.support.entity.SysFilePart;
-import com.sfi.matrix.support.repository.SysFilePartRepository;
+import com.sfi.matrix.support.repository.file.SysFilePartRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

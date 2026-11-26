@@ -3,7 +3,7 @@ package com.sfi.matrix.support.service.dict;
 import com.sfi.matrix.support.constant.SupportConstants;
 import com.sfi.matrix.support.dto.DictOptionValue;
 import com.sfi.matrix.support.entity.SysDictOption;
-import com.sfi.matrix.support.repository.SysDictOptionRepository;
+import com.sfi.matrix.support.repository.dict.SysDictOptionRepository;
 import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.exception.GlobalErrorCode;
 import com.sfi.scaffold.starter.data.jpa.service.BaseService;

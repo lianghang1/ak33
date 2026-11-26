@@ -1,7 +1,7 @@
 package com.sfi.matrix.support.service.file;
 
 import com.sfi.matrix.support.entity.SysFile;
-import com.sfi.matrix.support.repository.SysFileRepository;
+import com.sfi.matrix.support.repository.file.SysFileRepository;
 import com.sfi.scaffold.starter.data.jpa.service.BaseService;
 import org.springframework.stereotype.Service;
 

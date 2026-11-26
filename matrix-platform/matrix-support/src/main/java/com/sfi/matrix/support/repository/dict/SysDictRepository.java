@@ -1,4 +1,4 @@
-package com.sfi.matrix.support.repository;
+package com.sfi.matrix.support.repository.dict;
 
 import com.sfi.matrix.support.entity.SysDict;
 import org.springframework.data.jpa.repository.JpaRepository;

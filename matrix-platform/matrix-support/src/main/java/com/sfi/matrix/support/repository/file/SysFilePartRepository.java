@@ -1,4 +1,4 @@
-package com.sfi.matrix.support.repository;
+package com.sfi.matrix.support.repository.file;
 
 import com.sfi.matrix.support.entity.SysFilePart;
 import org.springframework.data.jpa.repository.JpaRepository;
