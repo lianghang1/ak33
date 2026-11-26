@@ -45,6 +45,9 @@ public class FileConfigInfo {
     /** 本地文件访问模式：nginx / stream */
     private String localAccessMode = "nginx";
 
+    /** 本地NGINX 内部访问前缀 */
+    private String nginxInternalPrefix = "/__self_internal__/";
+
     /** 本地文件签名密钥 */
     private String localAccessSecret = "matrix-self-file-2026-default-secret";
 

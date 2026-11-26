@@ -1,8 +1,8 @@
 package com.sfi.matrix.support.controller;
 
+import com.sfi.matrix.support.controller.file.FileController;
 import com.sfi.matrix.support.dto.FileDTO;
 import com.sfi.matrix.support.dto.MultipartInitResult;
-import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.matrix.support.service.file.FileService;
 import com.sfi.scaffold.starter.web.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;

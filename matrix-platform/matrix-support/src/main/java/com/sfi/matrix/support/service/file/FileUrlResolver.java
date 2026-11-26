@@ -9,6 +9,10 @@ import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.util.StringUtils;
 import org.dromara.x.file.storage.core.FileInfo;
+import org.dromara.x.file.storage.core.FileStorageService;
+import org.dromara.x.file.storage.core.platform.FileStorage;
+import org.dromara.x.file.storage.core.platform.LocalFileStorage;
+import org.dromara.x.file.storage.core.platform.LocalPlusFileStorage;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -27,6 +31,7 @@ import static com.sfi.scaffold.common.exception.GlobalErrorCode.SYSTEM_ERROR;
 @Service
 public class FileUrlResolver {
 
+    private static final String NGINX_INTERNAL_PREFIX = "/__self_internal__/";
     private static final String MODE_NGINX = "nginx";
     private static final String SELF_PREFIX = "/self/";
     private static final String ACTION_NGINX = "file";
@@ -50,7 +55,7 @@ public class FileUrlResolver {
         if (!Boolean.TRUE.equals(file.getPrivateAccess())) {
             return raw;
         }
-        if (isLocal(file.getChannelCode())) {
+        if (isLocal(file.getConfigId(), file.getChannelCode())) {
             return signedLocalUrl(file, raw, thumbnail);
         }
         FileInfo info = file.toFileInfo(thumbnail);
@@ -91,7 +96,7 @@ public class FileUrlResolver {
      * }</pre>
      */
     public void fillLocalUrls(SysFile file) {
-        if (!isLocal(file.getChannelCode())) {
+        if (!isLocal(file.getConfigId(), file.getChannelCode())) {
             return;
         }
         String base = concat(domainOf(file), SELF_PREFIX + action());
@@ -116,13 +121,18 @@ public class FileUrlResolver {
      * @return 本地文件且（公开，或签名有效且未过期）返回 true，否则 false
      */
     public boolean checkAccess(SysFile file, long t, boolean thumbnail, String sign) {
-        if (file == null || !isLocal(file.getChannelCode())) {
+        if (file == null || !isLocal(file.getConfigId(), file.getChannelCode())) {
             return false;
         }
         if (!Boolean.TRUE.equals(file.getPrivateAccess())) {
             return true;
         }
         return verify(file.getId(), t, thumbnail, sign);
+    }
+
+    /** 取 nginx 内部访问前缀，默认 {@link #NGINX_INTERNAL_PREFIX} */
+    public String getNginxInternalPrefix() {
+        return StringUtils.defaultIfBlank(fileConfig().getNginxInternalPrefix(), NGINX_INTERNAL_PREFIX);
     }
 
     /** 拼本地限时签名地址：基础地址 + t/s；有效期与 OSS 预签名共用 presignSeconds */
@@ -177,8 +187,10 @@ public class FileUrlResolver {
         return StringUtils.isBlank(domain) ? "" : domain;
     }
 
-    private static boolean isLocal(String channelCode) {
-        return "local".equalsIgnoreCase(channelCode) || "local-plus".equalsIgnoreCase(channelCode);
+    private boolean isLocal(String configId, String channelCode) {
+        FileStorageService storage = fileGateway.nativeService(configId, channelCode);
+        FileStorage fileStorage = storage.getFileStorage(channelCode);
+        return fileStorage instanceof LocalPlusFileStorage || fileStorage instanceof LocalFileStorage;
     }
 
     private static String concat(String domain, String path) {

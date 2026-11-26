@@ -1,6 +1,7 @@
 package com.sfi.matrix.support.controller;
 
 import com.sfi.conflux.file.engine.FileGateway;
+import com.sfi.matrix.support.controller.file.LocalFileAccessController;
 import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.matrix.support.service.SysFileService;
 import com.sfi.matrix.support.service.file.FileUrlResolver;

@@ -1,4 +1,4 @@
-package com.sfi.matrix.support.controller;
+package com.sfi.matrix.support.controller.file;
 
 import com.sfi.matrix.iam.audit.annotation.OperateLog;
 import com.sfi.matrix.support.dto.FileDTO;
@@ -165,7 +165,7 @@ public class FileController {
     private static int pageNum(HttpServletRequest request) {
         try {
             int v = Integer.parseInt(request.getParameter("pageNum"));
-            return v < 1 ? 1 : v;
+            return Math.max(v, 1);
         } catch (Exception e) {
             return 1;
         }

@@ -1,4 +1,4 @@
-package com.sfi.matrix.support.controller;
+package com.sfi.matrix.support.controller.file;
 
 import com.sfi.conflux.file.engine.FileGateway;
 import com.sfi.matrix.support.entity.SysFile;
@@ -30,8 +30,6 @@ import static com.sfi.matrix.support.exception.FileErrorCode.FILE_ACCESS_SIGN_IN
 @RestController
 public class LocalFileAccessController {
 
-    private static final String INTERNAL_PREFIX = "/__self_internal__/";
-
     private final FileUrlResolver urlResolver;
     private final SysFileService fileService;
     private final FileGateway fileGateway;
@@ -53,7 +51,7 @@ public class LocalFileAccessController {
                      HttpServletResponse response) {
         SysFile file = authorize(fileId, t, thumb, sign);
         response.setHeader(HttpHeaders.CONTENT_TYPE, file.getContentType());
-        response.setHeader("X-Accel-Redirect", INTERNAL_PREFIX + objectKey(file, thumb));
+        response.setHeader("X-Accel-Redirect", urlResolver.getNginxInternalPrefix() + objectKey(file, thumb));
     }
 
     /** stream 模式：验签通过后由 Java 读 SDK 下载流写回响应，不设 X-Accel-Redirect */
