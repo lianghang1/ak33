@@ -2,15 +2,15 @@ package com.sfi.matrix.support.dto;
 
 import javax.validation.constraints.NotBlank;
 
-/** 字典类型增改请求。id 为空=新增/覆盖，非空=修改。 */
-public class DictTypeRequest {
+/** 字典增改请求。id 为空=新增/覆盖，非空=修改；dictCode 可修改。 */
+public class DictRequest {
 
     private Long id;
 
-    @NotBlank(message = "字典类型编码不能为空")
-    private String dictType;
+    @NotBlank(message = "字典编码不能为空")
+    private String dictCode;
 
-    @NotBlank(message = "字典类型名称不能为空")
+    @NotBlank(message = "字典名称不能为空")
     private String dictName;
 
     private String remark;
@@ -19,8 +19,8 @@ public class DictTypeRequest {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public String getDictType() { return dictType; }
-    public void setDictType(String dictType) { this.dictType = dictType; }
+    public String getDictCode() { return dictCode; }
+    public void setDictCode(String dictCode) { this.dictCode = dictCode; }
     public String getDictName() { return dictName; }
     public void setDictName(String dictName) { this.dictName = dictName; }
     public String getRemark() { return remark; }

@@ -8,8 +8,8 @@ import com.sfi.matrix.iam.config.IamAutoConfiguration;
 import com.sfi.matrix.support.config.DbAuthConfigProvider;
 import com.sfi.matrix.support.config.DbFileConfigProvider;
 import com.sfi.matrix.support.repository.SysConfigRepository;
-import com.sfi.matrix.support.repository.SysDictDataRepository;
-import com.sfi.matrix.support.repository.SysDictTypeRepository;
+import com.sfi.matrix.support.repository.SysDictRepository;
+import com.sfi.matrix.support.repository.SysDictOptionRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -79,8 +79,8 @@ class SupportEndToEndTest {
     @Autowired ObjectMapper objectMapper;
     @Autowired AuthConfigProvider authConfigProvider;
     @Autowired FileConfigProvider fileConfigProvider;
-    @Autowired SysDictTypeRepository dictTypeRepository;
-    @Autowired SysDictDataRepository dictDataRepository;
+    @Autowired SysDictRepository dictRepository;
+    @Autowired SysDictOptionRepository dictOptionRepository;
     @Autowired SysConfigRepository configRepository;
 
     private static String adminToken;
@@ -120,45 +120,50 @@ class SupportEndToEndTest {
 
     @Test
     @Order(2)
-    void dictTypeCrud() throws Exception {
-        Map<String, Object> type = new HashMap<>();
-        type.put("dictType", "sys_normal_disable");
-        type.put("dictName", "系统正常/停用");
-        type.put("remark", "通用启停状态");
-        JsonNode saved = ok(postJson("/api/dict-type/save", type, adminToken));
+    void dictCrud() throws Exception {
+        Map<String, Object> dict = new HashMap<>();
+        dict.put("dictCode", "sys_normal_disable");
+        dict.put("dictName", "系统正常/停用");
+        dict.put("remark", "通用启停状态");
+        JsonNode saved = ok(postJson("/api/dict/save", dict, adminToken));
         assertNotNull(saved.path("id"));
         assertEquals("系统正常/停用", saved.path("dictName").asText());
-        assertTrue(dictTypeRepository.count() >= 1);
+        assertTrue(dictRepository.count() >= 1);
 
         // 基类 get 端点：GET /get?id=
-        MvcResult got = mockMvc.perform(get("/api/dict-type/get")
+        MvcResult got = mockMvc.perform(get("/api/dict/get")
                         .param("id", saved.path("id").asText())
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn();
         assertEquals("系统正常/停用", ok(got).path("dictName").asText());
 
-        // 幂等：同 type 再保存一次应覆盖，不新增
-        long before = dictTypeRepository.count();
-        ok(postJson("/api/dict-type/save", type, adminToken));
-        assertEquals(before, dictTypeRepository.count());
+        // 幂等：同编码再保存一次应覆盖，不新增
+        long before = dictRepository.count();
+        ok(postJson("/api/dict/save", dict, adminToken));
+        assertEquals(before, dictRepository.count());
     }
 
     @Test
     @Order(3)
-    void dictDataCrudAndCompatEndpoint() throws Exception {
-        Map<String, Object> data = new HashMap<>();
-        data.put("dictType", "sys_normal_disable");
-        data.put("dictCode", "1");
-        data.put("dictLabel", "正常");
-        data.put("sortNo", 1);
-        // 基类 save 端点 /api/dict/save（路径 /api/dict 保持，底层换 sys_dict_data）
-        JsonNode saved = ok(postJson("/api/dict/save", data, adminToken));
+    void dictOptionCrudAndValues() throws Exception {
+        // 先确保字典存在拿到 id（幂等保存）
+        Map<String, Object> dict = new HashMap<>();
+        dict.put("dictCode", "sys_normal_disable");
+        dict.put("dictName", "系统正常/停用");
+        long dictId = ok(postJson("/api/dict/save", dict, adminToken)).path("id").asLong();
+
+        Map<String, Object> option = new HashMap<>();
+        option.put("dictId", dictId);
+        option.put("optionCode", "1");
+        option.put("optionLabel", "正常");
+        option.put("sortNo", 1);
+        JsonNode saved = ok(postJson("/api/dict/option/save", option, adminToken));
         assertTrue(saved.path("id").asLong() > 0);
-        assertEquals("正常", saved.path("dictLabel").asText());
-        assertTrue(dictDataRepository.count() >= 1);
+        assertEquals("正常", saved.path("optionLabel").asText());
+        assertTrue(dictOptionRepository.count() >= 1);
 
         // 基类分页端点 GET /list（返回 PageResult）
-        MvcResult page = mockMvc.perform(get("/api/dict/list")
+        MvcResult page = mockMvc.perform(get("/api/dict/option/list")
                         .param("pageNum", "1").param("pageSize", "10")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn();
@@ -166,14 +171,15 @@ class SupportEndToEndTest {
         assertTrue(pageData.has("list") && pageData.path("list").isArray());
         assertTrue(pageData.path("total").asLong() >= 1);
 
-        // 按类型取选项（带平台兜底）——避让端点 /options
-        MvcResult list = mockMvc.perform(get("/api/dict/options")
-                        .param("dictType", "sys_normal_disable")
+        // 按字典编码取选项（带平台兜底，精简 VO）
+        MvcResult list = mockMvc.perform(get("/api/dict/option/values")
+                        .param("dictCode", "sys_normal_disable")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn();
         JsonNode items = ok(list);
         assertTrue(items.isArray() && items.size() >= 1);
-        assertEquals("1", items.get(0).path("dictCode").asText());
+        assertEquals("1", items.get(0).path("code").asText());
+        assertEquals("正常", items.get(0).path("label").asText());
     }
 
     @Test
@@ -212,12 +218,14 @@ class SupportEndToEndTest {
 
     @Test
     @Order(6)
-    void dictTypeFallbackListEndpoint() throws Exception {
-        MvcResult list = mockMvc.perform(get("/api/dict-type/options")
+    void dictValuesBatchEndpoint() throws Exception {
+        MvcResult list = mockMvc.perform(get("/api/dict/option/values/batch")
+                        .param("dictCodes", "sys_normal_disable,sys_user_type")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn();
-        JsonNode items = ok(list);
-        assertTrue(items.isArray() && items.size() >= 1);
+        JsonNode data = ok(list);
+        assertTrue(data.has("sys_normal_disable") && data.path("sys_normal_disable").isArray());
+        assertTrue(data.has("sys_user_type") && data.path("sys_user_type").isArray());
     }
 
     @Test

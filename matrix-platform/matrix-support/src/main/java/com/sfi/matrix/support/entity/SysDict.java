@@ -10,19 +10,18 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 /**
- * 字典类型（主表）。
+ * 字典（主表）。
  *
  * <p>描述"有哪些字典"，如 sys_normal_disable（系统正常/停用）。
- * 具体选项在 {@link SysDictData} 中按 dictType 关联。类型本身可独立命名、
- * 备注、整组启停，这是单表设计无法表达的。</p>
+ * 具体选项在 {@link SysDictOption} 中按 dictId 关联。</p>
  *
  * @author lianghang
  */
 @Entity
-@Table(name = "sys_dict_type")
+@Table(name = "sys_dict")
 @Filter(name = JpaTenantFilterAspect.FILTER_NAME, condition = "tenant_id = :tenantId")
 @Filter(name = JpaDeletedFilterAspect.FILTER_NAME, condition = "deleted = false")
-public class SysDictType extends BaseEntity {
+public class SysDict extends BaseEntity {
 
     /** 逻辑删除标记，true=已删除；由字段名探测自动过滤 */
     @Column(name = "deleted")
@@ -31,18 +30,18 @@ public class SysDictType extends BaseEntity {
     @Column(name = "tenant_id")
     private String tenantId;
 
-    /** 字典类型编码，如 sys_normal_disable */
-    @Column(name = "dict_type")
-    private String dictType;
+    /** 字典编码 */
+    @Column(name = "dict_code")
+    private String dictCode;
 
-    /** 字典类型名称，如"系统正常/停用" */
+    /** 字典名称 */
     @Column(name = "dict_name")
     private String dictName;
 
     @Column(name = "remark")
     private String remark;
 
-    /** 状态：1启用 0停用（整组选项的开关） */
+    /** 状态：1启用 0停用 */
     @Column(name = "status")
     private Integer status = 1;
 
@@ -54,12 +53,12 @@ public class SysDictType extends BaseEntity {
         this.tenantId = tenantId;
     }
 
-    public String getDictType() {
-        return dictType;
+    public String getDictCode() {
+        return dictCode;
     }
 
-    public void setDictType(String dictType) {
-        this.dictType = dictType;
+    public void setDictCode(String dictCode) {
+        this.dictCode = dictCode;
     }
 
     public String getDictName() {

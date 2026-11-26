@@ -42,17 +42,17 @@
         </createIndex>
     </changeSet>
 
-    <!-- 字典类型（主表）：描述有哪些字典，控制整组启停 -->
-    <changeSet id="support-001-sys-dict-type" author="matrix">
-        <createTable tableName="sys_dict_type" remarks="字典类型（主表）">
+    <!-- 字典（主表）：描述有哪些字典，dict_code 可修改，控制整组启停 -->
+    <changeSet id="support-001-sys-dict" author="matrix">
+        <createTable tableName="sys_dict" remarks="字典（主表）">
             <column name="id" type="BIGINT">
-                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_dict_type"/>
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_dict"/>
             </column>
             <column name="tenant_id" type="VARCHAR(64)" remarks="租户ID"/>
-            <column name="dict_type" type="VARCHAR(64)" remarks="字典类型编码">
+            <column name="dict_code" type="VARCHAR(64)" remarks="字典编码">
                 <constraints nullable="false"/>
             </column>
-            <column name="dict_name" type="VARCHAR(128)" remarks="字典类型名称"/>
+            <column name="dict_name" type="VARCHAR(128)" remarks="字典名称"/>
             <column name="remark" type="VARCHAR(255)"/>
             <column name="status" type="INT" defaultValueNumeric="1" remarks="1启用 0停用">
                 <constraints nullable="false"/>
@@ -63,28 +63,22 @@
             <column name="update_by" type="VARCHAR(64)"/>
             <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
         </createTable>
-        <addUniqueConstraint tableName="sys_dict_type"
-                             columnNames="tenant_id, dict_type, deleted"
-                             constraintName="uk_sys_dict_type_code"/>
-        <createIndex tableName="sys_dict_type" indexName="idx_sys_dict_type_tenant">
-            <column name="tenant_id"/>
-        </createIndex>
     </changeSet>
 
-    <!-- 字典选项（明细表）：type + code 唯一定位，平台兜底按 code 合并租户与平台两份 -->
-    <changeSet id="support-001-sys-dict-data" author="matrix">
-        <createTable tableName="sys_dict_data" remarks="字典选项（明细表）">
+    <!-- 字典选项（子表）：dict_id 关联 sys_dict.id，option_code 为字典内选项编码，平台兜底按 code 合并租户与平台两份 -->
+    <changeSet id="support-001-sys-dict-option" author="matrix">
+        <createTable tableName="sys_dict_option" remarks="字典选项（子表）">
             <column name="id" type="BIGINT">
-                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_dict_data"/>
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_dict_option"/>
             </column>
             <column name="tenant_id" type="VARCHAR(64)" remarks="租户ID"/>
-            <column name="dict_type" type="VARCHAR(64)" remarks="所属类型编码">
+            <column name="dict_id" type="BIGINT" remarks="所属字典ID，对应 sys_dict.id">
                 <constraints nullable="false"/>
             </column>
-            <column name="dict_code" type="VARCHAR(64)" remarks="选项编码">
+            <column name="option_code" type="VARCHAR(64)" remarks="选项编码">
                 <constraints nullable="false"/>
             </column>
-            <column name="dict_label" type="VARCHAR(128)" remarks="选项显示名">
+            <column name="option_label" type="VARCHAR(128)" remarks="选项显示名">
                 <constraints nullable="false"/>
             </column>
             <column name="sort_no" type="INT"/>
@@ -97,14 +91,8 @@
             <column name="update_by" type="VARCHAR(64)"/>
             <column name="deleted" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
         </createTable>
-        <addUniqueConstraint tableName="sys_dict_data"
-                             columnNames="tenant_id, dict_type, dict_code, deleted"
-                             constraintName="uk_sys_dict_data_code"/>
-        <createIndex tableName="sys_dict_data" indexName="idx_sys_dict_data_type">
-            <column name="dict_type"/>
-        </createIndex>
-        <createIndex tableName="sys_dict_data" indexName="idx_sys_dict_data_tenant">
-            <column name="tenant_id"/>
+        <createIndex tableName="sys_dict_option" indexName="idx_sys_dict_option_dict">
+            <column name="dict_id"/>
         </createIndex>
     </changeSet>
 

@@ -14,10 +14,10 @@ public final class SupportConstants {
     }
 
     // ===== 缓存名（scaffold-starter-cache 两级缓存）=====
-    /** 字典类型列表缓存：key = 租户ID */
-    public static final String CACHE_DICT_TYPE = "support:dictType";
-    /** 字典选项列表缓存：key = 租户ID + 类型 */
-    public static final String CACHE_DICT_DATA = "support:dictData";
+    /** 字典列表缓存：key = 租户ID */
+    public static final String CACHE_DICT = "support:dict";
+    /** 字典选项取值缓存：key = 租户ID + 字典编码 */
+    public static final String CACHE_DICT_OPTION = "support:dictOption";
     /** 系统参数缓存：key = 租户ID + 分组 + 参数键 */
     public static final String CACHE_CONFIG = "support:config";
     /** 系统参数分组列表缓存：key = 租户ID + 分组 */

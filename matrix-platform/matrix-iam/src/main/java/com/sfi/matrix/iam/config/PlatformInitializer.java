@@ -86,9 +86,9 @@ public class PlatformInitializer implements ApplicationRunner {
         seed(IamConstants.PERM_MENU, "菜单管理", "C", 60,
                 "/api/iam/menu/**,/api/iam/menus,/api/iam/my-menus");
         seed(IamConstants.PERM_DICT, "字典管理", "C", 70,
-                "GET:/api/dict/**,GET:/api/dict-type/**");
+                "GET:/api/dict/**");
         seed(IamConstants.PERM_DICT_SAVE, "字典维护", "C", 71,
-                "POST:/api/dict/**,POST:/api/dict-type/**");
+                "POST:/api/dict/**");
         seed(IamConstants.PERM_CONFIG, "参数管理", "C", 80,
                 "GET:/api/config/**");
         seed(IamConstants.PERM_CONFIG_SAVE, "参数维护", "C", 81,

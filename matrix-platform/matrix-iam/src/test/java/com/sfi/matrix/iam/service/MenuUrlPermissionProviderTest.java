@@ -32,8 +32,8 @@ class MenuUrlPermissionProviderTest {
     void parsesCommaSeparatedPatternsAndMethodPrefix() {
         SysMenuRepository repo = mock(SysMenuRepository.class);
         when(repo.findByDeletedFalseOrderBySortNoAsc()).thenReturn(Arrays.asList(
-                menu("platform:dict:list", "GET:/api/dict/**,GET:/api/dict-type/**"),
-                menu("platform:dict:save", "POST:/api/dict/**,POST:/api/dict-type/**"),
+                menu("platform:dict:list", "GET:/api/dict/**,GET:/api/dict/option/**"),
+                menu("platform:dict:save", "POST:/api/dict/**,POST:/api/dict/option/**"),
                 menu("platform:tenant:list", "/api/iam/tenant/**,/api/iam/tenants")));
 
         List<UrlPermissionRule> rules = new MenuUrlPermissionProvider(repo).loadRules();
@@ -46,7 +46,7 @@ class MenuUrlPermissionProviderTest {
         });
         assertThat(rules).anySatisfy(r -> {
             assertThat(r.getMethod()).isEqualTo("POST");
-            assertThat(r.getPattern()).isEqualTo("/api/dict-type/**");
+            assertThat(r.getPattern()).isEqualTo("/api/dict/option/**");
             assertThat(r.getPermissions()).containsExactly("platform:dict:save");
         });
         assertThat(rules).anySatisfy(r -> {

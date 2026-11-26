@@ -1,20 +1,21 @@
 package com.sfi.matrix.support.dto;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 /** 字典选项增改请求。id 为空=新增/覆盖，非空=修改。 */
-public class DictDataRequest {
+public class DictOptionRequest {
 
     private Long id;
 
-    @NotBlank(message = "字典类型不能为空")
-    private String dictType;
+    @NotNull(message = "所属字典ID不能为空")
+    private Long dictId;
 
-    @NotBlank(message = "字典编码不能为空")
-    private String dictCode;
+    @NotBlank(message = "选项编码不能为空")
+    private String optionCode;
 
-    @NotBlank(message = "字典显示名不能为空")
-    private String dictLabel;
+    @NotBlank(message = "选项显示名不能为空")
+    private String optionLabel;
 
     private Integer sortNo;
     private Integer status;
@@ -22,12 +23,12 @@ public class DictDataRequest {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public String getDictType() { return dictType; }
-    public void setDictType(String dictType) { this.dictType = dictType; }
-    public String getDictCode() { return dictCode; }
-    public void setDictCode(String dictCode) { this.dictCode = dictCode; }
-    public String getDictLabel() { return dictLabel; }
-    public void setDictLabel(String dictLabel) { this.dictLabel = dictLabel; }
+    public Long getDictId() { return dictId; }
+    public void setDictId(Long dictId) { this.dictId = dictId; }
+    public String getOptionCode() { return optionCode; }
+    public void setOptionCode(String optionCode) { this.optionCode = optionCode; }
+    public String getOptionLabel() { return optionLabel; }
+    public void setOptionLabel(String optionLabel) { this.optionLabel = optionLabel; }
     public Integer getSortNo() { return sortNo; }
     public void setSortNo(Integer sortNo) { this.sortNo = sortNo; }
     public Integer getStatus() { return status; }

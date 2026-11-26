@@ -10,18 +10,18 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 /**
- * 字典选项（明细表）。
+ * 字典选项（子表）。
  *
- * <p>type + code 唯一定位一个选项；type 相同的若干项构成一个下拉选项集，
- * 通过 dictType 关联 {@link SysDictType}。平台兜底按 code 合并租户与平台两份。</p>
+ * <p>通过 dictId 关联 {@link SysDict}；同一字典下 optionCode 唯一定位一个选项，
+ * 平台兜底按 optionCode 合并租户与平台两份。</p>
  *
  * @author lianghang
  */
 @Entity
-@Table(name = "sys_dict_data")
+@Table(name = "sys_dict_option")
 @Filter(name = JpaTenantFilterAspect.FILTER_NAME, condition = "tenant_id = :tenantId")
 @Filter(name = JpaDeletedFilterAspect.FILTER_NAME, condition = "deleted = false")
-public class SysDictData extends BaseEntity {
+public class SysDictOption extends BaseEntity {
 
     /** 逻辑删除标记，true=已删除；由字段名探测自动过滤 */
     @Column(name = "deleted")
@@ -30,17 +30,17 @@ public class SysDictData extends BaseEntity {
     @Column(name = "tenant_id")
     private String tenantId;
 
-    /** 所属字典类型编码 */
-    @Column(name = "dict_type")
-    private String dictType;
+    /** 所属字典ID，对应 sys_dict.id */
+    @Column(name = "dict_id")
+    private Long dictId;
 
-    /** 选项编码（存库值） */
-    @Column(name = "dict_code")
-    private String dictCode;
+    /** 选项编码 */
+    @Column(name = "option_code")
+    private String optionCode;
 
     /** 选项显示名 */
-    @Column(name = "dict_label")
-    private String dictLabel;
+    @Column(name = "option_label")
+    private String optionLabel;
 
     @Column(name = "sort_no")
     private Integer sortNo;
@@ -57,28 +57,28 @@ public class SysDictData extends BaseEntity {
         this.tenantId = tenantId;
     }
 
-    public String getDictType() {
-        return dictType;
+    public Long getDictId() {
+        return dictId;
     }
 
-    public void setDictType(String dictType) {
-        this.dictType = dictType;
+    public void setDictId(Long dictId) {
+        this.dictId = dictId;
     }
 
-    public String getDictCode() {
-        return dictCode;
+    public String getOptionCode() {
+        return optionCode;
     }
 
-    public void setDictCode(String dictCode) {
-        this.dictCode = dictCode;
+    public void setOptionCode(String optionCode) {
+        this.optionCode = optionCode;
     }
 
-    public String getDictLabel() {
-        return dictLabel;
+    public String getOptionLabel() {
+        return optionLabel;
     }
 
-    public void setDictLabel(String dictLabel) {
-        this.dictLabel = dictLabel;
+    public void setOptionLabel(String optionLabel) {
+        this.optionLabel = optionLabel;
     }
 
     public Integer getSortNo() {
