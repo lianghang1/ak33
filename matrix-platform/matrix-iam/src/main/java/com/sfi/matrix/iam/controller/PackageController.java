@@ -1,7 +1,7 @@
 package com.sfi.matrix.iam.controller;
 
 import com.sfi.matrix.iam.audit.annotation.OperateLog;
-import com.sfi.matrix.iam.controller.support.IamPageQuery;
+import com.sfi.scaffold.starter.web.crud.PageQuerySupport;
 import com.sfi.matrix.iam.dto.AssignMenusRequest;
 import com.sfi.matrix.iam.dto.PackageRequest;
 import com.sfi.matrix.iam.entity.SysTenantPackage;
@@ -57,7 +57,7 @@ public class PackageController {
 
     @GetMapping("/list")
     public R<PageResult<SysTenantPackage>> list(HttpServletRequest request) {
-        return R.ok(IamPageQuery.query(request, SysTenantPackage.class));
+        return R.ok(PageQuerySupport.query(request, SysTenantPackage.class));
     }
 
     @OperateLog(module = "套餐管理", operation = "分配套餐菜单")

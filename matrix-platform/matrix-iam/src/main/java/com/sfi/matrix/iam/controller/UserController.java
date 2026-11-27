@@ -1,7 +1,7 @@
 package com.sfi.matrix.iam.controller;
 
 import com.sfi.matrix.iam.audit.annotation.OperateLog;
-import com.sfi.matrix.iam.controller.support.IamPageQuery;
+import com.sfi.scaffold.starter.web.crud.PageQuerySupport;
 import com.sfi.matrix.iam.dto.AssignRolesRequest;
 import com.sfi.matrix.iam.dto.AssignTenantRequest;
 import com.sfi.matrix.iam.dto.UserRequest;
@@ -71,7 +71,7 @@ public class UserController {
 
     @GetMapping("/list")
     public R<PageResult<SysUser>> list(HttpServletRequest request) {
-        return R.ok(IamPageQuery.query(request, SysUser.class));
+        return R.ok(PageQuerySupport.query(request, SysUser.class));
     }
 
     @OperateLog(module = "用户管理", operation = "分配用户租户")

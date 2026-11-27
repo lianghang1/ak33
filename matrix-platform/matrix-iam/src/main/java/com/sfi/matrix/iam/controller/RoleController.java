@@ -1,7 +1,7 @@
 package com.sfi.matrix.iam.controller;
 
 import com.sfi.matrix.iam.audit.annotation.OperateLog;
-import com.sfi.matrix.iam.controller.support.IamPageQuery;
+import com.sfi.scaffold.starter.web.crud.PageQuerySupport;
 import com.sfi.matrix.iam.dto.AssignMenusRequest;
 import com.sfi.matrix.iam.dto.RoleRequest;
 import com.sfi.matrix.iam.entity.SysRole;
@@ -60,7 +60,7 @@ public class RoleController {
 
     @GetMapping("/list")
     public R<PageResult<SysRole>> list(HttpServletRequest request) {
-        return R.ok(IamPageQuery.query(request, SysRole.class));
+        return R.ok(PageQuerySupport.query(request, SysRole.class));
     }
 
     @OperateLog(module = "角色管理", operation = "分配角色菜单")

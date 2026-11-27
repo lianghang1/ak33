@@ -1,7 +1,7 @@
 package com.sfi.matrix.iam.controller;
 
 import com.sfi.matrix.iam.audit.annotation.OperateLog;
-import com.sfi.matrix.iam.controller.support.IamPageQuery;
+import com.sfi.scaffold.starter.web.crud.PageQuerySupport;
 import com.sfi.matrix.iam.dto.TenantRequest;
 import com.sfi.matrix.iam.entity.SysTenant;
 import com.sfi.matrix.iam.service.IamService;
@@ -76,6 +76,6 @@ public class TenantController {
 
     @GetMapping("/list")
     public R<PageResult<SysTenant>> list(HttpServletRequest request) {
-        return R.ok(IamPageQuery.query(request, SysTenant.class));
+        return R.ok(PageQuerySupport.query(request, SysTenant.class));
     }
 }
