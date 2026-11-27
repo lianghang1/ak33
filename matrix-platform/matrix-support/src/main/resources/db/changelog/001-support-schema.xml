@@ -23,7 +23,7 @@
                  VARCHAR(2048) 不够；明文落库，对外出口由 Controller 加密 -->
             <column name="config_value" type="CLOB" remarks="参数值（明文落库，敏感项对外出口加密）"/>
             <column name="value_type" type="VARCHAR(16)" defaultValue="STRING" remarks="值类型 STRING/INT/BOOL/JSON"/>
-            <column name="is_sensitive" type="BOOLEAN" defaultValueBoolean="false"
+            <column name="need_encrypt" type="BOOLEAN" defaultValueBoolean="false"
                     remarks="是否敏感值（写入加密落库、读取解密返回）">
                 <constraints nullable="false"/>
             </column>

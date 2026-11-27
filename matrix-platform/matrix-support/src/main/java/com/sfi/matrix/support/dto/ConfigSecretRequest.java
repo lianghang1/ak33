@@ -20,12 +20,12 @@ public class ConfigSecretRequest {
     private String configValue;
 
     /** 敏感标志；为 null 表示不改标志 */
-    private Boolean isSensitive;
+    private Boolean needEncrypt;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getConfigValue() { return configValue; }
     public void setConfigValue(String configValue) { this.configValue = configValue; }
-    public Boolean getIsSensitive() { return isSensitive; }
-    public void setIsSensitive(Boolean isSensitive) { this.isSensitive = isSensitive; }
+    public Boolean getNeedEncrypt() { return needEncrypt; }
+    public void setNeedEncrypt(Boolean needEncrypt) { this.needEncrypt = needEncrypt; }
 }

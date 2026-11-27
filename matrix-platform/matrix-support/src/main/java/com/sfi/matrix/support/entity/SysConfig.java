@@ -45,9 +45,9 @@ public class SysConfig extends BaseEntity {
     private String valueType;
 
     /** 是否敏感值：true 时写入加密落库、读取解密返回 */
-    /** 列名用 is_sensitive，避开 MySQL 8 保留字，属性名 isSensitive */
-    @Column(name = "is_sensitive")
-    private Boolean isSensitive = Boolean.FALSE;
+    /** 列名用 need_encrypt，避开 MySQL 8 保留字，属性名 needEncrypt */
+    @Column(name = "need_encrypt")
+    private Boolean needEncrypt = Boolean.FALSE;
 
     @Column(name = "remark")
     private String remark;
@@ -92,12 +92,12 @@ public class SysConfig extends BaseEntity {
         this.valueType = valueType;
     }
 
-    public Boolean getIsSensitive() {
-        return isSensitive;
+    public Boolean getNeedEncrypt() {
+        return needEncrypt;
     }
 
-    public void setIsSensitive(Boolean isSensitive) {
-        this.isSensitive = isSensitive;
+    public void setNeedEncrypt(Boolean needEncrypt) {
+        this.needEncrypt = needEncrypt;
     }
 
     public String getRemark() {
