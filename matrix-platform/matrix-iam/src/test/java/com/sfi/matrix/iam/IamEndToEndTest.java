@@ -260,22 +260,23 @@ class IamEndToEndTest {
         // QueryBean 通路②：用户列表分页（EQ status=1）
         // 不带条件：验证分页通路
         MvcResult result = mockMvc.perform(get("/api/iam/users")
-                        .param("page", "0").param("size", "10")
+                        .param("page", "1").param("size", "10")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn();
         JsonNode page = ok(result);
-        assertTrue(page.has("content"), "应返回分页 content");
-        assertTrue(page.path("totalElements").asLong() >= 2,
+        assertTrue(page.has("list"), "应返回统一分页 list（PageResult）");
+        assertTrue(page.path("total").asLong() >= 2,
                 "至少有平台管理员和 zhangsan，实际响应=" + page.toString());
+        assertEquals(1, page.path("pageNum").asLong(), "页码应统一为 1 基");
 
         // 带字符串条件：验证 QueryBean 前缀协议（CN_ 模糊匹配）
         MvcResult filtered = mockMvc.perform(get("/api/iam/users")
                         .param("CN_username", "zhang")
-                        .param("page", "0").param("size", "10")
+                        .param("page", "1").param("size", "10")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn();
         JsonNode filteredPage = ok(filtered);
-        assertEquals(1, filteredPage.path("totalElements").asLong(),
+        assertEquals(1, filteredPage.path("total").asLong(),
                 "CN_username=zhang 应只匹配 zhangsan，实际=" + filteredPage.toString());
     }
 
