@@ -34,7 +34,7 @@ class MenuUrlPermissionProviderTest {
         when(repo.findByDeletedFalseOrderBySortNoAsc()).thenReturn(Arrays.asList(
                 menu("platform:dict:list", "GET:/api/dict/**,GET:/api/dict/option/**"),
                 menu("platform:dict:save", "POST:/api/dict/**,POST:/api/dict/option/**"),
-                menu("platform:tenant:list", "/api/iam/tenant/**,/api/iam/tenants")));
+                menu("platform:user:list", "/api/iam/user/**,/api/iam/user/list")));
 
         List<UrlPermissionRule> rules = new MenuUrlPermissionProvider(repo).loadRules();
 
@@ -51,8 +51,8 @@ class MenuUrlPermissionProviderTest {
         });
         assertThat(rules).anySatisfy(r -> {
             assertThat(r.getMethod()).isEqualTo("*");
-            assertThat(r.getPattern()).isEqualTo("/api/iam/tenants");
-            assertThat(r.getPermissions()).containsExactly("platform:tenant:list");
+            assertThat(r.getPattern()).isEqualTo("/api/iam/user/list");
+            assertThat(r.getPermissions()).containsExactly("platform:user:list");
         });
     }
 

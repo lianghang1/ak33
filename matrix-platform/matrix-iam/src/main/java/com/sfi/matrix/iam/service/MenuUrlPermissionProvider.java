@@ -13,7 +13,7 @@ import java.util.List;
  * URL 权限规则来源：从菜单表 sys_menu 读取 api_pattern 与 permission 生成规则。
  *
  * <p>api_pattern 允许多个模式用逗号分隔，每个模式可带 {@code METHOD:} 前缀限定 HTTP 方法
- * （如 {@code POST:/api/iam/user,GET:/api/iam/users}），无前缀表示不限方法。
+ * （如 {@code POST:/api/iam/user/save,GET:/api/iam/user/list}），无前缀表示不限方法。
  * 改菜单即改权限，无需改代码、不发版。</p>
  *
  * @author lianghang

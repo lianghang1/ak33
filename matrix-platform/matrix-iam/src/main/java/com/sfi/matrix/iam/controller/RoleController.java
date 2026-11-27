@@ -25,7 +25,7 @@ import javax.validation.Valid;
  * @author lianghang
  */
 @RestController
-@RequestMapping("/api/iam")
+@RequestMapping("/api/iam/role")
 public class RoleController {
 
     private final IamService iamService;
@@ -35,8 +35,8 @@ public class RoleController {
     }
 
     @OperateLog(module = "角色管理", operation = "新增/修改角色")
-    @PostMapping("/role")
-    public R<SysRole> saveRole(@Valid @RequestBody RoleRequest req) {
+    @PostMapping("/save")
+    public R<SysRole> save(@Valid @RequestBody RoleRequest req) {
         if (req.getId() == null) {
             return R.ok(iamService.createRole(req.getRoleCode(), req.getRoleName(), req.getTenantId(),
                     req.getDataScope() == null ? "ALL" : req.getDataScope(),
@@ -46,20 +46,20 @@ public class RoleController {
                 req.getDataScopeDeptIds(), req.getSortNo(), req.getRemark()));
     }
 
-    @GetMapping("/role")
-    public R<SysRole> getRole(@RequestParam Long id) {
+    @GetMapping("/get")
+    public R<SysRole> get(@RequestParam Long id) {
         return R.ok(iamService.getRole(id));
     }
 
     @OperateLog(module = "角色管理", operation = "删除角色")
-    @PostMapping("/role/delete")
-    public R<Void> deleteRole(@Valid @RequestBody IdRequest req) {
+    @PostMapping("/delete")
+    public R<Void> delete(@Valid @RequestBody IdRequest req) {
         iamService.deleteRole(req.getId());
         return R.ok();
     }
 
-    @GetMapping("/roles")
-    public R<PageResult<SysRole>> roles(HttpServletRequest request) {
+    @GetMapping("/list")
+    public R<PageResult<SysRole>> list(HttpServletRequest request) {
         return R.ok(IamPageQuery.query(request, SysRole.class));
     }
 

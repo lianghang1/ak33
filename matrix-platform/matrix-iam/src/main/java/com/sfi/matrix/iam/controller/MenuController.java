@@ -25,7 +25,7 @@ import java.util.List;
  * @author lianghang
  */
 @RestController
-@RequestMapping("/api/iam")
+@RequestMapping("/api/iam/menu")
 public class MenuController {
 
     private final IamService iamService;
@@ -35,8 +35,8 @@ public class MenuController {
     }
 
     @OperateLog(module = "菜单管理", operation = "新增/修改菜单")
-    @PostMapping("/menu")
-    public R<SysMenu> saveMenu(@Valid @RequestBody MenuRequest req) {
+    @PostMapping("/save")
+    public R<SysMenu> save(@Valid @RequestBody MenuRequest req) {
         if (req.getId() == null) {
             String scope = req.getMenuScope() == null || req.getMenuScope().isEmpty()
                     ? IamConstants.MENU_SCOPE_TENANT : req.getMenuScope();
@@ -48,22 +48,22 @@ public class MenuController {
                 req.getPermission(), req.getMenuScope(), req.getSortNo(), req.getVisible()));
     }
 
-    @GetMapping("/menu")
-    public R<SysMenu> getMenu(@RequestParam Long id) {
+    @GetMapping("/get")
+    public R<SysMenu> get(@RequestParam Long id) {
         return R.ok(iamService.getMenu(id));
     }
 
     @OperateLog(module = "菜单管理", operation = "删除菜单")
-    @PostMapping("/menu/delete")
-    public R<Void> deleteMenu(@Valid @RequestBody IdRequest req) {
+    @PostMapping("/delete")
+    public R<Void> delete(@Valid @RequestBody IdRequest req) {
         iamService.deleteMenu(req.getId());
         return R.ok();
     }
 
-    /** 菜单查询：tenantId→套餐范围；scope→按范围；都不传→全部（非分页，菜单量小） */
-    @GetMapping("/menus")
-    public R<List<SysMenu>> menus(@RequestParam(required = false) String tenantId,
-                                  @RequestParam(required = false) String scope) {
+    /** 菜单树：tenantId→套餐范围；scope→按范围；都不传→全部（非分页，菜单量小） */
+    @GetMapping("/tree")
+    public R<List<SysMenu>> tree(@RequestParam(required = false) String tenantId,
+                                 @RequestParam(required = false) String scope) {
         if (tenantId != null && !tenantId.isEmpty()) {
             return R.ok(iamService.menuTreeOfTenant(tenantId));
         }
@@ -74,8 +74,8 @@ public class MenuController {
     }
 
     /** 当前登录用户在其租户下实际可见的菜单 */
-    @GetMapping("/my-menus")
-    public R<List<SysMenu>> myMenus(@RequestParam(required = false) String tenantId) {
+    @GetMapping("/my")
+    public R<List<SysMenu>> my(@RequestParam(required = false) String tenantId) {
         LoginUser current = LoginContext.current();
         String tid = tenantId == null || tenantId.isEmpty() ? current.getTenantId() : tenantId;
         return R.ok(iamService.menuTreeForUser(current.getAccountId(), tid));

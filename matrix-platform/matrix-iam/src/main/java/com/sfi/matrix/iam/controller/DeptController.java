@@ -24,7 +24,7 @@ import javax.validation.Valid;
  * @author lianghang
  */
 @RestController
-@RequestMapping("/api/iam")
+@RequestMapping("/api/iam/dept")
 public class DeptController {
 
     private final IamService iamService;
@@ -34,8 +34,8 @@ public class DeptController {
     }
 
     @OperateLog(module = "部门管理", operation = "新增/修改部门")
-    @PostMapping("/dept")
-    public R<SysDept> saveDept(@Valid @RequestBody DeptRequest req) {
+    @PostMapping("/save")
+    public R<SysDept> save(@Valid @RequestBody DeptRequest req) {
         if (req.getId() == null) {
             return R.ok(iamService.createDept(req.getDeptName(), req.getParentId(), req.getTenantId(),
                     req.getSortNo() == null ? 0 : req.getSortNo(), req.getLeaderId()));
@@ -44,20 +44,20 @@ public class DeptController {
                 req.getSortNo(), req.getLeaderId(), req.getStatus()));
     }
 
-    @GetMapping("/dept")
-    public R<SysDept> getDept(@RequestParam Long id) {
+    @GetMapping("/get")
+    public R<SysDept> get(@RequestParam Long id) {
         return R.ok(iamService.getDept(id));
     }
 
     @OperateLog(module = "部门管理", operation = "删除部门")
-    @PostMapping("/dept/delete")
-    public R<Void> deleteDept(@Valid @RequestBody IdRequest req) {
+    @PostMapping("/delete")
+    public R<Void> delete(@Valid @RequestBody IdRequest req) {
         iamService.deleteDept(req.getId());
         return R.ok();
     }
 
-    @GetMapping("/depts")
-    public R<PageResult<SysDept>> depts(HttpServletRequest request) {
+    @GetMapping("/list")
+    public R<PageResult<SysDept>> list(HttpServletRequest request) {
         return R.ok(IamPageQuery.query(request, SysDept.class));
     }
 }

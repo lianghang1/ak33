@@ -20,12 +20,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 /**
- * 套餐接口：套餐维护、套餐菜单授权。
+ * 套餐接口：套餐维护与套餐菜单授权。
  *
  * @author lianghang
  */
 @RestController
-@RequestMapping("/api/iam")
+@RequestMapping("/api/iam/package")
 public class PackageController {
 
     private final IamService iamService;
@@ -35,34 +35,34 @@ public class PackageController {
     }
 
     @OperateLog(module = "套餐管理", operation = "新增/修改套餐")
-    @PostMapping("/package")
-    public R<SysTenantPackage> savePackage(@Valid @RequestBody PackageRequest req) {
+    @PostMapping("/save")
+    public R<SysTenantPackage> save(@Valid @RequestBody PackageRequest req) {
         if (req.getId() == null) {
             return R.ok(iamService.createPackage(req.getPackageCode(), req.getPackageName(), req.getRemark()));
         }
         return R.ok(iamService.updatePackage(req.getId(), req.getPackageName(), req.getRemark(), req.getStatus()));
     }
 
-    @GetMapping("/package")
-    public R<SysTenantPackage> getPackage(@RequestParam Long id) {
+    @GetMapping("/get")
+    public R<SysTenantPackage> get(@RequestParam Long id) {
         return R.ok(iamService.getPackage(id));
     }
 
     @OperateLog(module = "套餐管理", operation = "删除套餐")
-    @PostMapping("/package/delete")
-    public R<Void> deletePackage(@Valid @RequestBody IdRequest req) {
+    @PostMapping("/delete")
+    public R<Void> delete(@Valid @RequestBody IdRequest req) {
         iamService.deletePackage(req.getId());
         return R.ok();
     }
 
-    @GetMapping("/packages")
-    public R<PageResult<SysTenantPackage>> packages(HttpServletRequest request) {
+    @GetMapping("/list")
+    public R<PageResult<SysTenantPackage>> list(HttpServletRequest request) {
         return R.ok(IamPageQuery.query(request, SysTenantPackage.class));
     }
 
     @OperateLog(module = "套餐管理", operation = "分配套餐菜单")
-    @PostMapping("/assign-package-menus")
-    public R<Void> assignPackageMenus(@Valid @RequestBody AssignMenusRequest req) {
+    @PostMapping("/assign-menus")
+    public R<Void> assignMenus(@Valid @RequestBody AssignMenusRequest req) {
         iamService.assignPackageMenus(req.getPackageId(), req.getMenuIds());
         return R.ok();
     }

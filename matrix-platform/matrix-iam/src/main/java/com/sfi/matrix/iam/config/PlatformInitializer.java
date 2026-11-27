@@ -72,19 +72,19 @@ public class PlatformInitializer implements ApplicationRunner {
      * 读/写用 METHOD 区分，落到不同权限点（如字典的 list 与 save）。</p>
      */
     private void seedPlatformMenus() {
+        // 每个资源独占一级路径，权限规则统一收敛为单条 /**；操作主体归入其资源（分配租户→用户）
         seed(IamConstants.PERM_TENANT, "租户管理", "C", 10,
-                "/api/iam/tenant/**,/api/iam/tenants,/api/iam/assign-tenant");
+                "/api/iam/tenant/**");
         seed(IamConstants.PERM_PACKAGE, "套餐管理", "C", 20,
-                "/api/iam/package/**,/api/iam/packages,/api/iam/assign-package-menus");
+                "/api/iam/package/**");
         seed(IamConstants.PERM_USER, "用户管理", "C", 30,
-                "/api/iam/user/**,/api/iam/users,/api/audit/**");
+                "/api/iam/user/**,/api/audit/**");
         seed(IamConstants.PERM_DEPT, "部门管理", "C", 40,
-                "/api/iam/dept/**,/api/iam/depts");
+                "/api/iam/dept/**");
         seed(IamConstants.PERM_ROLE, "角色管理", "C", 50,
-                "/api/iam/role/**,/api/iam/roles,/api/iam/assign-roles,/api/iam/assign-menus,"
-                        + "/api/iam/user-roles,/api/iam/user-permissions");
+                "/api/iam/role/**");
         seed(IamConstants.PERM_MENU, "菜单管理", "C", 60,
-                "/api/iam/menu/**,/api/iam/menus,/api/iam/my-menus");
+                "/api/iam/menu/**");
         seed(IamConstants.PERM_DICT, "字典管理", "C", 70,
                 "GET:/api/dict/**");
         seed(IamConstants.PERM_DICT_SAVE, "字典维护", "C", 71,

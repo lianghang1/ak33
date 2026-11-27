@@ -31,7 +31,7 @@ import java.util.Set;
  * @author lianghang
  */
 @RestController
-@RequestMapping("/api/iam")
+@RequestMapping("/api/iam/user")
 public class UserController {
 
     private final IamService iamService;
@@ -46,8 +46,8 @@ public class UserController {
     }
 
     @OperateLog(module = "用户管理", operation = "新增/修改用户")
-    @PostMapping("/user")
-    public R<SysUser> saveUser(@Valid @RequestBody UserRequest req) {
+    @PostMapping("/save")
+    public R<SysUser> save(@Valid @RequestBody UserRequest req) {
         if (req.getId() == null) {
             passwordPolicyValidator.validate(req.getPassword());
             return R.ok(iamService.createUser(req.getUsername(), passwordEncoder.encode(req.getPassword()),
@@ -57,20 +57,20 @@ public class UserController {
                 req.getAccountType(), req.getStatus(), req.getMaxSessions()));
     }
 
-    @GetMapping("/user")
-    public R<SysUser> getUser(@RequestParam Long id) {
+    @GetMapping("/get")
+    public R<SysUser> get(@RequestParam Long id) {
         return R.ok(iamService.getUser(id));
     }
 
     @OperateLog(module = "用户管理", operation = "删除用户")
-    @PostMapping("/user/delete")
-    public R<Void> deleteUser(@Valid @RequestBody IdRequest req) {
+    @PostMapping("/delete")
+    public R<Void> delete(@Valid @RequestBody IdRequest req) {
         iamService.deleteUser(req.getId());
         return R.ok();
     }
 
-    @GetMapping("/users")
-    public R<PageResult<SysUser>> users(HttpServletRequest request) {
+    @GetMapping("/list")
+    public R<PageResult<SysUser>> list(HttpServletRequest request) {
         return R.ok(IamPageQuery.query(request, SysUser.class));
     }
 
@@ -80,8 +80,8 @@ public class UserController {
         return R.ok(iamService.assignTenant(req.getUserId(), req.getTenantId(), req.getDeptId()));
     }
 
-    @GetMapping("/user-tenants")
-    public R<List<SysUserTenant>> userTenants(@RequestParam Long userId) {
+    @GetMapping("/tenants")
+    public R<List<SysUserTenant>> tenants(@RequestParam Long userId) {
         return R.ok(iamService.userTenants(userId));
     }
 
@@ -93,13 +93,13 @@ public class UserController {
     }
 
     // ===== 权限计算（带租户维度） =====
-    @GetMapping("/user-roles")
-    public R<List<String>> userRoles(@RequestParam Long userId, @RequestParam String tenantId) {
+    @GetMapping("/roles")
+    public R<List<String>> roles(@RequestParam Long userId, @RequestParam String tenantId) {
         return R.ok(iamService.userRoleCodes(userId, tenantId));
     }
 
-    @GetMapping("/user-permissions")
-    public R<Set<String>> userPermissions(@RequestParam Long userId, @RequestParam String tenantId) {
+    @GetMapping("/permissions")
+    public R<Set<String>> permissions(@RequestParam Long userId, @RequestParam String tenantId) {
         return R.ok(iamService.userPermissions(userId, tenantId));
     }
 }

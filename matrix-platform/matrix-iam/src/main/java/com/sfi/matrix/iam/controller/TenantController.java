@@ -26,7 +26,7 @@ import javax.validation.Valid;
  * @author lianghang
  */
 @RestController
-@RequestMapping("/api/iam")
+@RequestMapping("/api/iam/tenant")
 public class TenantController {
 
     private final IamService iamService;
@@ -47,8 +47,8 @@ public class TenantController {
     }
 
     @OperateLog(module = "租户管理", operation = "新增/修改租户")
-    @PostMapping("/tenant")
-    public R<SysTenant> saveTenant(@Valid @RequestBody TenantRequest req) {
+    @PostMapping("/save")
+    public R<SysTenant> save(@Valid @RequestBody TenantRequest req) {
         if (req.getId() == null) {
             if (req.getAdminPassword() != null && !req.getAdminPassword().isEmpty()) {
                 passwordPolicyValidator.validate(req.getAdminPassword());
@@ -62,20 +62,20 @@ public class TenantController {
                 req.getExpireTime(), req.getStatus(), req.getRemark()));
     }
 
-    @GetMapping("/tenant")
-    public R<SysTenant> getTenant(@RequestParam Long id) {
+    @GetMapping("/get")
+    public R<SysTenant> get(@RequestParam Long id) {
         return R.ok(iamService.getTenant(id));
     }
 
     @OperateLog(module = "租户管理", operation = "删除租户")
-    @PostMapping("/tenant/delete")
-    public R<Void> deleteTenant(@Valid @RequestBody IdRequest req) {
+    @PostMapping("/delete")
+    public R<Void> delete(@Valid @RequestBody IdRequest req) {
         iamService.deleteTenant(req.getId());
         return R.ok();
     }
 
-    @GetMapping("/tenants")
-    public R<PageResult<SysTenant>> tenants(HttpServletRequest request) {
+    @GetMapping("/list")
+    public R<PageResult<SysTenant>> list(HttpServletRequest request) {
         return R.ok(IamPageQuery.query(request, SysTenant.class));
     }
 }

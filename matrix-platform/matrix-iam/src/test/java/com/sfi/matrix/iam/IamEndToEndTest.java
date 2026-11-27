@@ -214,7 +214,7 @@ class IamEndToEndTest {
         Map<String, String> pkg = new HashMap<>();
         pkg.put("packageCode", "PKG_TEST");
         pkg.put("packageName", "测试套餐");
-        ok(postJson("/api/iam/package", pkg, adminToken));
+        ok(postJson("/api/iam/package/save", pkg, adminToken));
 
         // 建租户（带管理员）
         Map<String, Object> tenant = new HashMap<>();
@@ -224,7 +224,7 @@ class IamEndToEndTest {
         tenant.put("adminUsername", "t1admin");
         tenant.put("adminPassword", "admin123");
         tenant.put("adminName", "租户一管理员");
-        JsonNode created = ok(postJson("/api/iam/tenant", tenant, adminToken));
+        JsonNode created = ok(postJson("/api/iam/tenant/save", tenant, adminToken));
         assertNotNull(created);
         String tenantId = created.path("id").asText();
 
@@ -233,7 +233,7 @@ class IamEndToEndTest {
         user.put("username", "zhangsan");
         user.put("password", "admin123");
         user.put("nickname", "张三");
-        JsonNode u = ok(postJson("/api/iam/user", user, adminToken));
+        JsonNode u = ok(postJson("/api/iam/user/save", user, adminToken));
         assertNotNull(u.path("id"));
 
         // 建角色
@@ -242,7 +242,7 @@ class IamEndToEndTest {
         role.put("roleName", "测试角色");
         role.put("tenantId", tenantId);
         role.put("dataScope", "ALL");
-        JsonNode r = ok(postJson("/api/iam/role", role, adminToken));
+        JsonNode r = ok(postJson("/api/iam/role/save", role, adminToken));
         assertNotNull(r.path("id"));
 
         // 建部门
@@ -250,7 +250,7 @@ class IamEndToEndTest {
         dept.put("deptName", "研发部");
         dept.put("tenantId", tenantId);
         dept.put("sortNo", 1);
-        JsonNode d = ok(postJson("/api/iam/dept", dept, adminToken));
+        JsonNode d = ok(postJson("/api/iam/dept/save", dept, adminToken));
         assertNotNull(d.path("id"));
     }
 
@@ -259,7 +259,7 @@ class IamEndToEndTest {
     void queryBeanListWorks() throws Exception {
         // QueryBean 通路②：用户列表分页（EQ status=1）
         // 不带条件：验证分页通路
-        MvcResult result = mockMvc.perform(get("/api/iam/users")
+        MvcResult result = mockMvc.perform(get("/api/iam/user/list")
                         .param("page", "1").param("size", "10")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn();
@@ -270,7 +270,7 @@ class IamEndToEndTest {
         assertEquals(1, page.path("pageNum").asLong(), "页码应统一为 1 基");
 
         // 带字符串条件：验证 QueryBean 前缀协议（CN_ 模糊匹配）
-        MvcResult filtered = mockMvc.perform(get("/api/iam/users")
+        MvcResult filtered = mockMvc.perform(get("/api/iam/user/list")
                         .param("CN_username", "zhang")
                         .param("page", "1").param("size", "10")
                         .header("Authorization", "Bearer " + adminToken))
