@@ -9,10 +9,14 @@ import com.sfi.matrix.iam.service.RoleService;
 import com.sfi.scaffold.common.request.IdRequest;
 import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.starter.web.crud.BaseCrudController;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 import javax.validation.Valid;
 
@@ -50,6 +54,11 @@ public class RoleController extends BaseCrudController<SysRole, RoleRequest, Rol
     @PostMapping("/delete")
     public R<Void> delete(@Valid @RequestBody IdRequest req) {
         return super.delete(req);
+    }
+
+    @GetMapping("/menus")
+    public R<List<Long>> menus(@RequestParam Long roleId, @RequestParam String tenantId) {
+        return R.ok(iamService.roleMenuIds(roleId, tenantId));
     }
 
     @OperateLog(module = "角色管理", operation = "分配角色菜单")

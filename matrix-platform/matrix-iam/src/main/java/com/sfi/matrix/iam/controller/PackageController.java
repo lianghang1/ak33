@@ -9,10 +9,14 @@ import com.sfi.matrix.iam.service.PackageService;
 import com.sfi.scaffold.common.request.IdRequest;
 import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.starter.web.crud.BaseCrudController;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 import javax.validation.Valid;
 
@@ -47,6 +51,11 @@ public class PackageController extends BaseCrudController<SysTenantPackage, Pack
     @PostMapping("/delete")
     public R<Void> delete(@Valid @RequestBody IdRequest req) {
         return super.delete(req);
+    }
+
+    @GetMapping("/menus")
+    public R<List<Long>> menus(@RequestParam Long packageId) {
+        return R.ok(iamService.packageMenuIds(packageId));
     }
 
     @OperateLog(module = "套餐管理", operation = "分配套餐菜单")

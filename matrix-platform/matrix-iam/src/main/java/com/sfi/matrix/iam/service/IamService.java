@@ -473,6 +473,24 @@ public class IamService {
         }
     }
 
+    /** 查询角色已分配的菜单 ID（回显用）；内置超管由系统推导，直接返回全部可分配菜单。 */
+    public List<Long> roleMenuIds(Long roleId, String tenantId) {
+        SysRole role = roleRepository.findById(roleId)
+                .orElseThrow(() -> BizException.of(GlobalErrorCode.NOT_FOUND, "角色不存在：" + roleId));
+        if (isSuperRole(role)) {
+            return filterAssignableMenuIds(menuRepository.findAll().stream()
+                    .map(SysMenu::getId).collect(Collectors.toList()));
+        }
+        return roleMenuRepository.findByRoleIdAndTenantIdAndDeletedFalse(roleId, tenantId).stream()
+                .map(SysRoleMenu::getMenuId).collect(Collectors.toList());
+    }
+
+    /** 查询套餐已分配的菜单 ID（回显用）。 */
+    public List<Long> packageMenuIds(Long packageId) {
+        return packageMenuRepository.findByPackageIdAndDeletedFalse(packageId).stream()
+                .map(SysPackageMenu::getMenuId).collect(Collectors.toList());
+    }
+
     /**
      * 租户层：给本租户角色配菜单。
      *
