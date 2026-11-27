@@ -45,9 +45,9 @@ public class SysConfig extends BaseEntity {
     private String valueType;
 
     /** 是否敏感值：true 时写入加密落库、读取解密返回 */
-    /** sensitive 是 MySQL 8 保留字，Hibernate 生成 SQL 须转义，否则生产写入报语法错误 */
-    @Column(name = "`sensitive`")
-    private Boolean sensitive = Boolean.FALSE;
+    /** 列名用 is_sensitive，避开 MySQL 8 保留字，属性名 isSensitive */
+    @Column(name = "is_sensitive")
+    private Boolean isSensitive = Boolean.FALSE;
 
     @Column(name = "remark")
     private String remark;
@@ -92,12 +92,12 @@ public class SysConfig extends BaseEntity {
         this.valueType = valueType;
     }
 
-    public Boolean getSensitive() {
-        return sensitive;
+    public Boolean getIsSensitive() {
+        return isSensitive;
     }
 
-    public void setSensitive(Boolean sensitive) {
-        this.sensitive = sensitive;
+    public void setIsSensitive(Boolean isSensitive) {
+        this.isSensitive = isSensitive;
     }
 
     public String getRemark() {

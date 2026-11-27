@@ -36,9 +36,9 @@ public class CemeteryArea extends BaseEntity {
     @Column(name = "area_name", nullable = false, length = 64)
     private String areaName;
 
-    /** 层级深度：根=1，子=父+1 */
-    @Column(name = "level", nullable = false)
-    private Integer level;
+    /** 层级深度：根=1，子=父+1；列名用 area_level 避开 SQLServer/Oracle 保留字，属性名 areaLevel */
+    @Column(name = "area_level", nullable = false)
+    private Integer areaLevel;
 
     /** 上级墓区ID，根节点为 null */
     @Column(name = "parent_id")
@@ -61,8 +61,8 @@ public class CemeteryArea extends BaseEntity {
     public String getAreaName() { return areaName; }
     public void setAreaName(String areaName) { this.areaName = areaName; }
 
-    public Integer getLevel() { return level; }
-    public void setLevel(Integer level) { this.level = level; }
+    public Integer getAreaLevel() { return areaLevel; }
+    public void setAreaLevel(Integer areaLevel) { this.areaLevel = areaLevel; }
 
     public Long getParentId() { return parentId; }
     public void setParentId(Long parentId) { this.parentId = parentId; }

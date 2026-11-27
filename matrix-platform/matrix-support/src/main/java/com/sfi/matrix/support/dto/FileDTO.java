@@ -10,7 +10,7 @@ public class FileDTO {
     private Long id;
     private String filename;
     private String originalFilename;
-    private Long size;
+    private Long fileSize;
     private String contentType;
     private String fileType;
     /** 可访问地址（公开为原始地址，私有为限时签名地址） */
@@ -47,12 +47,12 @@ public class FileDTO {
         this.originalFilename = originalFilename;
     }
 
-    public Long getSize() {
-        return size;
+    public Long getFileSize() {
+        return fileSize;
     }
 
-    public void setSize(Long size) {
-        this.size = size;
+    public void setFileSize(Long fileSize) {
+        this.fileSize = fileSize;
     }
 
     public String getContentType() {

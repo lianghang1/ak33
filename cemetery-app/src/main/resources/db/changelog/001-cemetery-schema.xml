@@ -21,7 +21,7 @@
             <column name="area_name" type="VARCHAR(64)" remarks="墓区名称">
                 <constraints nullable="false"/>
             </column>
-            <column name="level" type="INT" remarks="层级深度，根=1">
+            <column name="area_level" type="INT" remarks="层级深度，根=1">
                 <constraints nullable="false"/>
             </column>
             <column name="parent_id" type="BIGINT" remarks="上级墓区ID，根为null"/>

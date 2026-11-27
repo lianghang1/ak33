@@ -133,21 +133,21 @@ class CemeteryEndToEndTest {
         JsonNode root = ok(postJson("/api/cemetery/area/save",
                 areaDto(null, "RY", "玫瑰园", null), adminToken));
         long rootId = root.path("id").asLong();
-        assertEquals(1, root.path("level").asInt());
+        assertEquals(1, root.path("areaLevel").asInt());
         assertEquals("玫瑰园", root.path("fullPath").asText());
 
         // 子：东区
         JsonNode child = ok(postJson("/api/cemetery/area/save",
                 areaDto(null, "DQU", "东区", rootId), adminToken));
         long childId = child.path("id").asLong();
-        assertEquals(2, child.path("level").asInt());
+        assertEquals(2, child.path("areaLevel").asInt());
         assertEquals("玫瑰园/东区", child.path("fullPath").asText());
 
         // 孙：二区（验证多级 level=3、fullPath 三段）
         JsonNode grand = ok(postJson("/api/cemetery/area/save",
                 areaDto(null, "EQU", "二区", childId), adminToken));
         long grandId = grand.path("id").asLong();
-        assertEquals(3, grand.path("level").asInt());
+        assertEquals(3, grand.path("areaLevel").asInt());
         assertEquals("玫瑰园/东区/二区", grand.path("fullPath").asText());
 
         // 树：含三级
@@ -159,7 +159,7 @@ class CemeteryEndToEndTest {
         move.put("id", grandId);
         move.put("newParentId", rootId);
         JsonNode moved = ok(postJson("/api/cemetery/area/move", move, adminToken));
-        assertEquals(2, moved.path("level").asInt());
+        assertEquals(2, moved.path("areaLevel").asInt());
         assertEquals("玫瑰园/二区", moved.path("fullPath").asText());
     }
 

@@ -61,8 +61,8 @@ public class SysFile extends BaseEntity {
     private String rawUrl;
 
     /** 原图字节数 */
-    @Column(name = "size")
-    private Long size;
+    @Column(name = "file_size")
+    private Long fileSize;
 
     /** 原图扩展名 */
     @Column(name = "extension")
@@ -186,12 +186,12 @@ public class SysFile extends BaseEntity {
         this.rawUrl = rawUrl;
     }
 
-    public Long getSize() {
-        return size;
+    public Long getFileSize() {
+        return fileSize;
     }
 
-    public void setSize(Long size) {
-        this.size = size;
+    public void setFileSize(Long fileSize) {
+        this.fileSize = fileSize;
     }
 
     public String getExtension() {
@@ -330,7 +330,7 @@ public class SysFile extends BaseEntity {
         info.setFilename(thumbnail ? thFilename : filename);
         info.setOriginalFilename(originalFilename);
         info.setContentType(thumbnail ? thContentType : contentType);
-        info.setSize(thumbnail ? thSize : size);
+        info.setSize(thumbnail ? thSize : fileSize);
         info.setUploadId(multipartUploadId);
         return info;
     }

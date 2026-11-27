@@ -151,7 +151,7 @@ public class FileController {
         cmd.setConfigId(req.getConfigId());
         cmd.setChannelCode(req.getChannelCode());
         cmd.setOriginalFilename(req.getOriginalFilename());
-        cmd.setSize(req.getSize());
+        cmd.setFileSize(req.getFileSize());
         cmd.setObjectType(req.getObjectType());
         cmd.setObjectId(req.getObjectId());
         cmd.setModule(req.getModule());

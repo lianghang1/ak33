@@ -25,7 +25,7 @@ public class ConfigCreateRequest {
     private String valueType;
 
     /** 是否敏感值（创建时定初值，后续只能通过 /secret 改） */
-    private Boolean sensitive;
+    private Boolean isSensitive;
 
     private String remark;
     private String tenantId;
@@ -38,8 +38,8 @@ public class ConfigCreateRequest {
     public void setConfigValue(String configValue) { this.configValue = configValue; }
     public String getValueType() { return valueType; }
     public void setValueType(String valueType) { this.valueType = valueType; }
-    public Boolean getSensitive() { return sensitive; }
-    public void setSensitive(Boolean sensitive) { this.sensitive = sensitive; }
+    public Boolean getIsSensitive() { return isSensitive; }
+    public void setIsSensitive(Boolean isSensitive) { this.isSensitive = isSensitive; }
     public String getRemark() { return remark; }
     public void setRemark(String remark) { this.remark = remark; }
     public String getTenantId() { return tenantId; }

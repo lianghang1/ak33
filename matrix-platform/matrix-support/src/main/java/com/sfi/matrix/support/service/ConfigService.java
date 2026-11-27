@@ -26,13 +26,13 @@ import java.util.List;
 /**
  * 系统参数服务：CRUD + 平台默认兜底 + 分组 + 敏感值出口加密 + 缓存。
  *
- * <p><b>敏感值口径</b>：DB 与内部 Service 全程明文——sensitive 项落库即明文，conflux provider
+ * <p><b>敏感值口径</b>：DB 与内部 Service 全程明文——isSensitive 项落库即明文，conflux provider
  * 等内部代码直接 {@code get()} 拿明文使用；只有对外 HTTP 出口（{@link ConfigVO}）才把敏感值
  * 加密成 {@link SecretCipher} 密文对象。加密只在出口发生，不污染存储与内部读取。</p>
  *
- * <p><b>写入三段式</b>：{@link #create} 纯新增（业务键重复拒绝）定 sensitive 初值；
- * {@link #update} 改基础信息与非敏感值、绝不碰 sensitive；{@link #updateSecret} 是改敏感值和
- * sensitive 标志的唯一入口（Controller 侧独立权限点 + 审计）。基类 save 已停用。</p>
+ * <p><b>写入三段式</b>：{@link #create} 纯新增（业务键重复拒绝）定 isSensitive 初值；
+ * {@link #update} 改基础信息与非敏感值、绝不碰 isSensitive；{@link #updateSecret} 是改敏感值和
+ * isSensitive 标志的唯一入口（Controller 侧独立权限点 + 审计）。基类 save 已停用。</p>
  *
  * <p>取值顺序：当前租户 → 平台租户（PLATFORM）→ null。</p>
  *
@@ -71,21 +71,21 @@ public class ConfigService extends BaseService<SysConfig> {
         config.setConfigGroup(group);
         config.setConfigKey(req.getConfigKey());
         config.setConfigValue(req.getConfigValue());          // 明文落库
-        config.setSensitive(Boolean.TRUE.equals(req.getSensitive()));
+        config.setIsSensitive(Boolean.TRUE.equals(req.getIsSensitive()));
         config.setValueType(req.getValueType());
         config.setRemark(req.getRemark());
         return configRepository.save(config);
     }
 
     /**
-     * 基础信息修改：只改 remark/valueType 与非敏感值，绝不碰 sensitive。
+     * 基础信息修改：只改 remark/valueType 与非敏感值，绝不碰 isSensitive。
      * 目标已敏感时传 configValue → 拒绝并引导走 /secret。
      */
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = {SupportConstants.CACHE_CONFIG, SupportConstants.CACHE_CONFIG_GROUP}, allEntries = true)
     public SysConfig update(ConfigUpdateRequest req) {
         SysConfig config = require(req.getId());
-        if (req.getConfigValue() != null && Boolean.TRUE.equals(config.getSensitive())) {
+        if (req.getConfigValue() != null && Boolean.TRUE.equals(config.getIsSensitive())) {
             throw BizException.of(GlobalErrorCode.BAD_REQUEST,
                     "敏感参数的值必须通过 /secret 修改：{}", config.getConfigKey());
         }
@@ -101,19 +101,19 @@ public class ConfigService extends BaseService<SysConfig> {
         return configRepository.save(config);
     }
 
-    /** 敏感专用修改：改值和/或 sensitive 标志，明文落库。两个字段都不给则拒绝。 */
+    /** 敏感专用修改：改值和/或 isSensitive 标志，明文落库。两个字段都不给则拒绝。 */
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(value = {SupportConstants.CACHE_CONFIG, SupportConstants.CACHE_CONFIG_GROUP}, allEntries = true)
     public SysConfig updateSecret(ConfigSecretRequest req) {
-        if (req.getConfigValue() == null && req.getSensitive() == null) {
-            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "configValue 与 sensitive 至少提供一个");
+        if (req.getConfigValue() == null && req.getIsSensitive() == null) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "configValue 与 isSensitive 至少提供一个");
         }
         SysConfig config = require(req.getId());
         if (req.getConfigValue() != null) {
             config.setConfigValue(req.getConfigValue());      // 明文落库
         }
-        if (req.getSensitive() != null) {
-            config.setSensitive(req.getSensitive());
+        if (req.getIsSensitive() != null) {
+            config.setIsSensitive(req.getIsSensitive());
         }
         return configRepository.save(config);
     }
@@ -196,13 +196,13 @@ public class ConfigService extends BaseService<SysConfig> {
         vo.setConfigGroup(src.getConfigGroup());
         vo.setConfigKey(src.getConfigKey());
         vo.setValueType(src.getValueType());
-        vo.setSensitive(src.getSensitive());
+        vo.setIsSensitive(src.getIsSensitive());
         vo.setRemark(src.getRemark());
         vo.setCreateTime(src.getCreateTime());
         vo.setUpdateTime(src.getUpdateTime());
         vo.setCreateBy(src.getCreateBy());
         vo.setUpdateBy(src.getUpdateBy());
-        vo.setConfigValue(Boolean.TRUE.equals(src.getSensitive())
+        vo.setConfigValue(Boolean.TRUE.equals(src.getIsSensitive())
                 ? encrypt(src.getConfigValue()) : src.getConfigValue());
         return vo;
     }
@@ -212,7 +212,7 @@ public class ConfigService extends BaseService<SysConfig> {
         if (src == null) {
             return null;
         }
-        return Boolean.TRUE.equals(src.getSensitive()) ? encrypt(src.getConfigValue()) : src.getConfigValue();
+        return Boolean.TRUE.equals(src.getIsSensitive()) ? encrypt(src.getConfigValue()) : src.getConfigValue();
     }
 
     private static SecretCipher encrypt(String plain) {
@@ -254,7 +254,7 @@ public class ConfigService extends BaseService<SysConfig> {
         copy.setConfigGroup(src.getConfigGroup());
         copy.setConfigKey(src.getConfigKey());
         copy.setValueType(src.getValueType());
-        copy.setSensitive(src.getSensitive());
+        copy.setIsSensitive(src.getIsSensitive());
         copy.setRemark(src.getRemark());
         copy.setConfigValue(src.getConfigValue());
         copy.setCreateTime(src.getCreateTime());

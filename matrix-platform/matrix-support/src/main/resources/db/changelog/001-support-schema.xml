@@ -23,7 +23,7 @@
                  VARCHAR(2048) 不够；明文落库，对外出口由 Controller 加密 -->
             <column name="config_value" type="CLOB" remarks="参数值（明文落库，敏感项对外出口加密）"/>
             <column name="value_type" type="VARCHAR(16)" defaultValue="STRING" remarks="值类型 STRING/INT/BOOL/JSON"/>
-            <column name="sensitive" type="BOOLEAN" defaultValueBoolean="false"
+            <column name="is_sensitive" type="BOOLEAN" defaultValueBoolean="false"
                     remarks="是否敏感值（写入加密落库、读取解密返回）">
                 <constraints nullable="false"/>
             </column>
@@ -111,7 +111,7 @@
             <column name="filename" type="VARCHAR(255)" remarks="原图存储文件名"/>
             <column name="original_filename" type="VARCHAR(255)" remarks="用户上传原始文件名"/>
             <column name="raw_url" type="VARCHAR(1024)" remarks="原图原始地址（未签名）"/>
-            <column name="size" type="BIGINT" remarks="原图字节数"/>
+            <column name="file_size" type="BIGINT" remarks="原图字节数"/>
             <column name="extension" type="VARCHAR(32)" remarks="原图扩展名"/>
             <column name="content_type" type="VARCHAR(128)" remarks="原图MIME"/>
             <column name="file_type" type="VARCHAR(32)"

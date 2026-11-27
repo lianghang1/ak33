@@ -84,7 +84,7 @@ public class FileUploadSupport {
         record.setPath(info.getPath());
         record.setFilename(info.getFilename());
         record.setRawUrl(info.getUrl());
-        record.setSize(info.getSize());
+        record.setFileSize(info.getSize());
         record.setExtension(info.getExt());
 
         HashInfo hash = info.getHashInfo();

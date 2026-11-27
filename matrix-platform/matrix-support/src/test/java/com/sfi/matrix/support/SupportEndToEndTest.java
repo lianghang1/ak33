@@ -258,9 +258,9 @@ class SupportEndToEndTest {
         apiKey.put("configGroup", "wechat.pay");
         apiKey.put("configKey", "apiKey");
         apiKey.put("configValue", plainApiKey);
-        apiKey.put("sensitive", true);
+        apiKey.put("isSensitive", true);
         JsonNode saved = ok(postJson("/api/config/create", apiKey, adminToken));
-        assertTrue(saved.path("sensitive").asBoolean());
+        assertTrue(saved.path("isSensitive").asBoolean());
         // create 出口即加密：configValue 是密文对象，不是明文
         JsonNode cipherOut = saved.path("configValue");
         assertTrue(cipherOut.path("encrypted").asBoolean(), "敏感值出口应为密文对象");

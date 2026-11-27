@@ -23,7 +23,7 @@ public class MultipartInitCommand {
     /** 原始文件名，必填 */
     private String originalFilename;
     /** 文件总字节数 */
-    private Long size;
+    private Long fileSize;
 
     /** 业务归属类型 */
     private String objectType;

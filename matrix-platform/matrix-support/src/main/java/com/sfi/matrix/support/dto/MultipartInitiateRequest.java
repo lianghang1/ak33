@@ -26,7 +26,7 @@ public class MultipartInitiateRequest {
     private String originalFilename;
 
     @NotNull(message = "文件总字节数不能为空")
-    private Long size;
+    private Long fileSize;
 
     /** 业务归属类型 */
     private String objectType;

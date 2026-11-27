@@ -116,7 +116,7 @@ class FileMultipartServiceTest {
 
         MultipartInitCommand cmd = new MultipartInitCommand();
         cmd.setOriginalFilename("movie.mp4");
-        cmd.setSize(1000L);
+        cmd.setFileSize(1000L);
         MultipartInitResult result = service.initiate(cmd);
 
         assertEquals(1L, result.getFileId());
@@ -129,7 +129,7 @@ class FileMultipartServiceTest {
         when(storage.isSupportMultipartUpload("oss")).thenReturn(MultipartUploadSupportInfo.notSupport());
         MultipartInitCommand cmd = new MultipartInitCommand();
         cmd.setOriginalFilename("movie.mp4");
-        cmd.setSize(1000L);
+        cmd.setFileSize(1000L);
 
         assertThrows(com.sfi.scaffold.common.exception.BizException.class, () -> service.initiate(cmd));
         verify(storage, org.mockito.Mockito.never()).initiateMultipartUpload();

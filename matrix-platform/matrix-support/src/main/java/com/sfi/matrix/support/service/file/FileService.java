@@ -137,7 +137,7 @@ public class FileService {
         InitiateMultipartUploadPretreatment pre = storage.initiateMultipartUpload()
                 .setPlatform(ctx.getChannelCode())
                 .setOriginalFilename(cmd.getOriginalFilename())
-                .setSize(cmd.getSize())
+                .setSize(cmd.getFileSize())
                 .setContentType(ctx.getMime())
                 .setPath(ctx.getPath())
                 .setFileAcl(supportAcl, ctx.getAcl())
@@ -268,7 +268,7 @@ public class FileService {
         dto.setId(f.getId());
         dto.setFilename(f.getFilename());
         dto.setOriginalFilename(f.getOriginalFilename());
-        dto.setSize(f.getSize());
+        dto.setFileSize(f.getFileSize());
         dto.setContentType(f.getContentType());
         dto.setFileType(f.getFileType());
         dto.setRawUrl(f.getRawUrl());

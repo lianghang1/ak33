@@ -104,7 +104,7 @@ class FileControllerTest {
         result.setUploadId("upload-1");
         when(service.initiate(any())).thenReturn(result);
 
-        String body = "{\"originalFilename\":\"movie.mp4\",\"size\":1000,\"objectType\":\"CEMETERY\",\"objectId\":\"t-1\"}";
+        String body = "{\"originalFilename\":\"movie.mp4\",\"fileSize\":1000,\"objectType\":\"CEMETERY\",\"objectId\":\"t-1\"}";
         mvc.perform(post("/api/file/initiate").contentType("application/json").content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.uploadId").value("upload-1"));
@@ -113,7 +113,7 @@ class FileControllerTest {
                 org.mockito.ArgumentCaptor.forClass(com.sfi.matrix.support.dto.MultipartInitCommand.class);
         verify(service).initiate(cap.capture());
         org.junit.jupiter.api.Assertions.assertEquals("movie.mp4", cap.getValue().getOriginalFilename());
-        org.junit.jupiter.api.Assertions.assertEquals(1000L, cap.getValue().getSize());
+        org.junit.jupiter.api.Assertions.assertEquals(1000L, cap.getValue().getFileSize());
     }
 
     @Test

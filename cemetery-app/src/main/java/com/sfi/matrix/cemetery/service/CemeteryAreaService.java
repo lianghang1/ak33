@@ -135,10 +135,10 @@ public class CemeteryAreaService extends BaseService<CemeteryArea> {
     /** 计算并写入 level/fullPath。 */
     private void applyDerived(CemeteryArea area, CemeteryArea parent) {
         if (parent == null) {
-            area.setLevel(1);
+            area.setAreaLevel(1);
             area.setFullPath(area.getAreaName());
         } else {
-            area.setLevel(parent.getLevel() + 1);
+            area.setAreaLevel(parent.getAreaLevel() + 1);
             area.setFullPath(join(parent.getFullPath(), area.getAreaName()));
         }
     }

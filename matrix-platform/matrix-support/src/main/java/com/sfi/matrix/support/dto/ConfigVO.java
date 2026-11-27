@@ -20,7 +20,7 @@ public class ConfigVO {
     /** sensitive=false 时为明文 String；sensitive=true 时为 SecretCipher 密文对象 */
     private Object configValue;
     private String valueType;
-    private Boolean sensitive;
+    private Boolean isSensitive;
     private String remark;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
@@ -39,8 +39,8 @@ public class ConfigVO {
     public void setConfigValue(Object configValue) { this.configValue = configValue; }
     public String getValueType() { return valueType; }
     public void setValueType(String valueType) { this.valueType = valueType; }
-    public Boolean getSensitive() { return sensitive; }
-    public void setSensitive(Boolean sensitive) { this.sensitive = sensitive; }
+    public Boolean getIsSensitive() { return isSensitive; }
+    public void setIsSensitive(Boolean isSensitive) { this.isSensitive = isSensitive; }
     public String getRemark() { return remark; }
     public void setRemark(String remark) { this.remark = remark; }
     public LocalDateTime getCreateTime() { return createTime; }
