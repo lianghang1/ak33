@@ -3,7 +3,7 @@ package com.sfi.matrix.cemetery.config;
 import com.sfi.matrix.cemetery.CemeteryConstants;
 import com.sfi.matrix.iam.constant.IamConstants;
 import com.sfi.matrix.iam.entity.SysMenu;
-import com.sfi.matrix.iam.service.IamService;
+import com.sfi.matrix.iam.service.MenuService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -29,13 +29,13 @@ import org.springframework.stereotype.Component;
 @Order(Ordered.LOWEST_PRECEDENCE - 10)
 public class CemeteryMenuInitializer implements ApplicationRunner {
 
-    private final IamService iamService;
+    private final MenuService menuService;
 
     @Value("${matrix.cemetery.seed-menus:true}")
     private boolean seedMenus;
 
-    public CemeteryMenuInitializer(IamService iamService) {
-        this.iamService = iamService;
+    public CemeteryMenuInitializer(MenuService menuService) {
+        this.menuService = menuService;
     }
 
     @Override
@@ -52,12 +52,12 @@ public class CemeteryMenuInitializer implements ApplicationRunner {
     }
 
     private void seed(String permission, String name, int sortNo, String apiPattern) {
-        SysMenu exists = iamService.findMenuByPermission(permission);
+        SysMenu exists = menuService.findByPermission(permission);
         if (exists == null) {
-            iamService.createMenu(name, "C", null, permission,
+            menuService.create(name, "C", null, permission,
                     IamConstants.MENU_SCOPE_COMMON, sortNo, apiPattern);
         } else {
-            iamService.ensureMenuApiPattern(permission, apiPattern);
+            menuService.ensureApiPattern(permission, apiPattern);
         }
     }
 }

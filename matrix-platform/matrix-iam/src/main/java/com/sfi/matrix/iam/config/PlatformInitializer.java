@@ -3,6 +3,7 @@ package com.sfi.matrix.iam.config;
 import com.sfi.matrix.iam.constant.IamConstants;
 import com.sfi.matrix.iam.entity.SysMenu;
 import com.sfi.matrix.iam.service.IamService;
+import com.sfi.matrix.iam.service.MenuService;
 import com.sfi.scaffold.starter.security.policy.PasswordPolicyValidator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Component;
 public class PlatformInitializer implements ApplicationRunner {
 
     private final IamService iamService;
+    private final MenuService menuService;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicyValidator passwordPolicyValidator;
 
@@ -45,9 +47,11 @@ public class PlatformInitializer implements ApplicationRunner {
     @Value("${matrix.platform.seed-menus:true}")
     private boolean seedMenus;
 
-    public PlatformInitializer(IamService iamService, PasswordEncoder passwordEncoder,
+    public PlatformInitializer(IamService iamService, MenuService menuService,
+                               PasswordEncoder passwordEncoder,
                                PasswordPolicyValidator passwordPolicyValidator) {
         this.iamService = iamService;
+        this.menuService = menuService;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicyValidator = passwordPolicyValidator;
     }
@@ -103,12 +107,12 @@ public class PlatformInitializer implements ApplicationRunner {
     }
 
     private void seed(String permission, String name, String type, int sortNo, String apiPattern) {
-        SysMenu exists = iamService.findMenuByPermission(permission);
+        SysMenu exists = menuService.findByPermission(permission);
         if (exists == null) {
-            iamService.createMenu(name, type, null, permission,
+            menuService.create(name, type, null, permission,
                     IamConstants.MENU_SCOPE_PLATFORM, sortNo, apiPattern);
         } else {
-            iamService.ensureMenuApiPattern(permission, apiPattern);
+            menuService.ensureApiPattern(permission, apiPattern);
         }
     }
 }

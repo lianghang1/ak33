@@ -2,11 +2,10 @@ package com.sfi.matrix.iam.audit.controller;
 
 import com.sfi.matrix.iam.audit.entity.SysLoginLog;
 import com.sfi.matrix.iam.audit.entity.SysOperateLog;
-import com.sfi.matrix.iam.constant.IamConstants;
+import com.sfi.scaffold.common.request.PageParam;
+import com.sfi.scaffold.common.result.PageResult;
 import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.query.QueryUtilsX;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * 审计日志查询（QueryBean 通路②）。
+ * 审计日志查询（QueryBean 通路②，统一 1 基 PageResult）。
  *
  * @author lianghang
  */
@@ -23,28 +22,42 @@ import javax.servlet.http.HttpServletRequest;
 public class AuditController {
 
     @GetMapping("/login-logs")
-    public R<Page<SysLoginLog>> loginLogs(HttpServletRequest request) {
-        return R.ok(QueryUtilsX.doQuery(QueryUtilsX.parse(request.getParameterMap()),
-                PageRequest.of(page(request), size(request)), SysLoginLog.class));
+    public R<PageResult<SysLoginLog>> loginLogs(HttpServletRequest request) {
+        return R.ok(QueryUtilsX.queryPage(QueryUtilsX.parse(request.getParameterMap()),
+                pageParamOf(request), SysLoginLog.class));
     }
 
     @GetMapping("/operate-logs")
-    public R<Page<SysOperateLog>> operateLogs(HttpServletRequest request) {
-        return R.ok(QueryUtilsX.doQuery(QueryUtilsX.parse(request.getParameterMap()),
-                PageRequest.of(page(request), size(request)), SysOperateLog.class));
+    public R<PageResult<SysOperateLog>> operateLogs(HttpServletRequest request) {
+        return R.ok(QueryUtilsX.queryPage(QueryUtilsX.parse(request.getParameterMap()),
+                pageParamOf(request), SysOperateLog.class));
     }
 
-    private static int page(HttpServletRequest request) {
-        try {
-            String v = request.getParameter("page");
-            return v == null || v.isEmpty() ? 0 : Integer.parseInt(v);
-        } catch (NumberFormatException e) { return 0; }
+    /** 从 request 解析 1 基分页参数：pageNum/page（默认1）、pageSize/size（默认15）。 */
+    private static PageParam pageParamOf(HttpServletRequest request) {
+        PageParam p = new PageParam();
+        int pageNum = toInt(first(request, "pageNum", "page"), 1);
+        int pageSize = toInt(first(request, "pageSize", "size"), 15);
+        p.setPageNum(pageNum < 1 ? 1 : pageNum);
+        p.setPageSize(pageSize > 0 ? pageSize : 15);
+        return p;
     }
 
-    private static int size(HttpServletRequest request) {
+    private static String first(HttpServletRequest request, String... keys) {
+        for (String key : keys) {
+            String v = request.getParameter(key);
+            if (v != null && !v.isEmpty()) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    private static int toInt(String v, int def) {
         try {
-            String v = request.getParameter("size");
-            return v == null || v.isEmpty() ? 15 : Math.min(Integer.parseInt(v), 200);
-        } catch (NumberFormatException e) { return 15; }
+            return v == null || v.isEmpty() ? def : Integer.parseInt(v.trim());
+        } catch (NumberFormatException e) {
+            return def;
+        }
     }
 }

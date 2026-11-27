@@ -286,11 +286,11 @@ class IamEndToEndTest {
         // 操作日志已由 @OperateLog 落库
         assertTrue(operateLogRepository.count() >= 1, "操作日志应落库");
         MvcResult result = mockMvc.perform(get("/api/audit/operate-logs")
-                        .param("page", "0").param("size", "10")
+                        .param("page", "1").param("size", "10")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn();
         JsonNode page = ok(result);
-        assertTrue(page.has("content"));
+        assertTrue(page.has("list"));
     }
 
     @Test

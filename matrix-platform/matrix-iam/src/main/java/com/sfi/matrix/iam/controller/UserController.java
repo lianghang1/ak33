@@ -1,17 +1,17 @@
 package com.sfi.matrix.iam.controller;
 
 import com.sfi.matrix.iam.audit.annotation.OperateLog;
-import com.sfi.scaffold.starter.web.crud.PageQuerySupport;
 import com.sfi.matrix.iam.dto.AssignRolesRequest;
 import com.sfi.matrix.iam.dto.AssignTenantRequest;
 import com.sfi.matrix.iam.dto.UserRequest;
 import com.sfi.matrix.iam.entity.SysUser;
 import com.sfi.matrix.iam.entity.SysUserTenant;
 import com.sfi.matrix.iam.service.IamService;
+import com.sfi.matrix.iam.service.UserService;
 import com.sfi.scaffold.common.request.IdRequest;
-import com.sfi.scaffold.common.result.PageResult;
 import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.starter.security.policy.PasswordPolicyValidator;
+import com.sfi.scaffold.starter.web.crud.BaseCrudController;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,58 +20,50 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.List;
 import java.util.Set;
 
 /**
- * 用户接口：用户维护、租户归属、角色/权限查询。
+ * 用户接口：list/get/delete 走 CRUD 基类；租户归属/角色分配与权限计算属跨实体编排，保留 IamService。
  *
  * @author lianghang
  */
 @RestController
 @RequestMapping("/api/iam/user")
-public class UserController {
+public class UserController extends BaseCrudController<SysUser, UserRequest, UserService> {
 
     private final IamService iamService;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicyValidator passwordPolicyValidator;
 
-    public UserController(IamService iamService, PasswordEncoder passwordEncoder,
+    public UserController(UserService service, IamService iamService,
+                          PasswordEncoder passwordEncoder,
                           PasswordPolicyValidator passwordPolicyValidator) {
+        super(service, SysUser.class);
         this.iamService = iamService;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicyValidator = passwordPolicyValidator;
     }
 
+    @Override
     @OperateLog(module = "用户管理", operation = "新增/修改用户")
     @PostMapping("/save")
     public R<SysUser> save(@Valid @RequestBody UserRequest req) {
         if (req.getId() == null) {
             passwordPolicyValidator.validate(req.getPassword());
-            return R.ok(iamService.createUser(req.getUsername(), passwordEncoder.encode(req.getPassword()),
+            return R.ok(service.create(req.getUsername(), passwordEncoder.encode(req.getPassword()),
                     req.getNickname()));
         }
-        return R.ok(iamService.updateUser(req.getId(), req.getNickname(), req.getMobile(), req.getEmail(),
+        return R.ok(service.update(req.getId(), req.getNickname(), req.getMobile(), req.getEmail(),
                 req.getAccountType(), req.getStatus(), req.getMaxSessions()));
     }
 
-    @GetMapping("/get")
-    public R<SysUser> get(@RequestParam Long id) {
-        return R.ok(iamService.getUser(id));
-    }
-
+    @Override
     @OperateLog(module = "用户管理", operation = "删除用户")
     @PostMapping("/delete")
     public R<Void> delete(@Valid @RequestBody IdRequest req) {
-        iamService.deleteUser(req.getId());
-        return R.ok();
-    }
-
-    @GetMapping("/list")
-    public R<PageResult<SysUser>> list(HttpServletRequest request) {
-        return R.ok(PageQuerySupport.query(request, SysUser.class));
+        return super.delete(req);
     }
 
     @OperateLog(module = "用户管理", operation = "分配用户租户")

@@ -12,14 +12,13 @@ import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.matrix.support.entity.SysFilePart;
 import com.sfi.matrix.support.service.file.FileService;
 import com.sfi.scaffold.common.request.IdRequest;
+import com.sfi.scaffold.common.request.PageParam;
 import com.sfi.scaffold.common.result.PageResult;
 import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.query.QueryUtilsX;
 import com.sfi.scaffold.query.filter.OperatorX;
 import com.sfi.scaffold.query.filter.QueryFilterX;
 import org.dromara.x.file.storage.core.upload.MultipartUploadSupportInfo;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -91,13 +90,13 @@ public class FileController {
     /** 列表查询 */
     @GetMapping("/list")
     public R<PageResult<FileDTO>> list(HttpServletRequest request) {
-        Page<SysFile> page = QueryUtilsX.doQuery(
-                QueryUtilsX.parse(request.getParameterMap()),
-                SUCCESS_OR_FILTERS,
-                PageRequest.of(pageNum(request) - 1, pageSize(request)),
-                SysFile.class);
-        List<FileDTO> list = page.getContent().stream().map(service::toDto).collect(Collectors.toList());
-        return R.ok(PageResult.of(list, page.getTotalElements(), pageNum(request), pageSize(request)));
+        PageParam page = new PageParam();
+        page.setPageNum(pageNum(request));
+        page.setPageSize(pageSize(request));
+        PageResult<SysFile> paged = QueryUtilsX.queryPage(
+                QueryUtilsX.parse(request.getParameterMap()), SUCCESS_OR_FILTERS, page, SysFile.class);
+        List<FileDTO> list = paged.getList().stream().map(service::toDto).collect(Collectors.toList());
+        return R.ok(PageResult.of(list, paged.getTotal(), paged.getPageNum(), paged.getPageSize()));
     }
 
     /** 查询平台是否支持手动分片上传 */
