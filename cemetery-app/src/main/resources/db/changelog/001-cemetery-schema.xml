@@ -6,7 +6,7 @@
             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
 
     <!-- 1. 墓区表：任意深度层级，parent_id 自关联 -->
-    <changeSet id="cem-001-01-create-area" author="matrix">
+    <changeSet id="cem-001-01-create-area" author="lianghang">
         <comment>墓区表：园/区多级层级节点</comment>
         <createTable tableName="cem_area" remarks="墓区">
             <column name="id" type="BIGINT">
@@ -46,7 +46,7 @@
     </changeSet>
 
     <!-- 2. 格位表：规划位置，可多于墓位 -->
-    <changeSet id="cem-001-02-create-grid-cell" author="matrix">
+    <changeSet id="cem-001-02-create-grid-cell" author="lianghang">
         <comment>格位表：initialized=false 表示待建</comment>
         <createTable tableName="cem_grid_cell" remarks="规划格位">
             <column name="id" type="BIGINT">
@@ -88,7 +88,7 @@
     </changeSet>
 
     <!-- 3. 墓位表：编号三元组快照，status 业务动作驱动 -->
-    <changeSet id="cem-001-03-create-tomb" author="matrix">
+    <changeSet id="cem-001-03-create-tomb" author="lianghang">
         <comment>墓位表：三标识落库快照，租户内编号唯一</comment>
         <createTable tableName="cem_tomb" remarks="墓位">
             <column name="id" type="BIGINT">

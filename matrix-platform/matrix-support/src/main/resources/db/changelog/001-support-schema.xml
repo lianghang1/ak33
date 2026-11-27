@@ -6,7 +6,7 @@
             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
 
     <!-- 系统参数：key-value 配置，分组 + 值类型 + 敏感加密，唯一键含 deleted 支持同键重建 -->
-    <changeSet id="support-001-sys-config" author="matrix">
+    <changeSet id="support-001-sys-config" author="lianghang">
         <createTable tableName="sys_config" remarks="系统参数">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_config"/>
@@ -43,7 +43,7 @@
     </changeSet>
 
     <!-- 字典（主表）：描述有哪些字典，dict_code 可修改，控制整组启停 -->
-    <changeSet id="support-001-sys-dict" author="matrix">
+    <changeSet id="support-001-sys-dict" author="lianghang">
         <createTable tableName="sys_dict" remarks="字典（主表）">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_dict"/>
@@ -66,7 +66,7 @@
     </changeSet>
 
     <!-- 字典选项（子表）：dict_id 关联 sys_dict.id，option_code 为字典内选项编码，平台兜底按 code 合并租户与平台两份 -->
-    <changeSet id="support-001-sys-dict-option" author="matrix">
+    <changeSet id="support-001-sys-dict-option" author="lianghang">
         <createTable tableName="sys_dict_option" remarks="字典选项（子表）">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_dict_option"/>
@@ -97,7 +97,7 @@
     </changeSet>
 
     <!-- 文件记录：原图与缩略图各占一组对称字段，同存一行 -->
-    <changeSet id="support-001-sys-file" author="matrix">
+    <changeSet id="support-001-sys-file" author="lianghang">
         <createTable tableName="sys_file" remarks="文件记录">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_file"/>
@@ -150,7 +150,7 @@
     </changeSet>
 
     <!-- 分片明细：临时数据，complete/abort 后物理删除，无 deleted 列 -->
-    <changeSet id="support-001-sys-file-part" author="matrix">
+    <changeSet id="support-001-sys-file-part" author="lianghang">
         <createTable tableName="sys_file_part" remarks="分片上传明细（临时数据）">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false" primaryKeyName="pk_sys_file_part"/>

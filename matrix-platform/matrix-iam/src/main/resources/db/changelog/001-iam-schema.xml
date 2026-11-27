@@ -7,7 +7,7 @@
 
     <!-- ============ 平台全局表（无 tenant_id，不参与租户过滤） ============ -->
 
-    <changeSet id="20261121-01" author="matrix">
+    <changeSet id="20261121-01" author="lianghang">
         <createTable tableName="sys_tenant" remarks="租户">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="tenant_code" type="VARCHAR(64)" remarks="租户编码"><constraints nullable="false"/></column>
@@ -25,7 +25,7 @@
         <addUniqueConstraint tableName="sys_tenant" columnNames="tenant_code" constraintName="uk_sys_tenant_code"/>
     </changeSet>
 
-    <changeSet id="20261121-02" author="matrix">
+    <changeSet id="20261121-02" author="lianghang">
         <createTable tableName="sys_tenant_package" remarks="租户套餐（平台全局）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="package_code" type="VARCHAR(64)"><constraints nullable="false"/></column>
@@ -41,7 +41,7 @@
         <addUniqueConstraint tableName="sys_tenant_package" columnNames="package_code" constraintName="uk_sys_package_code"/>
     </changeSet>
 
-    <changeSet id="20261121-03" author="matrix">
+    <changeSet id="20261121-03" author="lianghang">
         <createTable tableName="sys_package_menu" remarks="套餐-菜单关联（平台全局）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="package_id" type="BIGINT"><constraints nullable="false"/></column>
@@ -55,7 +55,7 @@
         <addUniqueConstraint tableName="sys_package_menu" columnNames="package_id, menu_id" constraintName="uk_sys_package_menu"/>
     </changeSet>
 
-    <changeSet id="20261121-04" author="matrix">
+    <changeSet id="20261121-04" author="lianghang">
         <createTable tableName="sys_menu" remarks="菜单/权限点（平台全局定义）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="menu_name" type="VARCHAR(64)"><constraints nullable="false"/></column>
@@ -79,7 +79,7 @@
 
     <!-- ============ 账号主体（无 tenant_id） ============ -->
 
-    <changeSet id="20261121-05" author="matrix">
+    <changeSet id="20261121-05" author="lianghang">
         <createTable tableName="sys_user" remarks="系统用户账号主体（只存登录鉴权核心字段，username 全局唯一）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="account_type" type="VARCHAR(16)" defaultValue="OPERATOR" remarks="账号类型:OPERATOR/APP/MEMBER"><constraints nullable="false"/></column>
@@ -100,7 +100,7 @@
 
     <!-- ============ 用户资料（1:1）与社交绑定（1:N） ============ -->
 
-    <changeSet id="20261121-06" author="matrix">
+    <changeSet id="20261121-06" author="lianghang">
         <createTable tableName="sys_user_profile" remarks="用户资料（1:1，展示/业务用，不参与登录）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="user_id" type="BIGINT" remarks="对应 sys_user.id"><constraints nullable="false"/></column>
@@ -141,7 +141,7 @@
 
     <!-- ============ 租户隔离表（有 tenant_id + @Filter） ============ -->
 
-    <changeSet id="20261121-07" author="matrix">
+    <changeSet id="20261121-07" author="lianghang">
         <createTable tableName="sys_user_tenant" remarks="用户-租户归属（不标租户过滤，登录跨租户查）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="user_id" type="BIGINT"><constraints nullable="false"/></column>
@@ -160,7 +160,7 @@
         </createIndex>
     </changeSet>
 
-    <changeSet id="20261121-08" author="matrix">
+    <changeSet id="20261121-08" author="lianghang">
         <createTable tableName="sys_dept" remarks="部门（租户内组织结构）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="tenant_id" type="VARCHAR(64)"/>
@@ -180,7 +180,7 @@
         </createIndex>
     </changeSet>
 
-    <changeSet id="20261121-09" author="matrix">
+    <changeSet id="20261121-09" author="lianghang">
         <createTable tableName="sys_role" remarks="系统角色（租户内）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="tenant_id" type="VARCHAR(64)"/>
@@ -204,7 +204,7 @@
         </createIndex>
     </changeSet>
 
-    <changeSet id="20261121-10" author="matrix">
+    <changeSet id="20261121-10" author="lianghang">
         <createTable tableName="sys_user_role" remarks="用户-角色关联（租户内）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="tenant_id" type="VARCHAR(64)"/>
@@ -222,7 +222,7 @@
         </createIndex>
     </changeSet>
 
-    <changeSet id="20261121-11" author="matrix">
+    <changeSet id="20261121-11" author="lianghang">
         <createTable tableName="sys_role_menu" remarks="角色-菜单关联（租户内，菜单为全局定义）">
             <column name="id" type="BIGINT"><constraints primaryKey="true"/></column>
             <column name="tenant_id" type="VARCHAR(64)"/>
@@ -242,7 +242,7 @@
 
     <!-- ============ 审计日志 ============ -->
 
-    <changeSet id="20261121-12" author="matrix">
+    <changeSet id="20261121-12" author="lianghang">
         <createTable tableName="sys_login_log" remarks="登录审计日志">
             <column name="id" type="BIGINT"><constraints primaryKey="true" nullable="false"/></column>
             <column name="username" type="VARCHAR(64)"/>
@@ -277,7 +277,7 @@
         </createIndex>
     </changeSet>
 
-    <changeSet id="20261121-13" author="matrix">
+    <changeSet id="20261121-13" author="lianghang">
         <createTable tableName="sys_operate_log" remarks="操作审计日志">
             <column name="id" type="BIGINT"><constraints primaryKey="true" nullable="false"/></column>
             <column name="tenant_id" type="VARCHAR(64)"/>
