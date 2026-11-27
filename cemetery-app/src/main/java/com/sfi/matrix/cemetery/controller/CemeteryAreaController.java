@@ -4,7 +4,7 @@ import com.sfi.matrix.cemetery.dto.AreaMoveDto;
 import com.sfi.matrix.cemetery.dto.AreaSaveDto;
 import com.sfi.matrix.cemetery.entity.CemeteryArea;
 import com.sfi.matrix.cemetery.service.CemeteryAreaService;
-import com.sfi.matrix.iam.audit.annotation.OperateLog;
+import com.sfi.matrix.iam.annotation.OperateLog;
 import com.sfi.scaffold.common.request.IdRequest;
 import com.sfi.scaffold.common.result.R;
 import com.sfi.scaffold.starter.web.crud.BaseCrudController;

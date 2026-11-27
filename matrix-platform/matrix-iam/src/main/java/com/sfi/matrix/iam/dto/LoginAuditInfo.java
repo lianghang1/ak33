@@ -1,4 +1,4 @@
-package com.sfi.matrix.iam.audit.dto;
+package com.sfi.matrix.iam.dto;
 
 /**
  * 登录审计记录入参：承载 controller 侧采集的业务信息，环境信息（IP/UA/设备/traceId）由 AuditService 从请求补全。

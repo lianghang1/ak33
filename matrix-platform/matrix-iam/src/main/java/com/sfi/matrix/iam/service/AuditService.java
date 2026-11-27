@@ -1,11 +1,11 @@
-package com.sfi.matrix.iam.audit.service;
+package com.sfi.matrix.iam.service;
 
-import com.sfi.matrix.iam.audit.dto.LoginAuditInfo;
-import com.sfi.matrix.iam.audit.entity.SysLoginLog;
-import com.sfi.matrix.iam.audit.entity.SysOperateLog;
-import com.sfi.matrix.iam.audit.repository.SysLoginLogRepository;
-import com.sfi.matrix.iam.audit.repository.SysOperateLogRepository;
-import com.sfi.matrix.iam.audit.util.UserAgentUtils;
+import com.sfi.matrix.iam.dto.LoginAuditInfo;
+import com.sfi.matrix.iam.entity.SysLoginLog;
+import com.sfi.matrix.iam.entity.SysOperateLog;
+import com.sfi.matrix.iam.repository.SysLoginLogRepository;
+import com.sfi.matrix.iam.repository.SysOperateLogRepository;
+import com.sfi.matrix.iam.util.UserAgentUtils;
 import com.sfi.scaffold.common.constant.TraceConstants;
 import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.exception.ErrorCode;

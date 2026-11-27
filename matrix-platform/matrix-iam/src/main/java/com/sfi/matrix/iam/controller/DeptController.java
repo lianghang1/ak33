@@ -1,6 +1,6 @@
 package com.sfi.matrix.iam.controller;
 
-import com.sfi.matrix.iam.audit.annotation.OperateLog;
+import com.sfi.matrix.iam.annotation.OperateLog;
 import com.sfi.matrix.iam.dto.DeptRequest;
 import com.sfi.matrix.iam.entity.SysDept;
 import com.sfi.matrix.iam.service.DeptService;

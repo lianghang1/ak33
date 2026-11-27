@@ -2,8 +2,8 @@ package com.sfi.matrix.iam;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sfi.matrix.iam.audit.repository.SysLoginLogRepository;
-import com.sfi.matrix.iam.audit.repository.SysOperateLogRepository;
+import com.sfi.matrix.iam.repository.SysLoginLogRepository;
+import com.sfi.matrix.iam.repository.SysOperateLogRepository;
 import com.sfi.matrix.iam.config.IamAutoConfiguration;
 import com.sfi.scaffold.starter.security.token.TokenService;
 import org.junit.jupiter.api.AfterAll;
@@ -142,7 +142,7 @@ class IamEndToEndTest {
         assertEquals("OPERATOR", data.path("accountType").asText());
         // 登录日志落库，且关键审计字段齐全
         assertTrue(loginLogRepository.count() >= 1, "登录日志应落库");
-        com.sfi.matrix.iam.audit.entity.SysLoginLog log = loginLogRepository.findAll().stream()
+        com.sfi.matrix.iam.entity.SysLoginLog log = loginLogRepository.findAll().stream()
                 .filter(l -> Boolean.TRUE.equals(l.getSuccess()))
                 .findFirst().orElse(null);
         assertNotNull(log, "成功登录日志应落库");
@@ -169,7 +169,7 @@ class IamEndToEndTest {
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)));
-        com.sfi.matrix.iam.audit.entity.SysLoginLog failed = loginLogRepository.findAll().stream()
+        com.sfi.matrix.iam.entity.SysLoginLog failed = loginLogRepository.findAll().stream()
                 .filter(l -> Boolean.FALSE.equals(l.getSuccess()))
                 .findFirst().orElse(null);
         assertNotNull(failed, "失败登录应落库");

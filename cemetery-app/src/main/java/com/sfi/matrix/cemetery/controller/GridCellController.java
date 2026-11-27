@@ -4,7 +4,7 @@ import com.sfi.matrix.cemetery.dto.GridCellSaveDto;
 import com.sfi.matrix.cemetery.dto.GridGenerateDto;
 import com.sfi.matrix.cemetery.entity.GridCell;
 import com.sfi.matrix.cemetery.service.GridCellService;
-import com.sfi.matrix.iam.audit.annotation.OperateLog;
+import com.sfi.matrix.iam.annotation.OperateLog;
 import com.sfi.scaffold.common.request.IdRequest;
 import com.sfi.scaffold.common.result.R;
 import org.springframework.web.bind.annotation.GetMapping;

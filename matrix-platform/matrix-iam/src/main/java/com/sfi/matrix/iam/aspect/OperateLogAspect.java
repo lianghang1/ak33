@@ -1,9 +1,9 @@
-package com.sfi.matrix.iam.audit.aspect;
+package com.sfi.matrix.iam.aspect;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sfi.matrix.iam.audit.annotation.OperateLog;
-import com.sfi.matrix.iam.audit.entity.SysOperateLog;
-import com.sfi.matrix.iam.audit.service.AuditService;
+import com.sfi.matrix.iam.annotation.OperateLog;
+import com.sfi.matrix.iam.entity.SysOperateLog;
+import com.sfi.matrix.iam.service.AuditService;
 import com.sfi.scaffold.common.util.IpUtils;
 import com.sfi.scaffold.starter.security.identity.LoginContext;
 import com.sfi.scaffold.starter.security.identity.LoginUser;

@@ -1,6 +1,6 @@
 package com.sfi.matrix.support.controller;
 
-import com.sfi.matrix.iam.audit.annotation.OperateLog;
+import com.sfi.matrix.iam.annotation.OperateLog;
 import com.sfi.matrix.support.dto.ConfigCreateRequest;
 import com.sfi.matrix.support.dto.ConfigSecretRequest;
 import com.sfi.matrix.support.dto.ConfigUpdateRequest;

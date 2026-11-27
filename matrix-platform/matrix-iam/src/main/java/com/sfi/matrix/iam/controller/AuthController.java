@@ -1,7 +1,7 @@
 package com.sfi.matrix.iam.controller;
 
-import com.sfi.matrix.iam.audit.dto.LoginAuditInfo;
-import com.sfi.matrix.iam.audit.service.AuditService;
+import com.sfi.matrix.iam.dto.LoginAuditInfo;
+import com.sfi.matrix.iam.service.AuditService;
 import com.sfi.matrix.iam.auth.AuthService;
 import com.sfi.matrix.iam.auth.AuthType;
 import com.sfi.matrix.iam.dto.ChangePasswordRequest;

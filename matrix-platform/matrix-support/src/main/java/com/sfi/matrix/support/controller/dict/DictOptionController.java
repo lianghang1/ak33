@@ -1,6 +1,6 @@
 package com.sfi.matrix.support.controller.dict;
 
-import com.sfi.matrix.iam.audit.annotation.OperateLog;
+import com.sfi.matrix.iam.annotation.OperateLog;
 import com.sfi.matrix.support.dto.DictOptionRequest;
 import com.sfi.matrix.support.dto.DictOptionValue;
 import com.sfi.matrix.support.entity.SysDictOption;

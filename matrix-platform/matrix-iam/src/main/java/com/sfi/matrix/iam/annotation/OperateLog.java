@@ -1,4 +1,4 @@
-package com.sfi.matrix.iam.audit.annotation;
+package com.sfi.matrix.iam.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

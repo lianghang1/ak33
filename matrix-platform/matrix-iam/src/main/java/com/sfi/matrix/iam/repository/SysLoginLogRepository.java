@@ -1,6 +1,6 @@
-package com.sfi.matrix.iam.audit.repository;
+package com.sfi.matrix.iam.repository;
 
-import com.sfi.matrix.iam.audit.entity.SysLoginLog;
+import com.sfi.matrix.iam.entity.SysLoginLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

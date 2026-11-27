@@ -1,4 +1,4 @@
-package com.sfi.matrix.iam.audit.entity;
+package com.sfi.matrix.iam.entity;
 
 import com.sfi.scaffold.starter.data.jpa.entity.BaseEntity;
 import com.sfi.scaffold.starter.data.jpa.logicdelete.JpaDeletedFilterAspect;

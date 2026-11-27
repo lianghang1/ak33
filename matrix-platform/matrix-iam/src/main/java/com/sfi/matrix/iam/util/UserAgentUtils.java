@@ -1,4 +1,4 @@
-package com.sfi.matrix.iam.audit.util;
+package com.sfi.matrix.iam.util;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

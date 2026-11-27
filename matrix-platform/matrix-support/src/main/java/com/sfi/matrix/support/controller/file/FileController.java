@@ -1,6 +1,6 @@
 package com.sfi.matrix.support.controller.file;
 
-import com.sfi.matrix.iam.audit.annotation.OperateLog;
+import com.sfi.matrix.iam.annotation.OperateLog;
 import com.sfi.matrix.support.dto.FileDTO;
 import com.sfi.matrix.support.dto.FileUploadForm;
 import com.sfi.matrix.support.dto.MultipartInitiateRequest;
@@ -12,9 +12,9 @@ import com.sfi.matrix.support.entity.SysFile;
 import com.sfi.matrix.support.entity.SysFilePart;
 import com.sfi.matrix.support.service.file.FileService;
 import com.sfi.scaffold.common.request.IdRequest;
-import com.sfi.scaffold.common.request.PageParam;
 import com.sfi.scaffold.common.result.PageResult;
 import com.sfi.scaffold.common.result.R;
+import com.sfi.scaffold.common.util.PageParams;
 import com.sfi.scaffold.query.QueryUtilsX;
 import com.sfi.scaffold.query.filter.OperatorX;
 import com.sfi.scaffold.query.filter.QueryFilterX;
@@ -87,14 +87,12 @@ public class FileController {
         return R.ok(service.listByObject(objectType, objectId));
     }
 
-    /** 列表查询 */
+    /** 列表查询（分页参数走公共 PageParams，页长上限 200） */
     @GetMapping("/list")
     public R<PageResult<FileDTO>> list(HttpServletRequest request) {
-        PageParam page = new PageParam();
-        page.setPageNum(pageNum(request));
-        page.setPageSize(pageSize(request));
         PageResult<SysFile> paged = QueryUtilsX.queryPage(
-                QueryUtilsX.parse(request.getParameterMap()), SUCCESS_OR_FILTERS, page, SysFile.class);
+                QueryUtilsX.parse(request.getParameterMap()), SUCCESS_OR_FILTERS,
+                PageParams.of(request, 10, 200), SysFile.class);
         List<FileDTO> list = paged.getList().stream().map(service::toDto).collect(Collectors.toList());
         return R.ok(PageResult.of(list, paged.getTotal(), paged.getPageNum(), paged.getPageSize()));
     }
@@ -161,21 +159,4 @@ public class FileController {
         return cmd;
     }
 
-    private static int pageNum(HttpServletRequest request) {
-        try {
-            int v = Integer.parseInt(request.getParameter("pageNum"));
-            return Math.max(v, 1);
-        } catch (Exception e) {
-            return 1;
-        }
-    }
-
-    private static int pageSize(HttpServletRequest request) {
-        try {
-            int v = Integer.parseInt(request.getParameter("pageSize"));
-            return v > 0 ? Math.min(v, 200) : 10;
-        } catch (Exception e) {
-            return 10;
-        }
-    }
 }
