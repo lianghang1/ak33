@@ -2,6 +2,8 @@ package com.sfi.matrix.iam.repository;
 
 import com.sfi.matrix.iam.entity.SysUserTenant;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,4 +24,13 @@ public interface SysUserTenantRepository extends JpaRepository<SysUserTenant, Lo
     Optional<SysUserTenant> findByUserIdAndTenantIdAndDeletedFalse(Long userId, String tenantId);
 
     void deleteByUserId(Long userId);
+
+    /**
+     * 按部门统计用户数（部门树节点显示人数用）。
+     * 返回每行 [deptId, count]，deptId 为 null 表示未分配部门的用户。
+     */
+    @Query("select ut.deptId, count(distinct ut.userId) from SysUserTenant ut " +
+            "where ut.tenantId = :tenantId and ut.deleted = false and ut.status = 1 " +
+            "group by ut.deptId")
+    List<Object[]> countUsersByDept(@Param("tenantId") String tenantId);
 }

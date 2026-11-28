@@ -57,6 +57,26 @@ public class MenuService extends BaseService<SysMenu> {
         return menuRepository.save(menu);
     }
 
+    /** 新增菜单（界面全字段）：含路由/组件/图标/可见/URL规则。 */
+    @Transactional(rollbackFor = Exception.class)
+    public SysMenu createFull(String menuName, String menuType, Long parentId, String path,
+                              String component, String icon, String permission, String apiPattern,
+                              String menuScope, Integer sortNo, Boolean visible) {
+        SysMenu menu = new SysMenu();
+        menu.setMenuName(menuName);
+        menu.setMenuType(menuType);
+        menu.setParentId(parentId);
+        menu.setPath(path);
+        menu.setComponent(component);
+        menu.setIcon(icon);
+        menu.setPermission(permission);
+        menu.setApiPattern(apiPattern);
+        menu.setMenuScope(menuScope == null || menuScope.isEmpty() ? IamConstants.MENU_SCOPE_TENANT : menuScope);
+        menu.setSortNo(sortNo == null ? 0 : sortNo);
+        menu.setVisible(visible == null ? Boolean.TRUE : visible);
+        return menuRepository.save(menu);
+    }
+
     /** 按权限标识查菜单（种子幂等判断）。 */
     public SysMenu findByPermission(String permission) {
         return menuRepository.findByPermissionAndDeletedFalse(permission).orElse(null);
@@ -75,8 +95,8 @@ public class MenuService extends BaseService<SysMenu> {
     /** 修改菜单。查不到由 require 抛 NOT_FOUND。 */
     @Transactional(rollbackFor = Exception.class)
     public SysMenu update(Long id, String menuName, String menuType, Long parentId, String path,
-                          String component, String icon, String permission, String menuScope,
-                          Integer sortNo, Boolean visible) {
+                          String component, String icon, String permission, String apiPattern,
+                          String menuScope, Integer sortNo, Boolean visible) {
         SysMenu m = require(id);
         if (menuName != null && !menuName.trim().isEmpty()) {
             m.setMenuName(menuName);
@@ -96,6 +116,9 @@ public class MenuService extends BaseService<SysMenu> {
         }
         if (permission != null) {
             m.setPermission(permission);
+        }
+        if (apiPattern != null) {
+            m.setApiPattern(apiPattern);
         }
         if (menuScope != null && !menuScope.trim().isEmpty()) {
             m.setMenuScope(menuScope);

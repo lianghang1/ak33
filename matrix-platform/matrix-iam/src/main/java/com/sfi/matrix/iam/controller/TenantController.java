@@ -1,6 +1,7 @@
 package com.sfi.matrix.iam.controller;
 
 import com.sfi.matrix.iam.annotation.OperateLog;
+import com.sfi.matrix.iam.constant.IamConstants;
 import com.sfi.matrix.iam.dto.TenantRequest;
 import com.sfi.matrix.iam.entity.SysTenant;
 import com.sfi.matrix.iam.service.IamService;
@@ -40,6 +41,17 @@ public class TenantController extends BaseCrudController<SysTenant, TenantReques
         this.passwordPolicyValidator = passwordPolicyValidator;
     }
 
+    /** 租户是平台级元数据：仅平台超管可增删改；租户管理员一律拒绝。 */
+    private void assertPlatformAdmin() {
+        boolean ok = com.sfi.scaffold.starter.security.identity.LoginContext.currentOrNull() != null
+                && com.sfi.scaffold.starter.security.identity.LoginContext.current().getRoles() != null
+                && com.sfi.scaffold.starter.security.identity.LoginContext.current()
+                        .getRoles().contains(IamConstants.PLATFORM_ADMIN_ROLE_CODE);
+        if (!ok) {
+            throw new IllegalArgumentException("仅平台超管可管理租户");
+        }
+    }
+
     /** 返回唯一平台租户 ID（供字典/参数做默认配置兜底） */
     @GetMapping("/platform-tenant-id")
     public R<String> platformTenantId() {
@@ -53,6 +65,7 @@ public class TenantController extends BaseCrudController<SysTenant, TenantReques
     @OperateLog(module = "租户管理", operation = "新增/修改租户")
     @PostMapping("/save")
     public R<SysTenant> save(@Valid @RequestBody TenantRequest req) {
+        assertPlatformAdmin();
         if (req.getId() == null) {
             if (req.getAdminPassword() != null && !req.getAdminPassword().isEmpty()) {
                 passwordPolicyValidator.validate(req.getAdminPassword());
@@ -71,6 +84,7 @@ public class TenantController extends BaseCrudController<SysTenant, TenantReques
     @OperateLog(module = "租户管理", operation = "删除租户")
     @PostMapping("/delete")
     public R<Void> delete(@Valid @RequestBody IdRequest req) {
+        assertPlatformAdmin();
         return super.delete(req);
     }
 

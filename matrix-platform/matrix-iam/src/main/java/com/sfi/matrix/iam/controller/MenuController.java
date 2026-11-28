@@ -1,7 +1,6 @@
 package com.sfi.matrix.iam.controller;
 
 import com.sfi.matrix.iam.annotation.OperateLog;
-import com.sfi.matrix.iam.constant.IamConstants;
 import com.sfi.matrix.iam.dto.MenuRequest;
 import com.sfi.matrix.iam.entity.SysMenu;
 import com.sfi.matrix.iam.service.IamService;
@@ -42,14 +41,14 @@ public class MenuController extends BaseCrudController<SysMenu, MenuRequest, Men
     @PostMapping("/save")
     public R<SysMenu> save(@Valid @RequestBody MenuRequest req) {
         if (req.getId() == null) {
-            String scope = req.getMenuScope() == null || req.getMenuScope().isEmpty()
-                    ? IamConstants.MENU_SCOPE_TENANT : req.getMenuScope();
-            return R.ok(service.create(req.getMenuName(), req.getMenuType(), req.getParentId(),
-                    req.getPermission(), scope, req.getSortNo() == null ? 0 : req.getSortNo()));
+            return R.ok(service.createFull(req.getMenuName(), req.getMenuType(), req.getParentId(),
+                    req.getPath(), req.getComponent(), req.getIcon(), req.getPermission(),
+                    req.getApiPattern(), req.getMenuScope(), req.getSortNo(), req.getVisible()));
         }
         return R.ok(service.update(req.getId(), req.getMenuName(), req.getMenuType(),
                 req.getParentId(), req.getPath(), req.getComponent(), req.getIcon(),
-                req.getPermission(), req.getMenuScope(), req.getSortNo(), req.getVisible()));
+                req.getPermission(), req.getApiPattern(), req.getMenuScope(),
+                req.getSortNo(), req.getVisible()));
     }
 
     @Override

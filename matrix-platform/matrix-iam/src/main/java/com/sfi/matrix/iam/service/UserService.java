@@ -31,15 +31,31 @@ public class UserService extends BaseService<SysUser> {
     /** 新增用户：用户名唯一校验 + 幂等建资料。encodedPassword 由 Controller 编码后传入。 */
     @Transactional(rollbackFor = Exception.class)
     public SysUser create(String username, String encodedPassword, String nickname) {
+        return create(username, encodedPassword, nickname, null, null, null, null, null, null);
+    }
+
+    /**
+     * 新增用户（完整字段）：修复此前新增时 mobile/email/status/maxSessions/sex/remark 被丢弃的问题。
+     * encodedPassword 由 Controller 编码后传入。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public SysUser create(String username, String encodedPassword, String nickname,
+                          String mobile, String email, Integer status, Integer maxSessions,
+                          Integer sex, String remark) {
         userRepository.findByUsernameAndDeletedFalse(username).ifPresent(u -> {
             throw new IllegalArgumentException("用户名已存在：" + username);
         });
         SysUser user = new SysUser();
         user.setUsername(username);
         user.setPassword(encodedPassword);
-        user.setStatus(1);
+        user.setStatus(status == null ? 1 : status);
+        user.setMobile(mobile);
+        user.setEmail(email);
+        if (maxSessions != null) {
+            user.setMaxSessions(maxSessions);
+        }
         user = userRepository.save(user);
-        saveProfile(user.getId(), nickname);
+        saveProfile(user.getId(), nickname, sex, remark);
         return user;
     }
 
@@ -47,6 +63,14 @@ public class UserService extends BaseService<SysUser> {
     @Transactional(rollbackFor = Exception.class)
     public SysUser update(Long id, String nickname, String mobile, String email,
                           String accountType, Integer status, Integer maxSessions) {
+        return update(id, nickname, mobile, email, accountType, status, maxSessions, null, null);
+    }
+
+    /** 修改用户（完整字段）：含资料 sex/remark。 */
+    @Transactional(rollbackFor = Exception.class)
+    public SysUser update(Long id, String nickname, String mobile, String email,
+                          String accountType, Integer status, Integer maxSessions,
+                          Integer sex, String remark) {
         SysUser u = require(id);
         if (mobile != null) {
             u.setMobile(mobile);
@@ -64,16 +88,20 @@ public class UserService extends BaseService<SysUser> {
             u.setMaxSessions(maxSessions);
         }
         u = userRepository.save(u);
-        if (nickname != null) {
-            saveProfile(id, nickname);
-        }
+        saveProfile(id, nickname, sex, remark);
         return u;
     }
 
     /** 建/更新用户资料，幂等。公开供 IamService 编排层（建租户管理员/平台超管）复用。 */
     @Transactional(rollbackFor = Exception.class)
     public void saveProfile(Long userId, String nickname) {
-        if (nickname == null || nickname.trim().isEmpty()) {
+        saveProfile(userId, nickname, null, null);
+    }
+
+    /** 建/更新用户资料（完整字段），幂等；全部字段为 null 时不落库。 */
+    @Transactional(rollbackFor = Exception.class)
+    public void saveProfile(Long userId, String nickname, Integer sex, String remark) {
+        if (nickname == null && sex == null && remark == null) {
             return;
         }
         SysUserProfile profile = userProfileRepository.findByUserIdAndDeletedFalse(userId)
@@ -82,7 +110,20 @@ public class UserService extends BaseService<SysUser> {
                     p.setUserId(userId);
                     return p;
                 });
-        profile.setNickname(nickname);
+        if (nickname != null) {
+            profile.setNickname(nickname);
+        }
+        if (sex != null) {
+            profile.setSex(sex);
+        }
+        if (remark != null) {
+            profile.setRemark(remark);
+        }
         userProfileRepository.save(profile);
+    }
+
+    /** 读取用户资料（1:1），无资料返回 null。 */
+    public SysUserProfile profileOf(Long userId) {
+        return userProfileRepository.findByUserIdAndDeletedFalse(userId).orElse(null);
     }
 }

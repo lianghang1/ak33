@@ -38,6 +38,10 @@ public class SysRole extends BaseEntity {
     @Column(name = "sort_no")
     private Integer sortNo;
 
+    /** 状态：1启用 0停用 */
+    @Column(name = "status")
+    private Integer status = 1;
+
     /**
      * 角色类型（决定权限推导行为）：PLATFORM_ADMIN / TENANT_ADMIN / NORMAL。
      * 超管为隐式权限，菜单不落 sys_role_menu，由服务层按 scope/套餐动态推导。
@@ -93,6 +97,14 @@ public class SysRole extends BaseEntity {
 
     public void setSortNo(Integer sortNo) {
         this.sortNo = sortNo;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
     }
 
     public String getRoleType() {

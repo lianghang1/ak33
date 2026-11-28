@@ -2,6 +2,7 @@ package com.sfi.matrix.iam.service;
 
 import com.sfi.matrix.iam.entity.SysDept;
 import com.sfi.matrix.iam.repository.SysDeptRepository;
+import com.sfi.matrix.iam.repository.SysUserTenantRepository;
 import com.sfi.scaffold.common.exception.BizException;
 import com.sfi.scaffold.common.exception.GlobalErrorCode;
 import com.sfi.scaffold.starter.data.jpa.service.BaseService;
@@ -19,10 +20,12 @@ import java.util.List;
 public class DeptService extends BaseService<SysDept> {
 
     private final SysDeptRepository deptRepository;
+    private final SysUserTenantRepository userTenantRepository;
 
-    public DeptService(SysDeptRepository deptRepository) {
+    public DeptService(SysDeptRepository deptRepository, SysUserTenantRepository userTenantRepository) {
         super(deptRepository);
         this.deptRepository = deptRepository;
+        this.userTenantRepository = userTenantRepository;
     }
 
     /** 新增部门。 */
@@ -55,6 +58,44 @@ public class DeptService extends BaseService<SysDept> {
             d.setStatus(status);
         }
         return deptRepository.save(d);
+    }
+
+    /**
+     * 按租户查部门树（芋道式左侧部门树）。按 sortNo 排序后装配成树。
+     * 显式带 tenantId 条件查询，不依赖 Hibernate 租户过滤（平台管理员可跨租户查看）。
+     */
+    @SuppressWarnings("unchecked")
+    public java.util.List<java.util.Map<String, Object>> treeOfTenant(String tenantId) {
+        java.util.List<SysDept> depts = deptRepository.findByTenantIdAndDeletedFalse(tenantId).stream()
+                .sorted(java.util.Comparator.comparing(d -> d.getSortNo() == null ? 0 : d.getSortNo()))
+                .collect(java.util.stream.Collectors.toList());
+        // 部门用户数：按 deptId 聚合，供树节点直接显示
+        java.util.Map<Long, Long> userCount = new java.util.HashMap<>();
+        for (Object[] row : userTenantRepository.countUsersByDept(tenantId)) {
+            if (row[0] != null && row[1] != null) {
+                userCount.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+            }
+        }
+
+        java.util.List<java.util.Map<String, Object>> nodes = new java.util.ArrayList<>();
+        for (SysDept d : depts) {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", d.getId());
+            m.put("deptName", d.getDeptName());
+            m.put("parentId", d.getParentId());
+            m.put("sortNo", d.getSortNo());
+            m.put("leaderId", d.getLeaderId());
+            m.put("status", d.getStatus());
+            // 本部门直属人数（不含子部门，前端如需含子部门可自行累加 children）
+            m.put("userCount", userCount.getOrDefault(d.getId(), 0L));
+            nodes.add(m);
+        }
+        return com.sfi.scaffold.common.util.TreeUtils.build(
+                nodes,
+                m -> (Long) m.get("id"),
+                m -> (Long) m.get("parentId"),
+                null,
+                (m, children) -> m.put("children", children));
     }
 
     /** 删除部门：存在子部门时拒绝。 */

@@ -1,13 +1,16 @@
 package com.sfi.matrix.iam.controller;
 
 import com.sfi.matrix.iam.annotation.OperateLog;
+import com.sfi.matrix.iam.constant.IamConstants;
 import com.sfi.matrix.iam.dto.AssignMenusRequest;
 import com.sfi.matrix.iam.dto.PackageRequest;
 import com.sfi.matrix.iam.entity.SysTenantPackage;
+import com.sfi.matrix.iam.plan.PackageListPlan;
 import com.sfi.matrix.iam.service.IamService;
 import com.sfi.matrix.iam.service.PackageService;
 import com.sfi.scaffold.common.request.IdRequest;
 import com.sfi.scaffold.common.result.R;
+import com.sfi.scaffold.query.plan.annotation.QueryPlanX;
 import com.sfi.scaffold.starter.web.crud.BaseCrudController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,6 +30,7 @@ import javax.validation.Valid;
  */
 @RestController
 @RequestMapping("/api/iam/package")
+@QueryPlanX({PackageListPlan.class})
 public class PackageController extends BaseCrudController<SysTenantPackage, PackageRequest, PackageService> {
 
     private final IamService iamService;
@@ -36,10 +40,22 @@ public class PackageController extends BaseCrudController<SysTenantPackage, Pack
         this.iamService = iamService;
     }
 
+    /** 套餐是平台级元数据：仅平台超管可增删改/授权。 */
+    private void assertPlatformAdmin() {
+        boolean ok = com.sfi.scaffold.starter.security.identity.LoginContext.currentOrNull() != null
+                && com.sfi.scaffold.starter.security.identity.LoginContext.current().getRoles() != null
+                && com.sfi.scaffold.starter.security.identity.LoginContext.current()
+                        .getRoles().contains(IamConstants.PLATFORM_ADMIN_ROLE_CODE);
+        if (!ok) {
+            throw new IllegalArgumentException("仅平台超管可管理套餐");
+        }
+    }
+
     @Override
     @OperateLog(module = "套餐管理", operation = "新增/修改套餐")
     @PostMapping("/save")
     public R<SysTenantPackage> save(@Valid @RequestBody PackageRequest req) {
+        assertPlatformAdmin();
         if (req.getId() == null) {
             return R.ok(service.create(req.getPackageCode(), req.getPackageName(), req.getRemark()));
         }
@@ -50,6 +66,7 @@ public class PackageController extends BaseCrudController<SysTenantPackage, Pack
     @OperateLog(module = "套餐管理", operation = "删除套餐")
     @PostMapping("/delete")
     public R<Void> delete(@Valid @RequestBody IdRequest req) {
+        assertPlatformAdmin();
         return super.delete(req);
     }
 
@@ -61,6 +78,7 @@ public class PackageController extends BaseCrudController<SysTenantPackage, Pack
     @OperateLog(module = "套餐管理", operation = "分配套餐菜单")
     @PostMapping("/assign-menus")
     public R<Void> assignMenus(@Valid @RequestBody AssignMenusRequest req) {
+        assertPlatformAdmin();
         iamService.assignPackageMenus(req.getPackageId(), req.getMenuIds());
         return R.ok();
     }

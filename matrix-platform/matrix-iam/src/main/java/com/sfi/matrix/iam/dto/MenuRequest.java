@@ -18,6 +18,8 @@ public class MenuRequest {
     private String component;
     private String icon;
     private String permission;
+    /** URL 权限规则（Ant 风格，多个逗号分隔），声明该菜单守护的后端 URL */
+    private String apiPattern;
     /** PLATFORM / TENANT / COMMON */
     private String menuScope;
     private Integer sortNo;
@@ -40,6 +42,8 @@ public class MenuRequest {
     public void setIcon(String icon) { this.icon = icon; }
     public String getPermission() { return permission; }
     public void setPermission(String permission) { this.permission = permission; }
+    public String getApiPattern() { return apiPattern; }
+    public void setApiPattern(String apiPattern) { this.apiPattern = apiPattern; }
     public String getMenuScope() { return menuScope; }
     public void setMenuScope(String menuScope) { this.menuScope = menuScope; }
     public Integer getSortNo() { return sortNo; }

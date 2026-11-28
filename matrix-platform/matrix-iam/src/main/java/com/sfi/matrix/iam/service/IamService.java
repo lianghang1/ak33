@@ -431,6 +431,134 @@ public class IamService {
         return userTenantRepository.findByUserIdAndDeletedFalse(userId);
     }
 
+    // ===== 用户聚合管理（芋道式一次提交：账号 + 资料 + 归属部门 + 角色） =====
+
+    /**
+     * 新增用户（聚合）：account + profile + 租户归属(含部门) + 角色，一次事务。
+     * encodedPassword 由 Controller 编码后传入。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public SysUser createUserFull(String username, String encodedPassword, String nickname,
+                                  String mobile, String email, Integer status, Integer maxSessions,
+                                  Integer sex, String remark, String tenantId, Long deptId,
+                                  List<Long> roleIds) {
+        assertDeptInTenant(deptId, tenantId);
+        assertRolesInTenant(roleIds, tenantId);
+        SysUser user = userService.create(username, encodedPassword, nickname, mobile, email,
+                status, maxSessions, sex, remark);
+        // 归属：已存在则更新部门，否则新建
+        SysUserTenant membership = userTenantRepository
+                .findByUserIdAndTenantIdAndDeletedFalse(user.getId(), tenantId)
+                .orElseGet(() -> {
+                    SysUserTenant ut = new SysUserTenant();
+                    ut.setUserId(user.getId());
+                    ut.setTenantId(tenantId);
+                    ut.setStatus(status == null ? 1 : status);
+                    return ut;
+                });
+        membership.setDeptId(deptId);
+        userTenantRepository.save(membership);
+        assignRoles(user.getId(), roleIds == null ? Collections.emptyList() : roleIds, tenantId);
+        return user;
+    }
+
+    /** 修改用户（聚合）：账号资料 + 资料 + 归属部门 + 角色，一次事务。 */
+    @Transactional(rollbackFor = Exception.class)
+    public SysUser updateUserFull(Long id, String nickname, String mobile, String email,
+                                  String accountType, Integer status, Integer maxSessions,
+                                  Integer sex, String remark, String tenantId, Long deptId,
+                                  List<Long> roleIds) {
+        assertDeptInTenant(deptId, tenantId);
+        assertRolesInTenant(roleIds, tenantId);
+        SysUser user = userService.update(id, nickname, mobile, email, accountType, status,
+                maxSessions, sex, remark);
+        SysUserTenant membership = userTenantRepository
+                .findByUserIdAndTenantIdAndDeletedFalse(id, tenantId)
+                .orElseGet(() -> {
+                    SysUserTenant ut = new SysUserTenant();
+                    ut.setUserId(id);
+                    ut.setTenantId(tenantId);
+                    return ut;
+                });
+        membership.setDeptId(deptId);
+        if (status != null) {
+            membership.setStatus(status);
+        }
+        userTenantRepository.save(membership);
+        assignRoles(id, roleIds == null ? Collections.emptyList() : roleIds, tenantId);
+        return user;
+    }
+
+    /** 用户详情回显（编辑抽屉用）：账号 + 资料 + 当前租户归属部门 + 角色 ID。 */
+    @TenantIgnore
+    public com.sfi.matrix.iam.dto.UserDetailVO userDetail(Long userId, String tenantId) {
+        SysUser user = userService.get(userId);
+        if (user == null) {
+            throw BizException.of(GlobalErrorCode.NOT_FOUND, "用户不存在：" + userId);
+        }
+        SysUserProfile profile = userService.profileOf(userId);
+        com.sfi.matrix.iam.dto.UserDetailVO vo = new com.sfi.matrix.iam.dto.UserDetailVO();
+        vo.setId(user.getId());
+        vo.setUsername(user.getUsername());
+        vo.setMobile(user.getMobile());
+        vo.setEmail(user.getEmail());
+        vo.setAccountType(user.getAccountType());
+        vo.setStatus(user.getStatus());
+        vo.setMaxSessions(user.getMaxSessions());
+        if (profile != null) {
+            vo.setNickname(profile.getNickname());
+            vo.setSex(profile.getSex());
+            vo.setRemark(profile.getRemark());
+        }
+        vo.setTenantId(tenantId);
+        SysUserTenant membership = userTenantRepository
+                .findByUserIdAndTenantIdAndDeletedFalse(userId, tenantId).orElse(null);
+        if (membership != null) {
+            vo.setDeptId(membership.getDeptId());
+        }
+        vo.setRoleIds(userRoleRepository.findByUserIdAndTenantIdAndDeletedFalse(userId, tenantId)
+                .stream().map(SysUserRole::getRoleId).collect(Collectors.toList()));
+        return vo;
+    }
+
+    /** 重置用户密码（管理员动作）。 */
+    @Transactional(rollbackFor = Exception.class)
+    public void resetPassword(Long userId, String encodedPassword) {
+        SysUser user = userService.get(userId);
+        if (user == null) {
+            throw BizException.of(GlobalErrorCode.NOT_FOUND, "用户不存在：" + userId);
+        }
+        user.setPassword(encodedPassword);
+        userRepository.save(user);
+    }
+
+    /** 校验部门属于指定租户，防止跨租户挂部门。 */
+    private void assertDeptInTenant(Long deptId, String tenantId) {
+        if (deptId == null) {
+            return;
+        }
+        SysDept dept = deptRepository.findById(deptId).orElse(null);
+        if (dept == null || Boolean.TRUE.equals(dept.getDeleted()) || !tenantId.equals(dept.getTenantId())) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "部门不属于该租户或已删除：" + deptId);
+        }
+    }
+
+    /** 校验角色都属于指定租户。 */
+    private void assertRolesInTenant(List<Long> roleIds, String tenantId) {
+        if (roleIds == null || roleIds.isEmpty()) {
+            return;
+        }
+        List<SysRole> roles = roleRepository.findByIdInAndDeletedFalse(roleIds);
+        if (roles.size() != roleIds.stream().distinct().count()) {
+            throw BizException.of(GlobalErrorCode.BAD_REQUEST, "部分角色不存在");
+        }
+        for (SysRole role : roles) {
+            if (!tenantId.equals(role.getTenantId())) {
+                throw BizException.of(GlobalErrorCode.BAD_REQUEST, "角色不属于该租户：" + role.getRoleCode());
+            }
+        }
+    }
+
     // ===== 菜单（全局定义） =====
 
     /** 平台层：查看全部全局菜单定义（用于配套餐） */

@@ -93,7 +93,7 @@ class IamEndToEndTest {
     private static String adminToken;
 
     private JsonNode ok(MvcResult result) throws Exception {
-        String body = result.getResponse().getContentAsString();
+        String body = result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
         JsonNode root = objectMapper.readTree(body);
         assertEquals(0, root.path("code").asInt(), "响应应成功: " + body);
         return root.path("data");
@@ -101,7 +101,7 @@ class IamEndToEndTest {
 
     private MvcResult postJson(String url, Object body, String token) throws Exception {
         MockHttpServletRequestBuilder builder = post(url).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(body));
+                .content(objectMapper.writeValueAsString(body).getBytes(java.nio.charset.StandardCharsets.UTF_8));
         if (token != null) builder.header("Authorization", "Bearer " + token);
         return mockMvc.perform(builder).andReturn();
     }
@@ -210,6 +210,11 @@ class IamEndToEndTest {
     @Test
     @Order(3)
     void createTenantUserRoleDept() throws Exception {
+        // 平台租户 ID：adminToken 的当前登录租户（plan 查询按当前租户隔离）
+        JsonNode platformIdNode = ok(mockMvc.perform(get("/api/iam/tenant/platform-tenant-id")
+                .header("Authorization", "Bearer " + adminToken)).andExpect(status().isOk()).andReturn());
+        String platformTenantId = platformIdNode.asText();
+
         // 建套餐
         Map<String, String> pkg = new HashMap<>();
         pkg.put("packageCode", "PKG_TEST");
@@ -228,11 +233,12 @@ class IamEndToEndTest {
         assertNotNull(created);
         String tenantId = created.path("id").asText();
 
-        // 建用户
-        Map<String, String> user = new HashMap<>();
+        // 建用户（归属平台租户，plan 查询才能按当前租户找到）
+        Map<String, Object> user = new HashMap<>();
         user.put("username", "zhangsan");
         user.put("password", "admin123");
         user.put("nickname", "张三");
+        user.put("tenantId", platformTenantId);
         JsonNode u = ok(postJson("/api/iam/user/save", user, adminToken));
         assertNotNull(u.path("id"));
 
@@ -252,6 +258,68 @@ class IamEndToEndTest {
         dept.put("sortNo", 1);
         JsonNode d = ok(postJson("/api/iam/dept/save", dept, adminToken));
         assertNotNull(d.path("id"));
+
+        // ===== 芋道式聚合创建（在平台租户内，plan 才能按当前租户查到）=====
+        // 平台租户内建部门
+        Map<String, Object> pdept = new HashMap<>();
+        pdept.put("deptName", "平台研发部");
+        pdept.put("tenantId", platformTenantId);
+        pdept.put("sortNo", 1);
+        String pdeptId = ok(postJson("/api/iam/dept/save", pdept, adminToken)).path("id").asText();
+        // 平台租户内建角色
+        Map<String, Object> prole = new HashMap<>();
+        prole.put("roleCode", "PLAT_TEST_ROLE");
+        prole.put("roleName", "平台测试角色");
+        prole.put("tenantId", platformTenantId);
+        prole.put("dataScope", "ALL");
+        String proleId = ok(postJson("/api/iam/role/save", prole, adminToken)).path("id").asText();
+
+        Map<String, Object> fullUser = new HashMap<>();
+        fullUser.put("username", "lisi");
+        fullUser.put("password", "admin123");
+        fullUser.put("nickname", "李四");
+        fullUser.put("mobile", "13800000000");
+        fullUser.put("email", "lisi@test.com");
+        fullUser.put("sex", 1);
+        fullUser.put("tenantId", platformTenantId);
+        fullUser.put("deptId", pdeptId);
+        fullUser.put("roleIds", java.util.Collections.singletonList(proleId));
+        JsonNode lu = ok(postJson("/api/iam/user/save", fullUser, adminToken));
+        assertNotNull(lu.path("id"), "聚合创建应返回用户");
+        String lisiId = lu.path("id").asText();
+
+        // 详情回显：手机号/邮箱/部门/角色都应正确落库（验证新增不再丢字段）
+        MvcResult detailResult = mockMvc.perform(get("/api/iam/user/detail")
+                        .param("id", lisiId).param("tenantId", platformTenantId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn();
+        JsonNode detail = ok(detailResult);
+        assertEquals("李四", detail.path("nickname").asText(), "昵称应落库");
+        assertEquals("13800000000", detail.path("mobile").asText(), "手机号应落库(修复丢弃bug)");
+        assertEquals("lisi@test.com", detail.path("email").asText(), "邮箱应落库(修复丢弃bug)");
+        assertEquals(pdeptId, detail.path("deptId").asText(), "归属部门应落库");
+        assertTrue(detail.path("roleIds").isArray() && detail.path("roleIds").size() == 1,
+                "角色应落库，实际=" + detail.toString());
+
+        // 部门树接口：应包含刚建的平台研发部
+        MvcResult treeResult = mockMvc.perform(get("/api/iam/dept/tree")
+                        .param("tenantId", platformTenantId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn();
+        JsonNode tree = ok(treeResult);
+        assertTrue(tree.isArray() && tree.size() >= 1, "部门树应非空，实际=" + tree.toString());
+
+        // plan 列表：lisi 应带部门名和角色名（验证关联列查询）
+        MvcResult planLisi = mockMvc.perform(get("/api/iam/user/list/UserListPlan")
+                        .param("CN_username", "lisi")
+                        .param("page", "1").param("size", "10")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn();
+        JsonNode lisiPage = ok(planLisi);
+        assertEquals(1, lisiPage.path("total").asLong(), "plan 应查到 lisi，实际=" + lisiPage.toString());
+        JsonNode lisiRow = lisiPage.path("list").get(0);
+        assertEquals("平台研发部", lisiRow.path("deptName").asText(), "plan 应返回部门名，实际=" + lisiPage.toString());
+        assertEquals("平台测试角色", lisiRow.path("roleNames").asText(), "plan 应返回角色名，实际=" + lisiPage.toString());
     }
 
     @Test
@@ -278,6 +346,103 @@ class IamEndToEndTest {
         JsonNode filteredPage = ok(filtered);
         assertEquals(1, filteredPage.path("total").asLong(),
                 "CN_username=zhang 应只匹配 zhangsan，实际=" + filteredPage.toString());
+
+        // QueryPlan 通路③：/list/UserListPlan 关联 sys_user_profile 查出昵称
+        MvcResult planResult = mockMvc.perform(get("/api/iam/user/list/UserListPlan")
+                        .param("CN_username", "zhang")
+                        .param("page", "1").param("size", "10")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn();
+        JsonNode planPage = ok(planResult);
+        assertEquals(1, planPage.path("total").asLong(),
+                "plan 查询 CN_username=zhang 应只匹配 zhangsan，实际=" + planPage.toString());
+        JsonNode planRow = planPage.path("list").get(0);
+        assertEquals("张三", planRow.path("nickname").asText(),
+                "plan 应关联资料表查出昵称，实际=" + planPage.toString());
+
+        // plan 昵称模糊搜索：字段已在计划类声明，严格字段校验应放行
+        MvcResult nickFiltered = mockMvc.perform(get("/api/iam/user/list/UserListPlan")
+                        .param("CN_nickname", "张")
+                        .param("page", "1").param("size", "10")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn();
+        JsonNode nickPage = ok(nickFiltered);
+        assertTrue(nickPage.path("total").asLong() >= 1,
+                "CN_nickname=张 应命中 zhangsan，实际=" + nickPage.toString());
+
+        // ===== 角色 RoleListPlan：关键表 join + 聚合列 =====
+        MvcResult rolePlan = mockMvc.perform(get("/api/iam/role/list/RoleListPlan")
+                        .param("CN_roleCode", "PLAT_TEST_ROLE")
+                        .param("page", "1").param("size", "10")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn();
+        JsonNode rolePlanPage = ok(rolePlan);
+        assertEquals(1, rolePlanPage.path("total").asLong(),
+                "plan 应查到 PLAT_TEST_ROLE，实际=" + rolePlanPage.toString());
+        JsonNode roleRow = rolePlanPage.path("list").get(0);
+        assertEquals("平台测试角色", roleRow.path("roleName").asText(),
+                "plan 应返回角色名，实际=" + rolePlanPage.toString());
+        assertEquals("运营平台", roleRow.path("tenantName").asText(),
+                "plan 应关联租户名，实际=" + rolePlanPage.toString());
+        assertTrue(roleRow.has("userCount") && roleRow.has("menuCount"),
+                "plan 应返回用户数/菜单数聚合列，实际=" + rolePlanPage.toString());
+        assertEquals(1, roleRow.path("status").asInt(),
+                "角色默认应为启用状态，实际=" + rolePlanPage.toString());
+
+        // 角色 plan 按状态过滤（EQ_status）
+        MvcResult roleStatusFiltered = mockMvc.perform(get("/api/iam/role/list/RoleListPlan")
+                        .param("EQ_status", "1")
+                        .param("page", "1").param("size", "50")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn();
+        JsonNode roleStatusPage = ok(roleStatusFiltered);
+        assertTrue(roleStatusPage.path("total").asLong() >= 1,
+                "EQ_status=1 应命中启用角色，实际=" + roleStatusPage.toString());
+
+        // change-status：停用再启用 PLAT_TEST_ROLE
+        String rolePlanId = roleRow.path("id").asText();
+        ok(postJson("/api/iam/role/change-status",
+                new HashMap<String, Object>() {{
+                    put("ids", java.util.Collections.singletonList(rolePlanId));
+                    put("status", 0);
+                }}, adminToken));
+        MvcResult roleDisabled = mockMvc.perform(get("/api/iam/role/list/RoleListPlan")
+                        .param("EQ_id", rolePlanId)
+                        .param("page", "1").param("size", "10")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn();
+        assertEquals(0, ok(roleDisabled).path("list").get(0).path("status").asInt(),
+                "change-status 应停用角色，实际=" + ok(roleDisabled).toString());
+
+        // ===== 菜单全字段落库：createFull 应接收 path/component/icon/apiPattern =====
+        java.util.Map<String, Object> menu = new java.util.HashMap<>();
+        menu.put("menuName", "测试全字段菜单");
+        menu.put("menuType", "C");
+        menu.put("path", "/system/fullfield");
+        menu.put("component", "/system/fullfield/index.vue");
+        menu.put("icon", "Settings");
+        menu.put("permission", "system:fullfield:list");
+        menu.put("apiPattern", "/api/iam/fullfield/**");
+        menu.put("menuScope", "TENANT");
+        menu.put("sortNo", 3);
+        menu.put("visible", true);
+        JsonNode createdMenu = ok(postJson("/api/iam/menu/save", menu, adminToken));
+        String menuId = createdMenu.path("id").asText();
+        assertEquals("/system/fullfield", createdMenu.path("path").asText(),
+                "新增菜单应落库路由路径，实际=" + createdMenu.toString());
+        assertEquals("/api/iam/fullfield/**", createdMenu.path("apiPattern").asText(),
+                "新增菜单应落库 URL 权限规则，实际=" + createdMenu.toString());
+
+        // 回显：get 接口应返回 apiPattern
+        MvcResult menuGet = mockMvc.perform(get("/api/iam/menu/get")
+                        .param("id", menuId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn();
+        JsonNode menuDetail = ok(menuGet);
+        assertEquals("/system/fullfield/index.vue", menuDetail.path("component").asText(),
+                "get 应回显组件路径，实际=" + menuDetail.toString());
+        assertEquals("/api/iam/fullfield/**", menuDetail.path("apiPattern").asText(),
+                "get 应回显 URL 权限规则，实际=" + menuDetail.toString());
     }
 
     @Test
