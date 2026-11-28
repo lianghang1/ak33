@@ -188,7 +188,6 @@
             <column name="role_name" type="VARCHAR(64)"><constraints nullable="false"/></column>
             <column name="role_type" type="VARCHAR(32)" defaultValue="NORMAL" remarks="PLATFORM_ADMIN/TENANT_ADMIN/NORMAL"><constraints nullable="false"/></column>
             <column name="sort_no" type="INT"/>
-            <column name="status" type="INT" defaultValueNumeric="1" remarks="1启用 0停用"><constraints nullable="false"/></column>
             <column name="built_in" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
             <column name="data_scope" type="VARCHAR(32)" defaultValue="ALL" remarks="数据范围:ALL/DEPT_CUSTOM/DEPT_ONLY/DEPT_AND_CHILD/SELF"><constraints nullable="false"/></column>
             <column name="data_scope_dept_ids" type="VARCHAR(255)" remarks="指定部门(DEPT_CUSTOM用),逗号分隔部门ID"/>
@@ -306,6 +305,15 @@
         <createIndex tableName="sys_operate_log" indexName="idx_operate_log_time">
             <column name="oper_time"/>
         </createIndex>
+    </changeSet>
+
+    <!-- 投产增量：sys_role 增加 status 列（对应角色启用/停用）。原 20261121-09 建表脚本保持不变，避免已执行 changeset 的 checksum 变化。 -->
+    <changeSet id="20261128-01" author="lianghang">
+        <addColumn tableName="sys_role">
+            <column name="status" type="INT" defaultValueNumeric="1" remarks="1启用 0停用">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
     </changeSet>
 
 </databaseChangeLog>
